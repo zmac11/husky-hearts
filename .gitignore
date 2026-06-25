@@ -1,0 +1,16 @@
+# Build artifacts — uncomment if you prefer not to commit dist/
+# dist/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Python cache (build script)
+__pycache__/
+*.pyc
+*.pyo

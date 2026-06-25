@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Husky Hearts</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="wrap">
+  <h1><span>🐾</span>Husky Hearts<span>🐾</span></h1>
+  <div id="subtitle">a cozy little walk to make some friends smile</div>
+
+  <div id="hud">
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats</div>
+    <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
+    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats</div>
+    <button id="fsBtn">⛶ Fullscreen</button>
+  </div>
+
+  <div id="fullscreenTarget">
+
+    <div id="gameFrame">
+      <canvas id="game" width="640" height="416"></canvas>
+      <div id="toast"></div>
+
+      <div id="startScreen">
+        <h2>🐕 Welcome to Husky Hearts 🐕</h2>
+        <p>Explore the big meadow, collect treats, and bring them to lonely animal friends. Use the minimap to find them!</p>
+        <button class="modebtn" id="btn1p">🐾 Play Solo</button>
+        <button class="modebtn secondary" id="btn2p">🐾🐾 Play Together (2 Players)</button>
+      </div>
+
+      <div id="winScreen">
+        <h2>💛 Everyone is happy! 💛</h2>
+        <p>You filled the meadow with friendship.<br>Good dog! 🌸</p>
+        <button class="modebtn" id="btnReplay">Play Again 🐾</button>
+      </div>
+    </div>
+
+    <div id="mobileControls">
+      <div id="dpad">
+        <div class="dpad-empty"></div>
+        <div class="dpad-btn" id="mb-up">▲</div>
+        <div class="dpad-empty"></div>
+        <div class="dpad-btn" id="mb-left">◀</div>
+        <div class="dpad-empty"></div>
+        <div class="dpad-btn" id="mb-right">▶</div>
+        <div class="dpad-empty"></div>
+        <div class="dpad-btn" id="mb-down">▼</div>
+        <div class="dpad-empty"></div>
+      </div>
+      <div id="mobileHowlBtn">🐺<br>Howl/<br>Deliver</div>
+    </div>
+
+  </div>
+
+  <div id="controls">
+    <div class="ctrl-card"><b>Player 1</b>WASD · SPACE to howl/deliver</div>
+    <div class="ctrl-card" id="p2controls" style="display:none;"><b>Player 2</b>Arrow Keys · ENTER to howl/deliver</div>
+  </div>
+  <footer>Tip: check the minimap (top-right) to find animals and treats!</footer>
+</div>
+
+<!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->
+<script src="dist/bundle.js"></script>
+</body>
+</html>
