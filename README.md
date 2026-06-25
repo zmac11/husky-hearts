@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.svg" alt="Husky Hearts icon" width="160">
+</p>
+
 # 🐾 Husky Hearts 🐾
 
 A cozy 2D pixel-art game where you (and optionally a friend) explore a meadow as cute dogs, collect treats, and cheer up lonely animal friends. Built entirely with vanilla HTML, CSS, JavaScript and the Canvas API — no frameworks, no build dependencies beyond Python 3.
