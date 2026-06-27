@@ -52,9 +52,36 @@ function rand2(ax,ay,bx,by,minDist,existing,tries=40){
 }
 
 const worldObjects=[]; // typed world objects with draw info
+let river=null; // { pos, width, amplitude, wavelength }
 
 function buildWorld(){
   worldObjects.length=0; colliders.length=0;
+
+  // ---- RIVER (create first so placements can avoid it) ----
+  river={ pos:WORLD_H*0.38, width:72, amplitude:28, wavelength:520 };
+
+  // ---- PONDS (also before other objects) ----
+  const taken=[];
+  for(let i=0;i<5;i++){
+    const p=rand2(150,150,WORLD_W-150,WORLD_H-150,280,taken);
+    taken.push(p);
+    const w=rand(160,260),h=rand(110,170);
+    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100});
+  }
+
+  // ---- Water exclusion helper ----
+  function inWater(x,y,margin){
+    if(inRiver(x,y,margin)) return true;
+    return worldObjects.some(o=>o.kind==='pond'&&
+      ((x-o.x)/(o.w/2+margin))**2+((y-o.y)/(o.h/2+margin))**2<1);
+  }
+  function safePt(ax,ay,bx,by,minDist,list,margin){
+    for(let a=0;a<60;a++){
+      const p=rand2(ax,ay,bx,by,minDist,list);
+      if(!inWater(p.x,p.y,margin)) return p;
+    }
+    return rand2(ax,ay,bx,by,minDist,list); // fallback
+  }
 
   // ---- FENCE border ----
   addCollider(0,0,WORLD_W,14);
@@ -63,73 +90,55 @@ function buildWorld(){
   addCollider(WORLD_W-14,0,14,WORLD_H);
 
   // ---- OAK TREES ----
-  // Trunk base: x-5,y+2 w10 h28, roots spread to x±9,y+26
-  // Collider covers lower trunk + root spread, not the canopy
-  const taken=[];
   for(let i=0;i<22;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,100,taken);
+    const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
-    worldObjects.push({kind:'oak',x:p.x,y:p.y, variant:Math.floor(Math.random()*3)});
-    addCollider(p.x-9, p.y+14, 18, 18); // trunk base + roots
+    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
+    addCollider(p.x-9,p.y+14,18,18);
   }
 
   // ---- PINE TREES ----
-  // Trunk: x-3,y+2 w6 h22
   for(let i=0;i<12;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,80,taken);
+    const p=safePt(40,40,WORLD_W-40,WORLD_H-40,80,taken,45);
     taken.push(p);
     worldObjects.push({kind:'pine',x:p.x,y:p.y});
-    addCollider(p.x-4, p.y+14, 8, 12); // just the trunk base
+    addCollider(p.x-4,p.y+14,8,12);
   }
 
   // ---- ROCKS ----
-  // Big rock: x-14,y-11 to x+14,y+14  → body sits y-4 to y+14
-  // Small rock: x-9,y-5 to x+9,y+10   → no collider (walkable decoration)
   for(let i=0;i<18;i++){
-    const p=rand2(60,60,WORLD_W-60,WORLD_H-60,60,taken);
+    const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
     const big=Math.random()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13, p.y-2, 26, 16); // wide base of big rock only
-    // small rocks: no collider
+    if(big) addCollider(p.x-13,p.y-2,26,16);
   }
 
   // ---- ROCK CLUSTERS ----
-  // Spread: offsets [-18,4],[-6,-2],[6,2],[14,-4],[-2,10]
-  // Combined footprint roughly x-27 to x+23, y-6 to y+18
   for(let i=0;i<6;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,120,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26, p.y-4, 50, 18); // covers all rock bases in cluster
-  }
-
-  // ---- PONDS ----
-  // Ellipse: center x,y semi-axes w/2,h/2. Use tighter fit so shore is blocked
-  for(let i=0;i<5;i++){
-    const p=rand2(100,100,WORLD_W-100,WORLD_H-100,180,taken);
-    taken.push(p);
-    const w=rand(60,110),h=rand(40,70);
-    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100});
-    // AABB inscribed tightly in the ellipse
-    addCollider(p.x-w*0.48, p.y-h*0.48, w*0.96, h*0.96);
+    addCollider(p.x-26,p.y-4,50,18);
   }
 
   // ---- TALL GRASS patches (no collider) ----
   for(let i=0;i<30;i++){
-    const p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,i)=>i%3===0));
+    let p;
+    for(let a=0;a<40;a++){
+      p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,j)=>j%3===0));
+      if(!inWater(p.x,p.y,30)) break;
+    }
     worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:Math.random()*100});
   }
 
   // ---- BUSHES ----
-  // Variant 0: x-14,y+6 to x+14,y+18 (widest at base)
-  // Variant 1: x-14,y+4 to x+14,y+16
   for(let i=0;i<24;i++){
-    const p=rand2(50,50,WORLD_W-50,WORLD_H-50,70,taken);
+    const p=safePt(50,50,WORLD_W-50,WORLD_H-50,70,taken,40);
     taken.push(p);
     const variant=Math.floor(Math.random()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
-    addCollider(p.x-13, p.y+2, 26, 16); // lower body only, matches visual base
+    addCollider(p.x-13,p.y+2,26,16);
   }
 
   // ---- FLOWERS (no collider) ----
@@ -140,23 +149,26 @@ function buildWorld(){
   }
 
   // ---- WILLOW TREES ----
-  // Trunk: x-6,y+2 to x+6,y+34, roots x-12,y+28 to x+12,y+34
   for(let i=0;i<6;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,100,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,100,taken,50);
     taken.push(p);
     worldObjects.push({kind:'willow',x:p.x,y:p.y});
-    addCollider(p.x-9, p.y+16, 18, 18); // trunk base + roots
+    addCollider(p.x-9,p.y+16,18,18);
   }
 
-  // ---- MUSHROOMS — no colliders (small, walkable) ----
+  // ---- MUSHROOMS ----
   for(let i=0;i<14;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,i)=>i%4===0));
+    let p;
+    for(let a=0;a<40;a++){
+      p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,j)=>j%4===0));
+      if(!inWater(p.x,p.y,25)) break;
+    }
     worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:Math.random()<0.3});
   }
 
-  // ---- MUSHROOM RINGS — no colliders ----
+  // ---- MUSHROOM RINGS ----
   for(let i=0;i<4;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,90,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
     worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
   }
@@ -170,6 +182,12 @@ function buildWorld(){
   // ---- BRIDGES over ponds ----
   worldObjects.filter(o=>o.kind==='pond').slice(0,3).forEach((pond,i)=>{
     worldObjects.push({kind:'bridge',x:pond.x,y:pond.y,horizontal:i%2===0,seed:i});
+  });
+
+  // ---- RIVER BRIDGES (3 crossings) ----
+  [0.25,0.5,0.75].forEach((fx,i)=>{
+    const bx=WORLD_W*fx;
+    worldObjects.push({kind:'bridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i});
   });
 
   // Sort by y for painter's algorithm
@@ -199,11 +217,26 @@ function makeFriends(){
 }
 let friends=makeFriends();
 
-// ---------- PLAYERS ----------
-// breed/markings fields ready for selection screen
+// ---------- RIVER / POND helpers ----------
+function riverY(x){
+  if(!river) return 0;
+  return river.pos + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2);
+}
+
+function inRiver(x,y,margin=0){
+  if(!river) return false;
+  return Math.abs(y-riverY(x)) < river.width/2+margin;
+}
+
+function isInPond(px,py){
+  const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
+    ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
+  return inEllipse || inRiver(px,py);
+}
+
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings};
+    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);
 let p2=makePlayer(2,'#E0855B',260,200);

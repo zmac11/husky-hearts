@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Husky Hearts</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta property="og:title" content="Husky Hearts">
+<meta property="og:description" content="A cozy pixel-art game — explore a meadow, collect treats, and cheer up lonely animal friends.">
+<meta property="og:image" content="icon.svg">
 <style>
 :root{
     --sky:#FFE9D6; --sky-deep:#FFD6B8; --sunset:#FFB199;
@@ -357,9 +361,36 @@ function rand2(ax,ay,bx,by,minDist,existing,tries=40){
 }
 
 const worldObjects=[]; // typed world objects with draw info
+let river=null; // { pos, width, amplitude, wavelength }
 
 function buildWorld(){
   worldObjects.length=0; colliders.length=0;
+
+  // ---- RIVER (create first so placements can avoid it) ----
+  river={ pos:WORLD_H*0.38, width:72, amplitude:28, wavelength:520 };
+
+  // ---- PONDS (also before other objects) ----
+  const taken=[];
+  for(let i=0;i<5;i++){
+    const p=rand2(150,150,WORLD_W-150,WORLD_H-150,280,taken);
+    taken.push(p);
+    const w=rand(160,260),h=rand(110,170);
+    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100});
+  }
+
+  // ---- Water exclusion helper ----
+  function inWater(x,y,margin){
+    if(inRiver(x,y,margin)) return true;
+    return worldObjects.some(o=>o.kind==='pond'&&
+      ((x-o.x)/(o.w/2+margin))**2+((y-o.y)/(o.h/2+margin))**2<1);
+  }
+  function safePt(ax,ay,bx,by,minDist,list,margin){
+    for(let a=0;a<60;a++){
+      const p=rand2(ax,ay,bx,by,minDist,list);
+      if(!inWater(p.x,p.y,margin)) return p;
+    }
+    return rand2(ax,ay,bx,by,minDist,list); // fallback
+  }
 
   // ---- FENCE border ----
   addCollider(0,0,WORLD_W,14);
@@ -368,73 +399,55 @@ function buildWorld(){
   addCollider(WORLD_W-14,0,14,WORLD_H);
 
   // ---- OAK TREES ----
-  // Trunk base: x-5,y+2 w10 h28, roots spread to x±9,y+26
-  // Collider covers lower trunk + root spread, not the canopy
-  const taken=[];
   for(let i=0;i<22;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,100,taken);
+    const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
-    worldObjects.push({kind:'oak',x:p.x,y:p.y, variant:Math.floor(Math.random()*3)});
-    addCollider(p.x-9, p.y+14, 18, 18); // trunk base + roots
+    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
+    addCollider(p.x-9,p.y+14,18,18);
   }
 
   // ---- PINE TREES ----
-  // Trunk: x-3,y+2 w6 h22
   for(let i=0;i<12;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,80,taken);
+    const p=safePt(40,40,WORLD_W-40,WORLD_H-40,80,taken,45);
     taken.push(p);
     worldObjects.push({kind:'pine',x:p.x,y:p.y});
-    addCollider(p.x-4, p.y+14, 8, 12); // just the trunk base
+    addCollider(p.x-4,p.y+14,8,12);
   }
 
   // ---- ROCKS ----
-  // Big rock: x-14,y-11 to x+14,y+14  → body sits y-4 to y+14
-  // Small rock: x-9,y-5 to x+9,y+10   → no collider (walkable decoration)
   for(let i=0;i<18;i++){
-    const p=rand2(60,60,WORLD_W-60,WORLD_H-60,60,taken);
+    const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
     const big=Math.random()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13, p.y-2, 26, 16); // wide base of big rock only
-    // small rocks: no collider
+    if(big) addCollider(p.x-13,p.y-2,26,16);
   }
 
   // ---- ROCK CLUSTERS ----
-  // Spread: offsets [-18,4],[-6,-2],[6,2],[14,-4],[-2,10]
-  // Combined footprint roughly x-27 to x+23, y-6 to y+18
   for(let i=0;i<6;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,120,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26, p.y-4, 50, 18); // covers all rock bases in cluster
-  }
-
-  // ---- PONDS ----
-  // Ellipse: center x,y semi-axes w/2,h/2. Use tighter fit so shore is blocked
-  for(let i=0;i<5;i++){
-    const p=rand2(100,100,WORLD_W-100,WORLD_H-100,180,taken);
-    taken.push(p);
-    const w=rand(60,110),h=rand(40,70);
-    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100});
-    // AABB inscribed tightly in the ellipse
-    addCollider(p.x-w*0.48, p.y-h*0.48, w*0.96, h*0.96);
+    addCollider(p.x-26,p.y-4,50,18);
   }
 
   // ---- TALL GRASS patches (no collider) ----
   for(let i=0;i<30;i++){
-    const p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,i)=>i%3===0));
+    let p;
+    for(let a=0;a<40;a++){
+      p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,j)=>j%3===0));
+      if(!inWater(p.x,p.y,30)) break;
+    }
     worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:Math.random()*100});
   }
 
   // ---- BUSHES ----
-  // Variant 0: x-14,y+6 to x+14,y+18 (widest at base)
-  // Variant 1: x-14,y+4 to x+14,y+16
   for(let i=0;i<24;i++){
-    const p=rand2(50,50,WORLD_W-50,WORLD_H-50,70,taken);
+    const p=safePt(50,50,WORLD_W-50,WORLD_H-50,70,taken,40);
     taken.push(p);
     const variant=Math.floor(Math.random()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
-    addCollider(p.x-13, p.y+2, 26, 16); // lower body only, matches visual base
+    addCollider(p.x-13,p.y+2,26,16);
   }
 
   // ---- FLOWERS (no collider) ----
@@ -445,23 +458,26 @@ function buildWorld(){
   }
 
   // ---- WILLOW TREES ----
-  // Trunk: x-6,y+2 to x+6,y+34, roots x-12,y+28 to x+12,y+34
   for(let i=0;i<6;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,100,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,100,taken,50);
     taken.push(p);
     worldObjects.push({kind:'willow',x:p.x,y:p.y});
-    addCollider(p.x-9, p.y+16, 18, 18); // trunk base + roots
+    addCollider(p.x-9,p.y+16,18,18);
   }
 
-  // ---- MUSHROOMS — no colliders (small, walkable) ----
+  // ---- MUSHROOMS ----
   for(let i=0;i<14;i++){
-    const p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,i)=>i%4===0));
+    let p;
+    for(let a=0;a<40;a++){
+      p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,j)=>j%4===0));
+      if(!inWater(p.x,p.y,25)) break;
+    }
     worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:Math.random()<0.3});
   }
 
-  // ---- MUSHROOM RINGS — no colliders ----
+  // ---- MUSHROOM RINGS ----
   for(let i=0;i<4;i++){
-    const p=rand2(80,80,WORLD_W-80,WORLD_H-80,90,taken);
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
     worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
   }
@@ -475,6 +491,12 @@ function buildWorld(){
   // ---- BRIDGES over ponds ----
   worldObjects.filter(o=>o.kind==='pond').slice(0,3).forEach((pond,i)=>{
     worldObjects.push({kind:'bridge',x:pond.x,y:pond.y,horizontal:i%2===0,seed:i});
+  });
+
+  // ---- RIVER BRIDGES (3 crossings) ----
+  [0.25,0.5,0.75].forEach((fx,i)=>{
+    const bx=WORLD_W*fx;
+    worldObjects.push({kind:'bridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i});
   });
 
   // Sort by y for painter's algorithm
@@ -504,11 +526,26 @@ function makeFriends(){
 }
 let friends=makeFriends();
 
-// ---------- PLAYERS ----------
-// breed/markings fields ready for selection screen
+// ---------- RIVER / POND helpers ----------
+function riverY(x){
+  if(!river) return 0;
+  return river.pos + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2);
+}
+
+function inRiver(x,y,margin=0){
+  if(!river) return false;
+  return Math.abs(y-riverY(x)) < river.width/2+margin;
+}
+
+function isInPond(px,py){
+  const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
+    ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
+  return inEllipse || inRiver(px,py);
+}
+
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings};
+    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);
 let p2=makePlayer(2,'#E0855B',260,200);
@@ -840,10 +877,62 @@ function drawBridge(x,y,horizontal,t){
 }
 
 
+function drawRiver(t){
+  if(!river) return;
+  const steps=100, dx=WORLD_W/steps, phase=t/3000;
+
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const x=i*dx;
+    const y=riverY(x)-river.width/2;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  for(let i=steps;i>=0;i--){
+    const x=i*dx;
+    const y=riverY(x)+river.width/2;
+    ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+
+  const grad=ctx.createLinearGradient(0,river.pos-river.width/2,0,river.pos+river.width/2);
+  grad.addColorStop(0,'#7DD4F0');
+  grad.addColorStop(0.5,'#4AACDC');
+  grad.addColorStop(1,'#2A7AAA');
+  ctx.fillStyle=grad; ctx.fill();
+
+  // shore lines
+  ctx.strokeStyle='#3A9ABB'; ctx.lineWidth=2;
+  for(let edge=0;edge<2;edge++){
+    const sign=edge===0?-1:1;
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){
+      const x=i*dx, y=riverY(x)+sign*river.width/2;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // animated ripple lines
+  const rphase=t/1800;
+  for(let ri=0;ri<3;ri++){
+    ctx.globalAlpha=0.18-ri*0.05;
+    ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){
+      const x=i*dx, y=riverY(x)+(ri-1)*20+Math.sin(x/200+rphase+ri)*4;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
   else { ctx.fillStyle='#9ED87A'; ctx.fillRect(0,0,WORLD_W,WORLD_H); }
+
+  drawRiver(t);
 
   // draw all world objects in y-sorted order
   worldObjects.forEach(obj=>{
@@ -1069,17 +1158,58 @@ function drawDog(p,t){
   const K='#1A1A1A';
 
   ctx.save();
-  ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x,y+16,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
 
   const bounce=p.moving?Math.sin(t/90)*2.5:Math.sin(t/400);
   const by=y+bounce;
   const breed=p.breed||'husky';
 
-  if(breed==='corgi') _drawCorgi(x,by,t,C,D,L,W,K,p);
+  if(!p.swimming){
+    ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x,y+16,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
+  }
+
+  if(p.swimming){
+    // clip to upper portion only — waterline sits at by+2
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x-32, by-42, 64, 44);
+    ctx.clip();
+  }
+
+  if(breed==='dinno') _drawDinno(x,by,t,C,D,L,W,K,p);
+  else if(breed==='lolla') _drawLolla(x,by,t,C,D,L,W,K,p);
+  else if(breed==='corgi') _drawCorgi(x,by,t,C,D,L,W,K,p);
   else if(breed==='shiba') _drawShiba(x,by,t,C,D,L,W,K,p);
   else if(breed==='poodle') _drawPoodle(x,by,t,C,D,L,W,K,p);
   else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
   else _drawHusky(x,by,t,C,D,L,W,K,p);
+
+  // Lolla ball in mouth
+  if(breed==='lolla' && typeof lollaBall!=='undefined' && lollaBall && lollaBall.state==='held' && lollaBall.carrier===p.id){
+    drawBallInMouth(x,by,p.dir);
+  }
+
+  if(p.swimming){
+    ctx.restore(); // remove clip
+    // water surface at waterline
+    const wl=Math.round(by)+2;
+    const wswing=Math.sin(t/600)*3;
+    // water fill over lower body
+    ctx.globalAlpha=0.72;
+    ctx.beginPath(); ctx.ellipse(x+wswing*0.3,wl,16,6,0,0,Math.PI*2);
+    const wg=ctx.createRadialGradient(x-4,wl-2,1,x,wl,16);
+    wg.addColorStop(0,'#9CE4FF'); wg.addColorStop(1,'#3AAACC');
+    ctx.fillStyle=wg; ctx.fill();
+    ctx.globalAlpha=1;
+    // animated expanding ripples
+    for(let i=0;i<3;i++){
+      const phase=((t/1000+i/3)%1);
+      const rs=1+phase*1.6;
+      ctx.globalAlpha=0.38*(1-phase);
+      ctx.beginPath(); ctx.ellipse(x+wswing*0.3,wl,16*rs,6*rs,0,0,Math.PI*2);
+      ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
 
   ctx.fillStyle='rgba(255,248,239,0.88)'; roundRect(x-11,by-34,22,11,3,true,false);
   ctx.fillStyle='#4A3F35'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
@@ -1107,7 +1237,8 @@ function _drawHusky(x,by,t,C,D,L,W,K,p){
   px(x+2,by+11+la2,5,9,D); px(x+3,by+18+la2,4,4,shade(D,-10));
   px(x-7,by+19+la,5,3,'#9A7060'); px(x+2,by+19+la2,5,3,'#9A7060');
   const tw=Math.sin(t/160)*5;
-  px(x+9,by+2+tw*0.5,5,12,D); px(x+11,by+tw,4,8,C); px(x+12,by-2+tw,3,6,W);
+  if(p.dir==='right'){ px(x-14,by+2+tw*0.5,5,12,D); px(x-15,by+tw,4,8,C); px(x-15,by-2+tw,3,6,W); }
+  else { px(x+9,by+2+tw*0.5,5,12,D); px(x+11,by+tw,4,8,C); px(x+12,by-2+tw,3,6,W); }
   if(p.dir==='down'||p.dir==='up'){
     const facing=p.dir==='down';
     px(x-8,by-14,16,14,C);
@@ -1150,7 +1281,8 @@ function _drawShiba(x,by,t,C,D,L,W,K,p){
   px(x-6,by+11+la,4,8,D); px(x+2,by+11+la2,4,8,D);
   px(x-6,by+18+la,4,3,'#9A7060'); px(x+2,by+18+la2,4,3,'#9A7060');
   const tw=Math.sin(t/150)*3;
-  px(x+8,by-1,5,8,D); px(x+10,by-5+tw,4,6,C); px(x+9,by-8+tw,5,4,C); px(x+7,by-7+tw,4,3,C);
+  if(p.dir==='right'){ px(x-13,by-1,5,8,D); px(x-14,by-5+tw,4,6,C); px(x-14,by-8+tw,5,4,C); px(x-11,by-7+tw,4,3,C); }
+  else { px(x+8,by-1,5,8,D); px(x+10,by-5+tw,4,6,C); px(x+9,by-8+tw,5,4,C); px(x+7,by-7+tw,4,3,C); }
   if(p.dir==='down'||p.dir==='up'){
     const facing=p.dir==='down';
     px(x-7,by-14,14,13,C);
@@ -1191,7 +1323,8 @@ function _drawCorgi(x,by,t,C,D,L,W,K,p){
   px(x-7,by+11+la,5,6,D); px(x+2,by+11+la2,5,6,D);
   px(x-7,by+16+la,5,3,'#9A7060'); px(x+2,by+16+la2,5,3,'#9A7060');
   const tw=Math.sin(t/200)*2;
-  px(x+9,by+1+tw,6,8,W); px(x+10,by-1+tw,5,6,L);
+  if(p.dir==='right'){ px(x-15,by+1+tw,6,8,W); px(x-15,by-1+tw,5,6,L); }
+  else { px(x+9,by+1+tw,6,8,W); px(x+10,by-1+tw,5,6,L); }
   if(p.dir==='down'||p.dir==='up'){
     const facing=p.dir==='down';
     px(x-8,by-13,16,13,C);
@@ -1232,7 +1365,8 @@ function _drawPoodle(x,by,t,C,D,L,W,K,p){
   px(x-6,by+12+la,3,8,D);px(x+3,by+12+la2,3,8,D);
   arc(x-4,by+20+la,4,C);arc(x+5,by+20+la2,4,C);
   const tw=Math.sin(t/150)*4;
-  arc(x+10,by-1+tw*0.5,3,D);arc(x+12,by-3+tw,4,C);
+  if(p.dir==='right'){ arc(x-10,by-1+tw*0.5,3,D);arc(x-12,by-3+tw,4,C); }
+  else { arc(x+10,by-1+tw*0.5,3,D);arc(x+12,by-3+tw,4,C); }
   arc(x,by-14,7,C);arc(x-5,by-17,5,C);arc(x+5,by-17,5,C);
   if(p.dir==='down'||p.dir==='up'){
     const facing=p.dir==='down';
@@ -1271,7 +1405,8 @@ function _drawDalmatian(x,by,t,C,D,L,W,K,p){
   px(x+2,by+11+la2,5,9,BSH);px(x+3,by+18+la2,4,4,shade(BSH,-10));
   px(x-7,by+19+la,5,3,'#9A7060');px(x+2,by+19+la2,5,3,'#9A7060');
   const tw=Math.sin(t/160)*5;
-  px(x+9,by+2+tw*0.5,5,12,BSH);px(x+11,by+tw,4,8,BASE);px(x+12,by-2+tw,3,6,W);
+  if(p.dir==='right'){ px(x-14,by+2+tw*0.5,5,12,BSH);px(x-15,by+tw,4,8,BASE);px(x-15,by-2+tw,3,6,W); }
+  else { px(x+9,by+2+tw*0.5,5,12,BSH);px(x+11,by+tw,4,8,BASE);px(x+12,by-2+tw,3,6,W); }
   if(p.dir==='down'||p.dir==='up'){
     const facing=p.dir==='down';
     px(x-8,by-14,16,14,BASE);
@@ -1296,6 +1431,118 @@ function _drawDalmatian(x,by,t,C,D,L,W,K,p){
     px(x-20,by-7,8,5,W);px(x-20,by-7,4,4,K);
   }
   _dalSpots(x,by,C,false);
+}
+
+function _drawDinno(x,by,t,C,D,L,W,K,p){
+  // Red/copper husky with distinctive white face mask — fixed real-dog colors
+  const RC='#C07040', RD=shade(RC,-30), RL=shade(RC,40), RW='#F0EAD8';
+  if(p.howling){
+    px(x-10,by-2,20,14,RC); px(x-6,by+4,12,8,RW);
+    px(x-7,by-16,14,16,RC); px(x-5,by-13,10,10,RW);
+    px(x-10,by-22,7,10,RD); px(x-8,by-20,4,7,L);
+    px(x+3,by-22,7,10,RD); px(x+5,by-20,4,7,L);
+    px(x-4,by-8,8,5,RW); px(x-3,by-6,6,3,RC); px(x-2,by-5,4,2,'#AA2244');
+    px(x-2,by-9,5,4,K); px(x-1,by-8,2,2,'#555');
+    px(x-5,by-13,4,2,K); px(x+1,by-13,4,2,K);
+    const tw=Math.sin(t/80)*6;
+    px(x+8,by-8+tw,6,16,RD); px(x+10,by-6+tw,4,10,RC);
+    px(x-8,by+10,6,8,RD); px(x+2,by+10,6,8,RD);
+    return;
+  }
+  px(x-10,by,20,14,RC); px(x-7,by+4,14,8,RW); px(x-10,by+2,4,10,RD);
+  const la=p.moving?Math.sin(t/130)*5:0,la2=p.moving?Math.sin(t/130+Math.PI)*5:0;
+  px(x-7,by+11+la,5,9,RD); px(x-6,by+18+la,4,4,shade(RD,-10));
+  px(x+2,by+11+la2,5,9,RD); px(x+3,by+18+la2,4,4,shade(RD,-10));
+  px(x-7,by+19+la,5,3,'#9A7060'); px(x+2,by+19+la2,5,3,'#9A7060');
+  const tw=Math.sin(t/160)*5;
+  if(p.dir==='right'){ px(x-14,by+2+tw*0.5,5,12,RD); px(x-15,by+tw,4,8,RC); px(x-15,by-2+tw,3,6,RW); }
+  else { px(x+9,by+2+tw*0.5,5,12,RD); px(x+11,by+tw,4,8,RC); px(x+12,by-2+tw,3,6,RW); }
+  if(p.dir==='down'||p.dir==='up'){
+    const facing=p.dir==='down';
+    px(x-8,by-14,16,14,RC);
+    // white mask patch
+    px(x-5,by-12,10,6,RW); px(x-4,by-9,8,4,RW);
+    px(x-7,by-14,5,8,RD); px(x+2,by-14,5,8,RD);
+    px(x-9,by-22,7,10,RD); px(x-7,by-20,4,7,L);
+    px(x+2,by-22,7,10,RD); px(x+4,by-20,4,7,L);
+    px(x-6,by-19,3,5,'#FFBBAA'); px(x+3,by-19,3,5,'#FFBBAA');
+    if(facing){
+      px(x-5,by-11,4,4,K); px(x-4,by-11,2,2,'#4A3A2A'); px(x-3,by-10,1,1,'#FFFFFF');
+      px(x+1,by-11,4,4,K); px(x+2,by-11,2,2,'#4A3A2A'); px(x+3,by-10,1,1,'#FFFFFF');
+      px(x-4,by-6,8,5,RW); px(x-2,by-4,5,3,L);
+      px(x-2,by-7,5,4,K); px(x-1,by-6,2,2,'#444'); px(x,by-5,2,1,'#CC6688');
+    } else { px(x-7,by-14,14,12,RD); px(x-5,by-16,10,6,RC); }
+  } else if(p.dir==='right'){
+    px(x-2,by-14,14,13,RC); px(x-2,by-12,8,7,RW); px(x+2,by-14,10,8,RD);
+    px(x+5,by-22,7,10,RD); px(x+7,by-20,4,7,L); px(x+8,by-19,3,5,'#FFBBAA');
+    px(x+6,by-11,4,4,K); px(x+7,by-11,2,2,'#4A3A2A'); px(x+8,by-10,1,1,'#FFF');
+    px(x+8,by-7,8,5,RW); px(x+14,by-7,4,4,K); px(x+15,by-6,2,2,'#444');
+  } else {
+    px(x-12,by-14,14,13,RC); px(x-6,by-12,8,7,RW); px(x-12,by-14,10,8,RD);
+    px(x-12,by-22,7,10,RD); px(x-11,by-20,4,7,L); px(x-11,by-19,3,5,'#FFBBAA');
+    px(x-11,by-11,4,4,K); px(x-10,by-11,2,2,'#4A3A2A'); px(x-9,by-10,1,1,'#FFF');
+    px(x-20,by-7,8,5,RW); px(x-20,by-7,4,4,K); px(x-19,by-6,2,2,'#444');
+  }
+}
+
+function _drawLolla(x,by,t,C,D,L,W,K,p){
+  // Sheltie/collie: tricolor — fixed real-dog colors, ignores player color
+  const BC='#C07838', BD=shade(BC,-35), BWH='#F4EEE2', BLK='#2A2820';
+  if(p.howling){
+    px(x-9,by-1,18,13,BC); px(x-5,by+3,10,7,BWH);
+    px(x-4,by-3,8,10,BLK);
+    px(x-6,by-15,12,15,BC);
+    px(x-8,by-23,5,10,BLK); px(x-6,by-21,3,7,BC);
+    px(x+3,by-23,5,10,BLK); px(x+4,by-21,3,7,BC);
+    px(x-8,by-5,4,10,BWH); px(x+4,by-5,4,10,BWH);
+    px(x-3,by-7,7,5,BWH); px(x-2,by-9,4,3,K);
+    const tw=Math.sin(t/70)*5;
+    px(x+7,by-3+tw,5,10,BLK); px(x+9,by-7+tw,4,7,BC);
+    return;
+  }
+  // body
+  px(x-9,by,18,12,BC); px(x-5,by+3,10,7,BWH);
+  px(x-4,by,8,8,BLK);
+  // mane / chest fluff
+  px(x-8,by-2,4,12,BWH); px(x+4,by-2,4,12,BWH);
+  const la=p.moving?Math.sin(t/120)*4:0,la2=p.moving?Math.sin(t/120+Math.PI)*4:0;
+  px(x-6,by+11+la,4,8,BD); px(x+2,by+11+la2,4,8,BD);
+  px(x-6,by+18+la,4,3,'#9A7060'); px(x+2,by+18+la2,4,3,'#9A7060');
+  // tail
+  const tw=Math.sin(t/170)*4;
+  if(p.dir==='right'){ px(x-13,by-1,5,10,BLK); px(x-14,by-5+tw,4,7,BC); px(x-14,by-8+tw,5,4,BWH); }
+  else { px(x+8,by-1,5,10,BLK); px(x+10,by-5+tw,4,7,BC); px(x+9,by-8+tw,5,4,BWH); }
+  if(p.dir==='down'||p.dir==='up'){
+    const facing=p.dir==='down';
+    px(x-6,by-16,13,15,BC);
+    px(x-4,by-16,9,8,BLK);
+    if(facing){
+      px(x-3,by-12,7,5,BWH);
+    }
+    px(x-8,by-25,5,11,BLK); px(x-6,by-23,3,8,BC);
+    px(x+3,by-25,5,11,BLK); px(x+4,by-23,3,8,BC);
+    px(x-8,by-5,4,12,BWH); px(x+4,by-5,4,12,BWH);
+    if(facing){
+      px(x-4,by-10,3,3,K); px(x-3,by-10,1,1,'#fff');
+      px(x+1,by-10,3,3,K); px(x+2,by-10,1,1,'#fff');
+      px(x-3,by-7,7,6,BWH); px(x-2,by-9,5,4,K);
+      px(x-1,by-4,3,2,'#CC6688');
+    } else { px(x-5,by-16,12,12,BLK); }
+  } else if(p.dir==='right'){
+    px(x-1,by-16,13,14,BC); px(x+1,by-16,9,8,BLK);
+    px(x+3,by-12,7,5,BWH);
+    px(x+4,by-25,5,11,BLK); px(x+5,by-23,3,8,BC);
+    px(x+4,by-5,4,12,BWH);
+    px(x+5,by-10,3,3,K); px(x+6,by-10,1,1,'#fff');
+    px(x+7,by-7,9,5,BWH); px(x+13,by-7,4,4,K);
+  } else {
+    px(x-12,by-16,13,14,BC); px(x-10,by-16,9,8,BLK);
+    px(x-10,by-12,7,5,BWH);
+    px(x-9,by-25,5,11,BLK); px(x-8,by-23,3,8,BC);
+    px(x-8,by-5,4,12,BWH);
+    px(x-9,by-10,3,3,K); px(x-8,by-10,1,1,'#fff');
+    px(x-20,by-7,9,5,BWH); px(x-20,by-7,4,4,K);
+  }
 }
 
 function _dalSpots(x,by,C,howling){
@@ -1350,6 +1597,265 @@ function drawMinimap(){
 }
 
 
+// ===== src/lolla.js =====
+// ====================== LOLLA SPECIAL: TENNIS BALL + CANNON ======================
+
+let lollaBall   = null;
+let lollaCannon = null;  // { x, y, angle, firingT, smoke[] }
+let _lollaDropHeld = false;
+
+function getLollaPlayer(){
+  if(p1 && p1.breed==='lolla') return p1;
+  if(typeof twoPlayer!=='undefined' && twoPlayer && p2 && p2.breed==='lolla') return p2;
+  return null;
+}
+
+function spawnLollaItems(){
+  lollaBall=null; lollaCannon=null;
+  const lolla=getLollaPlayer();
+  if(!lolla) return;
+
+  let bx,by;
+  do{ bx=rand(200,WORLD_W-200); by=rand(200,WORLD_H-200); }
+  while(Math.hypot(bx-lolla.x,by-lolla.y)<160 || isInPond(bx,by));
+
+  lollaBall={ x:bx, y:by, state:'idle', carrier:null,
+              startX:bx, startY:by, landX:bx, landY:by,
+              flightProgress:0, flightDuration:1500 };
+
+  let cx,cy;
+  do{ cx=rand(250,WORLD_W-250); cy=rand(250,WORLD_H-250); }
+  while(Math.hypot(cx-bx,cy-by)<220 || Math.hypot(cx-lolla.x,cy-lolla.y)<180 || isInPond(cx,cy));
+
+  lollaCannon={ x:cx, y:cy, angle:Math.random()*Math.PI*2, firingT:0, smoke:[] };
+}
+
+function updateLollaBall(p, controls, dt){
+  if(!lollaBall || !lollaCannon) return false;
+  const lolla=getLollaPlayer();
+  if(!lolla || lolla.id!==p.id) return false;
+
+  const ball=lollaBall;
+  const cannon=lollaCannon;
+  const dropKey = lolla.id===1 ? 'KeyQ' : 'Period';
+
+  // Advance cannon animation
+  if(cannon.firingT>0){
+    cannon.firingT=Math.max(0, cannon.firingT-dt);
+    cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
+    cannon.smoke=cannon.smoke.filter(s=>s.life>0);
+  }
+
+  if(ball.state==='idle'){
+    if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
+      ball.state='held'; ball.carrier=p.id;
+      showToast('🎾 Ball! [Q] near cannon to fire · [Q] elsewhere to drop',2800);
+    }
+  }
+
+  if(ball.state==='held' && ball.carrier===p.id){
+    ball.x=p.x; ball.y=p.y;
+
+    if(keys[dropKey] && !_lollaDropHeld){
+      _lollaDropHeld=true;
+      const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
+      if(nearCannon){
+        _fireBallCannon();
+        showToast('💥 Fired! Go fetch!',1600);
+        sfxCollect();
+      } else {
+        const ox=p.dir==='right'?14:p.dir==='left'?-14:0;
+        const oy=p.dir==='down'?12:p.dir==='up'?-12:0;
+        ball.x=clamp(p.x+ox,60,WORLD_W-60);
+        ball.y=clamp(p.y+oy,60,WORLD_H-60);
+        ball.state='idle'; ball.carrier=null;
+      }
+    }
+    if(!keys[dropKey]) _lollaDropHeld=false;
+  }
+
+  if(ball.state==='flying'){
+    ball.flightProgress+=dt/ball.flightDuration;
+    if(ball.flightProgress>=1){
+      ball.flightProgress=1;
+      ball.x=ball.landX; ball.y=ball.landY;
+      ball.state='idle'; ball.carrier=null;
+      spawnSparkles(ball.x,ball.y,'#B5E853',8);
+      showToast('🎾 Fetch!',1200);
+    } else {
+      ball.x=ball.startX+(ball.landX-ball.startX)*ball.flightProgress;
+      ball.y=ball.startY+(ball.landY-ball.startY)*ball.flightProgress;
+    }
+  }
+
+  return false;
+}
+
+function _fireBallCannon(){
+  const ball=lollaBall; const cannon=lollaCannon;
+
+  // New random direction every shot
+  cannon.angle=Math.random()*Math.PI*2;
+
+  const dist=300+rand(0,120);
+  ball.startX=cannon.x; ball.startY=cannon.y;
+  ball.landX=clamp(cannon.x+Math.cos(cannon.angle)*dist, 80, WORLD_W-80);
+  ball.landY=clamp(cannon.y+Math.sin(cannon.angle)*dist, 80, WORLD_H-80);
+  ball.flightProgress=0; ball.state='flying'; ball.carrier=null;
+  ball.x=cannon.x; ball.y=cannon.y;
+
+  // Trigger animation
+  cannon.firingT=500; // ms total animation
+
+  // Spawn smoke puffs from barrel tip
+  const tipX=cannon.x+Math.cos(cannon.angle)*35;
+  const tipY=cannon.y+Math.sin(cannon.angle)*35;
+  for(let i=0;i<6;i++){
+    cannon.smoke.push({
+      x:tipX+rand(-3,3), y:tipY+rand(-3,3),
+      vx:Math.cos(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3),
+      vy:Math.sin(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3)-0.3,
+      r:rand(3,6), life:rand(280,500),
+      col:Math.random()<0.5?'#CCCCCC':'#AAAAAA'
+    });
+  }
+}
+
+// ---- Drawing ----
+
+function drawLollaBall(t){
+  if(!lollaBall || lollaBall.state==='held') return;
+  const ball=lollaBall;
+  const flightH=ball.state==='flying'
+    ? Math.sin(ball.flightProgress*Math.PI)*50 : 0;
+  const bx=Math.round(ball.x), by=Math.round(ball.y);
+  const visualY=by-flightH;
+
+  // shadow shrinks/fades with height
+  ctx.globalAlpha=Math.max(0.04, 0.3*(1-flightH/60));
+  ctx.beginPath();
+  ctx.ellipse(bx, by, Math.max(2,7-flightH*0.06), Math.max(1,3-flightH*0.03), 0,0,Math.PI*2);
+  ctx.fillStyle='#1A2A1A'; ctx.fill();
+  ctx.globalAlpha=1;
+
+  // tennis ball
+  ctx.fillStyle='#B5E853';
+  ctx.beginPath(); ctx.arc(bx, visualY, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='#CCFF77';
+  ctx.beginPath(); ctx.arc(bx-1, visualY-1, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(bx, visualY, 5, 0.35, Math.PI-0.35); ctx.stroke();
+  ctx.beginPath(); ctx.arc(bx, visualY, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
+
+  if(ball.state==='flying'){
+    const spin=ball.flightProgress*Math.PI*6;
+    ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(bx, visualY, 5, spin, spin+Math.PI); ctx.stroke();
+  }
+}
+
+function drawLollaCannon(t){
+  if(!lollaCannon) return;
+  const cannon=lollaCannon;
+  const cx=Math.round(cannon.x), cy=Math.round(cannon.y);
+
+  // Idle bob (stops during firing)
+  const bob=cannon.firingT>0 ? 0 : Math.sin(t/700)*1;
+
+  // --- Smoke particles (drawn before cannon body so cannon is on top) ---
+  cannon.smoke.forEach(s=>{
+    const a=Math.max(0, (s.life/400)*0.55);
+    ctx.globalAlpha=a;
+    ctx.fillStyle=s.col;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  ctx.save();
+  ctx.translate(cx, cy+bob);
+
+  // shadow
+  ctx.globalAlpha=0.18;
+  ctx.beginPath(); ctx.ellipse(2,8,18,7,0,0,Math.PI*2);
+  ctx.fillStyle='#1A2A1A'; ctx.fill();
+  ctx.globalAlpha=1;
+
+  // base platform
+  ctx.fillStyle='#6B4C2A'; ctx.fillRect(-16,2,32,8);
+  ctx.fillStyle='#7A5830'; ctx.fillRect(-14,0,28,6);
+  [-10,10].forEach(wx=>{
+    ctx.fillStyle='#4A3018'; ctx.beginPath(); ctx.arc(wx,6,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#7A5830'; ctx.beginPath(); ctx.arc(wx,6,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#AA8850'; ctx.beginPath(); ctx.arc(wx,6,1,0,Math.PI*2); ctx.fill();
+  });
+
+  // barrel with recoil
+  ctx.rotate(cannon.angle);
+  // firingT: 500→400 = recoil back, 400→300 = return, 300→0 = settled
+  let recoil=0;
+  if(cannon.firingT>400){
+    recoil=((500-cannon.firingT)/100)*8; // 0→8 px back
+  } else if(cannon.firingT>300){
+    recoil=((cannon.firingT-300)/100)*8; // 8→0 px back
+  }
+
+  ctx.fillStyle='#4A4A4A';
+  ctx.beginPath(); ctx.roundRect(4-recoil,-5,28,10,3); ctx.fill();
+  ctx.fillStyle='#666';
+  ctx.fillRect(6-recoil,-3,24,6);
+  ctx.fillStyle='#FFD700';
+  ctx.fillRect(14-recoil,-3,4,6);
+  ctx.fillStyle='#2A2A2A'; ctx.fillRect(30-recoil,-6,5,12);
+  ctx.fillStyle='#555';   ctx.fillRect(31-recoil,-5,3,10);
+
+  // muzzle flash when just fired (firingT 500→400)
+  if(cannon.firingT>400){
+    const flashA=(cannon.firingT-400)/100;
+    ctx.globalAlpha=flashA*0.9;
+    const tipX=35-recoil;
+    // outer glow
+    ctx.fillStyle='#FFAA00';
+    ctx.beginPath(); ctx.arc(tipX,0,10,0,Math.PI*2); ctx.fill();
+    // inner bright core
+    ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.arc(tipX,0,5,0,Math.PI*2); ctx.fill();
+    // star rays
+    ctx.strokeStyle='#FFDD00'; ctx.lineWidth=2;
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3;
+      ctx.beginPath();
+      ctx.moveTo(tipX+Math.cos(a)*5, Math.sin(a)*5);
+      ctx.lineTo(tipX+Math.cos(a)*13, Math.sin(a)*13);
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  ctx.restore();
+
+  // label (unaffected by rotation)
+  ctx.fillStyle='rgba(255,248,220,0.88)';
+  roundRect(cx-30,cy+bob-32,60,13,3,true,false);
+  ctx.fillStyle='#4A3F35';
+  ctx.font='bold 7px monospace'; ctx.textAlign='center';
+  ctx.fillText('BALL CANNON',cx,cy+bob-22);
+}
+
+function drawBallInMouth(x, by, dir){
+  let bx, bly;
+  if(dir==='right')     { bx=x+18; bly=by-8; }
+  else if(dir==='left') { bx=x-18; bly=by-8; }
+  else if(dir==='down') { bx=x+1;  bly=by-4; }
+  else return;
+
+  ctx.fillStyle='#B5E853';
+  ctx.beginPath(); ctx.arc(bx,bly,4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#CCFF77';
+  ctx.beginPath(); ctx.arc(bx-1,bly-1,2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
+}
+
 // ===== src/update.js =====
 // ====================== UPDATE ======================
 function updatePlayer(p,controls,t,dt){
@@ -1359,13 +1865,16 @@ function updatePlayer(p,controls,t,dt){
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
-    p.x+=dx*p.speed; p.y+=dy*p.speed;
+    const spd=p.swimming?p.speed*0.5:p.speed;
+    p.x+=dx*spd; p.y+=dy*spd;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
   }
   resolveCollisions(p);
+  p.swimming=isInPond(p.x,p.y);
+  updateLollaBall(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
@@ -1451,6 +1960,8 @@ function loop(now){
     updateSparkles();updateCamera();
     ctx.save();ctx.translate(-cam.x,-cam.y);
     drawWorld(now);
+    drawLollaCannon(now);
+    drawLollaBall(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
     [...(twoPlayer?[p1,p2]:[p1])].sort((a,b)=>a.y-b.y).forEach(p=>drawDog(p,now));
@@ -1553,6 +2064,8 @@ function resetGame(cfg1, cfg2){
 // ====================== CHARACTER SELECTION ======================
 
 const BREEDS = [
+  { id:'dinno',    name:'Dinno',     desc:'The real husky boss',  emoji:'❤️' },
+  { id:'lolla',    name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟' },
   { id:'husky',    name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕' },
   { id:'shiba',    name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊' },
   { id:'corgi',    name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾' },
@@ -1573,8 +2086,8 @@ const COLORS = [
 
 // Current selections (defaults)
 const dogConfig = {
-  p1: { breed:'husky',    color: COLORS[0] },
-  p2: { breed:'shiba',    color: COLORS[1] },
+  p1: { breed:'dinno',    color: COLORS[1] },  // copper — matches Dinno's real coat
+  p2: { breed:'lolla',    color: COLORS[0] },  // ice blue for Lolla
 };
 
 // Which player we're currently configuring (null = showing mode select)
@@ -1607,7 +2120,48 @@ function drawBreedPreviewInline(c, breed, colorHex, x, y, t){
   c.beginPath(); c.ellipse(x,by+14,11,4,0,0,Math.PI*2); c.fillStyle='#2A3A2A'; c.fill();
   c.globalAlpha=1;
 
-  if(breed==='husky'){
+  if(breed==='dinno'){
+    // Red husky with white mask
+    const RC='#C07040', RD=shade(RC,-30), RL=shade(RC,40), RW='#F0EAD8';
+    f(-9,-2,18,13,RC); f(-6,2,12,7,RW);
+    f(-6,10,4,7,RD); f(2,10,4,7,RD);
+    const tw=Math.sin(t/160)*4;
+    f(8,0+tw*0.4,4,10,RD); f(10,tw-2,3,7,RC); f(11,tw-4,2,5,RW);
+    f(-7,-14,14,13,RC);
+    f(-5,-12,9,6,RW); // white face mask
+    f(-6,-14,4,7,RD); f(2,-14,4,7,RD);
+    f(-8,-20,6,8,RD); f(2,-20,6,8,RD);
+    f(-6,-18,3,5,RL); f(3,-18,3,5,RL);
+    f(-4,-10,3,3,K); f(2,-10,3,3,K);
+    f(-3,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
+    f(-4,-6,8,5,RW); f(-2,-8,4,3,K);
+  } else if(breed==='lolla'){
+    // Sheltie / collie: tricolor brown+black+white, long mane
+    const BC='#C07838', BD=shade(BC,-35), BL='#D8A060';
+    const BLK='#2A2A2A', BWH='#F4EEE2';
+    // body
+    f(-8,-2,16,12,BC); f(-5,2,10,6,BWH); // white chest
+    f(-8,-2,4,6,BLK); // black saddle left
+    f(4,-2,4,6,BLK);  // black saddle right
+    f(-5,10,4,7,BD); f(1,10,4,7,BD);
+    // mane (fluffy chest extension)
+    f(-6,0,4,8,BWH); f(2,0,4,8,BWH);
+    // tail
+    const tw=Math.sin(t/180)*3;
+    f(7,-1+tw*0.4,5,11,BLK); f(9,tw-2,3,8,BC);
+    // head — elongated/pointy
+    f(-6,-16,13,14,BC);
+    f(-4,-14,8,6,BWH); // white blaze
+    f(-8,-22,5,8,BLK); f(3,-22,5,8,BLK); // ears
+    f(-7,-20,3,6,BC); f(4,-20,3,6,BC);   // ear inner
+    // mane around neck
+    f(-8,-6,4,8,BWH); f(4,-6,4,8,BWH);
+    // eyes
+    f(-3,-10,3,3,K); f(2,-10,3,3,K);
+    f(-2,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
+    // pointy muzzle
+    f(-2,-7,5,5,BWH); f(-1,-9,3,3,K);
+  } else if(breed==='husky'){
     // body
     f(-9,-2,18,13,C); f(-6,2,12,7,L);
     // legs
@@ -1723,6 +2277,11 @@ function buildSelectScreen(playerNum){
     `).join('')}
   </div>
 
+  ${cfg.breed==='dinno'||cfg.breed==='lolla' ? `
+  <div class="cs-section-label">Colour</div>
+  <div style="text-align:center;font-size:12px;color:#888;padding:8px 0;">
+    ${cfg.breed==='dinno'?'Dinno':'Lolla'} keeps their real colours!
+  </div>` : `
   <div class="cs-section-label">Colour</div>
   <div class="cs-colors" id="csColors">
     ${COLORS.map(col=>`
@@ -1733,7 +2292,7 @@ function buildSelectScreen(playerNum){
         ${cfg.color.id===col.id?'<span class="swatch-check">✓</span>':''}
       </div>
     `).join('')}
-  </div>
+  </div>`}
 
   <div class="cs-actions">
     ${playerNum===2 && pendingMode==='2p'
@@ -1856,6 +2415,7 @@ function launchGame(){
 
   document.getElementById('startScreen').style.display='none';
   resetGame(cfg1, cfg2);
+  spawnLollaItems();
   gameStarted=true;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
@@ -1865,6 +2425,7 @@ function launchGame(){
 function resetGame(cfg1, cfg2){
   stopMusic();
   collectibles=makeCollectibles(); friends=makeFriends(); cheeredCount=0;
+  lollaBall=null; lollaCannon=null; _lollaDropHeld=false;
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
   p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);

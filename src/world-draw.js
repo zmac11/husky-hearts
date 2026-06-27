@@ -301,10 +301,62 @@ function drawBridge(x,y,horizontal,t){
 }
 
 
+function drawRiver(t){
+  if(!river) return;
+  const steps=100, dx=WORLD_W/steps, phase=t/3000;
+
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const x=i*dx;
+    const y=riverY(x)-river.width/2;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  for(let i=steps;i>=0;i--){
+    const x=i*dx;
+    const y=riverY(x)+river.width/2;
+    ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+
+  const grad=ctx.createLinearGradient(0,river.pos-river.width/2,0,river.pos+river.width/2);
+  grad.addColorStop(0,'#7DD4F0');
+  grad.addColorStop(0.5,'#4AACDC');
+  grad.addColorStop(1,'#2A7AAA');
+  ctx.fillStyle=grad; ctx.fill();
+
+  // shore lines
+  ctx.strokeStyle='#3A9ABB'; ctx.lineWidth=2;
+  for(let edge=0;edge<2;edge++){
+    const sign=edge===0?-1:1;
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){
+      const x=i*dx, y=riverY(x)+sign*river.width/2;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // animated ripple lines
+  const rphase=t/1800;
+  for(let ri=0;ri<3;ri++){
+    ctx.globalAlpha=0.18-ri*0.05;
+    ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){
+      const x=i*dx, y=riverY(x)+(ri-1)*20+Math.sin(x/200+rphase+ri)*4;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
   else { ctx.fillStyle='#9ED87A'; ctx.fillRect(0,0,WORLD_W,WORLD_H); }
+
+  drawRiver(t);
 
   // draw all world objects in y-sorted order
   worldObjects.forEach(obj=>{

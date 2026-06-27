@@ -11,6 +11,8 @@ function loop(now){
     updateSparkles();updateCamera();
     ctx.save();ctx.translate(-cam.x,-cam.y);
     drawWorld(now);
+    drawLollaCannon(now);
+    drawLollaBall(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
     [...(twoPlayer?[p1,p2]:[p1])].sort((a,b)=>a.y-b.y).forEach(p=>drawDog(p,now));
