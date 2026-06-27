@@ -228,7 +228,16 @@ function inRiver(x,y,margin=0){
   return Math.abs(y-riverY(x)) < river.width/2+margin;
 }
 
+function isOnBridge(px,py){
+  return worldObjects.some(o=>{
+    if(o.kind!=='bridge') return false;
+    const hw=o.horizontal?28:8, hh=o.horizontal?10:28;
+    return Math.abs(px-o.x)<hw && Math.abs(py-o.y)<hh;
+  });
+}
+
 function isInPond(px,py){
+  if(isOnBridge(px,py)) return false;
   const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
     ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
   return inEllipse || inRiver(px,py);

@@ -280,7 +280,16 @@ function inRiver(x,y,margin=0){
   return Math.abs(y-riverY(x)) < river.width/2+margin;
 }
 
+function isOnBridge(px,py){
+  return worldObjects.some(o=>{
+    if(o.kind!=='bridge') return false;
+    const hw=o.horizontal?28:8, hh=o.horizontal?10:28;
+    return Math.abs(px-o.x)<hw && Math.abs(py-o.y)<hh;
+  });
+}
+
 function isInPond(px,py){
+  if(isOnBridge(px,py)) return false;
   const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
     ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
   return inEllipse || inRiver(px,py);
@@ -1320,6 +1329,15 @@ function drawMinimap(){
   ctx.globalAlpha=1;
   // grass
   ctx.fillStyle='#4A9A3A'; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
+  // river
+  if(river){
+    const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
+    ctx.fillStyle='#4AACDC';
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);}
+    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+river.width/2)*sy);}
+    ctx.closePath();ctx.fill();
+  }
   // ponds
   worldObjects.filter(o=>o.kind==='pond').forEach(o=>{
     ctx.fillStyle='#4AACDC';
