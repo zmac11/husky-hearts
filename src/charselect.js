@@ -1,6 +1,8 @@
 // ====================== CHARACTER SELECTION ======================
 
 const BREEDS = [
+  { id:'dinno',    name:'Dinno',     desc:'The real husky boss',  emoji:'❤️' },
+  { id:'lolla',    name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟' },
   { id:'husky',    name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕' },
   { id:'shiba',    name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊' },
   { id:'corgi',    name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾' },
@@ -21,8 +23,8 @@ const COLORS = [
 
 // Current selections (defaults)
 const dogConfig = {
-  p1: { breed:'husky',    color: COLORS[0] },
-  p2: { breed:'shiba',    color: COLORS[1] },
+  p1: { breed:'dinno',    color: COLORS[1] },  // copper — matches Dinno's real coat
+  p2: { breed:'lolla',    color: COLORS[0] },  // ice blue for Lolla
 };
 
 // Which player we're currently configuring (null = showing mode select)
@@ -55,7 +57,48 @@ function drawBreedPreviewInline(c, breed, colorHex, x, y, t){
   c.beginPath(); c.ellipse(x,by+14,11,4,0,0,Math.PI*2); c.fillStyle='#2A3A2A'; c.fill();
   c.globalAlpha=1;
 
-  if(breed==='husky'){
+  if(breed==='dinno'){
+    // Red husky with white mask
+    const RC='#C07040', RD=shade(RC,-30), RL=shade(RC,40), RW='#F0EAD8';
+    f(-9,-2,18,13,RC); f(-6,2,12,7,RW);
+    f(-6,10,4,7,RD); f(2,10,4,7,RD);
+    const tw=Math.sin(t/160)*4;
+    f(8,0+tw*0.4,4,10,RD); f(10,tw-2,3,7,RC); f(11,tw-4,2,5,RW);
+    f(-7,-14,14,13,RC);
+    f(-5,-12,9,6,RW); // white face mask
+    f(-6,-14,4,7,RD); f(2,-14,4,7,RD);
+    f(-8,-20,6,8,RD); f(2,-20,6,8,RD);
+    f(-6,-18,3,5,RL); f(3,-18,3,5,RL);
+    f(-4,-10,3,3,K); f(2,-10,3,3,K);
+    f(-3,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
+    f(-4,-6,8,5,RW); f(-2,-8,4,3,K);
+  } else if(breed==='lolla'){
+    // Sheltie / collie: tricolor brown+black+white, long mane
+    const BC='#C07838', BD=shade(BC,-35), BL='#D8A060';
+    const BLK='#2A2A2A', BWH='#F4EEE2';
+    // body
+    f(-8,-2,16,12,BC); f(-5,2,10,6,BWH); // white chest
+    f(-8,-2,4,6,BLK); // black saddle left
+    f(4,-2,4,6,BLK);  // black saddle right
+    f(-5,10,4,7,BD); f(1,10,4,7,BD);
+    // mane (fluffy chest extension)
+    f(-6,0,4,8,BWH); f(2,0,4,8,BWH);
+    // tail
+    const tw=Math.sin(t/180)*3;
+    f(7,-1+tw*0.4,5,11,BLK); f(9,tw-2,3,8,BC);
+    // head — elongated/pointy
+    f(-6,-16,13,14,BC);
+    f(-4,-14,8,6,BWH); // white blaze
+    f(-8,-22,5,8,BLK); f(3,-22,5,8,BLK); // ears
+    f(-7,-20,3,6,BC); f(4,-20,3,6,BC);   // ear inner
+    // mane around neck
+    f(-8,-6,4,8,BWH); f(4,-6,4,8,BWH);
+    // eyes
+    f(-3,-10,3,3,K); f(2,-10,3,3,K);
+    f(-2,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
+    // pointy muzzle
+    f(-2,-7,5,5,BWH); f(-1,-9,3,3,K);
+  } else if(breed==='husky'){
     // body
     f(-9,-2,18,13,C); f(-6,2,12,7,L);
     // legs
@@ -171,6 +214,11 @@ function buildSelectScreen(playerNum){
     `).join('')}
   </div>
 
+  ${cfg.breed==='dinno'||cfg.breed==='lolla' ? `
+  <div class="cs-section-label">Colour</div>
+  <div style="text-align:center;font-size:12px;color:#888;padding:8px 0;">
+    ${cfg.breed==='dinno'?'Dinno':'Lolla'} keeps their real colours!
+  </div>` : `
   <div class="cs-section-label">Colour</div>
   <div class="cs-colors" id="csColors">
     ${COLORS.map(col=>`
@@ -181,7 +229,7 @@ function buildSelectScreen(playerNum){
         ${cfg.color.id===col.id?'<span class="swatch-check">✓</span>':''}
       </div>
     `).join('')}
-  </div>
+  </div>`}
 
   <div class="cs-actions">
     ${playerNum===2 && pendingMode==='2p'
@@ -304,6 +352,7 @@ function launchGame(){
 
   document.getElementById('startScreen').style.display='none';
   resetGame(cfg1, cfg2);
+  spawnLollaItems();
   gameStarted=true;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
@@ -313,6 +362,7 @@ function launchGame(){
 function resetGame(cfg1, cfg2){
   stopMusic();
   collectibles=makeCollectibles(); friends=makeFriends(); cheeredCount=0;
+  lollaBall=null; lollaCannon=null; _lollaDropHeld=false;
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
   p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);

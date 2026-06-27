@@ -31,6 +31,7 @@ LOAD_ORDER = [
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
     'minimap.js',         # drawMinimap
+    'lolla.js',           # Lolla special: tennis ball + cannon
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
     'toast.js',           # showToast
     'main.js',            # main loop + start

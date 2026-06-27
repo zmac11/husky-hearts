@@ -6,13 +6,16 @@ function updatePlayer(p,controls,t,dt){
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
-    p.x+=dx*p.speed; p.y+=dy*p.speed;
+    const spd=p.swimming?p.speed*0.5:p.speed;
+    p.x+=dx*spd; p.y+=dy*spd;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
   }
   resolveCollisions(p);
+  p.swimming=isInPond(p.x,p.y);
+  updateLollaBall(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
