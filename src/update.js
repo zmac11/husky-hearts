@@ -14,7 +14,7 @@ function updatePlayer(p,controls,t,dt){
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
   }
   resolveCollisions(p);
-  p.swimming=isInPond(p.x,p.y);
+  p.swimming=isInPond(p.x,p.y,p.swimming);
   updateLollaBall(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
@@ -24,7 +24,7 @@ function tryCollect(p){
   collectibles.forEach(item=>{
     if(item.taken)return;
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
-      item.taken=true;p.treats++;spawnSparkles(item.x,item.y,'#FFD93D',10);sfxCollect();updateHUD();
+      item.taken=true;p.treats++;spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
     }
   });
 }

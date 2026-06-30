@@ -8,6 +8,15 @@ function drawMinimap(){
   ctx.globalAlpha=1;
   // grass
   ctx.fillStyle='#4A9A3A'; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
+  // river
+  if(river){
+    const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
+    ctx.fillStyle='#4AACDC';
+    ctx.beginPath();
+    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);}
+    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
+    ctx.closePath();ctx.fill();
+  }
   // ponds
   worldObjects.filter(o=>o.kind==='pond').forEach(o=>{
     ctx.fillStyle='#4AACDC';
@@ -15,7 +24,7 @@ function drawMinimap(){
   });
   const sx=MW/WORLD_W,sy=MH/WORLD_H;
   // collectibles
-  collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle='#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
+  collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
   // viewport

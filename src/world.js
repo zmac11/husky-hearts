@@ -58,18 +58,15 @@ function buildWorld(){
   worldObjects.length=0; colliders.length=0;
 
   // ---- RIVER (create first so placements can avoid it) ----
-  river={ pos:WORLD_H*0.38, width:72, amplitude:28, wavelength:520 };
+  river={
+    pos:WORLD_H*0.38,
+    amplitude:34, wavelength:560,                 // broad meander
+    amplitude2:13, wavelength2:190, phase2:1.7,    // smaller wobble layered on top, less mechanical
+    baseWidth:74, widthAmp:22, widthWavelength:430, widthPhase:0.6, // river breathes wider/narrower along its length
+  };
+  river.pebbles=makeRiverPebbles();
 
-  // ---- PONDS (also before other objects) ----
-  const taken=[];
-  for(let i=0;i<5;i++){
-    const p=rand2(150,150,WORLD_W-150,WORLD_H-150,280,taken);
-    taken.push(p);
-    const w=rand(160,260),h=rand(110,170);
-    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100});
-  }
-
-  // ---- Water exclusion helper ----
+  // ---- Water exclusion helper (hoisted — usable by pond placement below too) ----
   function inWater(x,y,margin){
     if(inRiver(x,y,margin)) return true;
     return worldObjects.some(o=>o.kind==='pond'&&
@@ -81,6 +78,23 @@ function buildWorld(){
       if(!inWater(p.x,p.y,margin)) return p;
     }
     return rand2(ax,ay,bx,by,minDist,list); // fallback
+  }
+
+  // ---- PONDS (also before other objects) — varied sizes & shapes, kept clear of the river ----
+  const taken=[];
+  const pondShapes=[
+    ()=>({w:rand(90,130),  h:rand(80,120)}),   // small & round
+    ()=>({w:rand(170,240), h:rand(110,160)}),  // medium oval
+    ()=>({w:rand(240,330), h:rand(150,210)}),  // large oval
+    ()=>({w:rand(110,150), h:rand(210,280)}),  // tall & narrow
+    ()=>({w:rand(260,350), h:rand(90,130)}),   // long & wide
+  ];
+  for(let i=0;i<5;i++){
+    const {w,h}=pondShapes[i%pondShapes.length]();
+    const margin=Math.max(w,h)/2+50; // keep ponds well clear of the river & each other
+    const p=safePt(140,140,WORLD_W-140,WORLD_H-140,260,taken,margin);
+    taken.push(p);
+    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100,blobSeed:Math.floor(Math.random()*9999)});
   }
 
   // ---- FENCE border ----
@@ -184,10 +198,12 @@ function buildWorld(){
     worldObjects.push({kind:'bridge',x:pond.x,y:pond.y,horizontal:i%2===0,seed:i});
   });
 
-  // ---- RIVER BRIDGES (3 crossings) ----
-  [0.25,0.5,0.75].forEach((fx,i)=>{
+  // ---- RIVER BRIDGES (3 stone crossings, sized to fully span the river at their spot —
+  //      drawn separately in main.js so swimmers can pass underneath) ----
+  [0.22,0.5,0.78].forEach((fx,i)=>{
     const bx=WORLD_W*fx;
-    worldObjects.push({kind:'bridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i});
+    const span=riverWidthAt(bx)/2+16; // half-length along the crossing, with margin onto both banks
+    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i,span});
   });
 
   // Sort by y for painter's algorithm
@@ -198,12 +214,32 @@ buildWorld();
 // ---------- COLLECTIBLES ----------
 function makeCollectibles(){
   const types=['bone','heart','ball','flower'];
-  return Array.from({length:24},(_,i)=>({
+  const items=Array.from({length:24},(_,i)=>({
     x:rand(80,WORLD_W-80), y:rand(80,WORLD_H-80),
     type:types[i%types.length], taken:false, bob:rand(0,Math.PI*2)
   }));
+  // fish swimming back and forth along the river
+  for(let i=0;i<6;i++){
+    const baseX=rand(120,WORLD_W-120);
+    items.push({
+      type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(Math.random()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      x:baseX, y:riverY(baseX)
+    });
+  }
+  return items;
 }
 let collectibles=makeCollectibles();
+
+function updateCollectibles(t){
+  collectibles.forEach(item=>{
+    if(item.taken||item.type!=='fish') return;
+    const ang=t/1000*item.speed+item.phase;
+    item.x=clamp(item.baseX+Math.sin(ang)*item.range,30,WORLD_W-30);
+    item.y=riverY(item.x)+Math.sin(t/260+item.phase)*6;
+    item.dir=Math.cos(ang)>=0?1:-1;
+  });
+}
 
 // ---------- NPC FRIENDS ----------
 function makeFriends(){
@@ -220,18 +256,65 @@ let friends=makeFriends();
 // ---------- RIVER / POND helpers ----------
 function riverY(x){
   if(!river) return 0;
-  return river.pos + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2);
+  return river.pos
+    + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2)
+    + river.amplitude2*Math.sin(x/river.wavelength2*Math.PI*2+river.phase2);
+}
+
+function riverWidthAt(x){
+  if(!river) return 0;
+  const w=river.baseWidth
+    + river.widthAmp*Math.sin(x/river.widthWavelength*Math.PI*2+river.widthPhase)
+    + river.widthAmp*0.4*Math.sin(x/(river.widthWavelength*0.37)*Math.PI*2);
+  return Math.max(40,w);
+}
+
+function makeRiverPebbles(){
+  const list=[];
+  for(let x=40;x<WORLD_W-40;){
+    const w=riverWidthAt(x), cy=riverY(x);
+    const side=Math.random()<0.5?-1:1;
+    list.push({x, y:cy+side*(w/2+rand(2,9)), big:Math.random()<0.3});
+    x+=rand(26,46);
+  }
+  return list;
 }
 
 function inRiver(x,y,margin=0){
   if(!river) return false;
-  return Math.abs(y-riverY(x)) < river.width/2+margin;
+  return Math.abs(y-riverY(x)) < riverWidthAt(x)/2+margin;
 }
 
-function isInPond(px,py){
+function isOnSpecificBridge(o,px,py){
+  if(o.kind==='riverbridge'){
+    const span=o.span||30, road=9; // span covers the full river crossing; road is the walkway width
+    if(o.horizontal) return Math.abs(px-o.x)<span && Math.abs(py-o.y)<road;
+    return Math.abs(px-o.x)<road && Math.abs(py-o.y)<span;
+  }
+  const hw=o.horizontal?28:8, hh=o.horizontal?10:28;
+  return Math.abs(px-o.x)<hw && Math.abs(py-o.y)<hh;
+}
+
+function isOnWalkableBridge(px,py){ // pond bridges — always a dry deck
+  return worldObjects.some(o=>o.kind==='bridge'&&isOnSpecificBridge(o,px,py));
+}
+
+function onRiverBridge(px,py){
+  return worldObjects.some(o=>o.kind==='riverbridge'&&isOnSpecificBridge(o,px,py));
+}
+
+function isOnBridge(px,py){
+  return isOnWalkableBridge(px,py) || onRiverBridge(px,py);
+}
+
+function isInPond(px,py,wasSwimming){
   const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
     ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
-  return inEllipse || inRiver(px,py);
+  const inWater=inEllipse || inRiver(px,py);
+  if(!inWater) return false;
+  if(isOnWalkableBridge(px,py)) return false; // pond bridge deck — never swimming
+  if(onRiverBridge(px,py) && !wasSwimming) return false; // stepping onto bridge from dry land
+  return true; // open water, or already swimming and passing underneath a river bridge
 }
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
