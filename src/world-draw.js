@@ -299,27 +299,47 @@ function drawStonePath(x1,y1,x2,y2,seed){
   }
 }
 
+function drawStoneBridge(x,y,horizontal){
+  // solid masonry bridge: deck slab + thick parapets + bank piers, drawn in a
+  // "spans left-right" local frame, then rotated for the (always vertical) river crossings
+  const HW=30, HH=15;
+  ctx.save();
+  ctx.translate(x,y);
+  if(!horizontal) ctx.rotate(Math.PI/2);
+
+  const stone='#9B9B92', stoneLight='#C4C4B8', stoneDark='#7C7C73', stoneDeep='#5A584F';
+  const mortar='rgba(56,52,44,0.4)';
+
+  // shadow cast on the water, suggesting the deck is raised above it
+  ctx.fillStyle='rgba(18,42,56,0.32)';
+  ctx.fillRect(Math.round(-HW+3),Math.round(HH-3),HW*2-6,6);
+
+  // stone abutment piers anchoring the bridge into the banks
+  px(-HW-2,-HH+3,8,HH*2-6,stoneDeep);
+  px(HW-6, -HH+3,8,HH*2-6,stoneDeep);
+  px(-HW-1,-HH+4,3,HH*2-8,stoneDark);
+  px(HW-5, -HH+4,3,HH*2-8,stoneDark);
+
+  // deck slab — solid stone with a gentle sunlit camber
+  px(-HW,-7,HW*2,14,stone);
+  px(-HW,-7,HW*2,3,stoneLight);
+  px(-HW,4, HW*2,3,stoneDeep);
+  for(let i=-HW+10;i<HW-6;i+=10){ ctx.fillStyle=mortar; ctx.fillRect(Math.round(i),-7,1,14); }
+
+  // thick parapet walls along both edges, with coping stones on top
+  [-HH+1, HH-7].forEach(py=>{
+    px(-HW,py,HW*2,6,stoneDark);
+    px(-HW,py-1,HW*2,2,stoneLight);
+    px(-HW,py+5,HW*2,1,stoneDeep);
+    for(let i=-HW+8;i<HW-6;i+=11){ ctx.fillStyle=mortar; ctx.fillRect(Math.round(i),py,1,6); }
+  });
+
+  ctx.restore();
+}
+
 function drawBridge(x,y,horizontal,t,material){
   if(material==='stone'){
-    // stone bridge crossing the river
-    const stoneCol='#9A9A92', darkStone='#7E7E76', mortar='#6A6A62', rail='#5C5C54';
-    if(horizontal){
-      for(let i=0;i<5;i++){
-        px(x-27+i*11,y-6,9,12,i%2===0?stoneCol:darkStone);
-        px(x-27+i*11+1,y-5,4,2,'#B8B8AE'); // highlight
-        px(x-27+i*11,y+5,9,1,mortar); // mortar line
-      }
-      px(x-28,y-9,56,5,rail); px(x-28,y+6,56,5,rail);
-      [x-26,x-2,x+22].forEach(px2=>{ px(px2,y-11,5,22,rail); px(px2+1,y-10,2,20,'#7A7A72'); });
-    } else {
-      for(let i=0;i<5;i++){
-        px(x-6,y-27+i*11,12,9,i%2===0?stoneCol:darkStone);
-        px(x-5,y-27+i*11+1,2,4,'#B8B8AE');
-        px(x+5,y-27+i*11,1,9,mortar);
-      }
-      px(x-9,y-28,5,56,rail); px(x+5,y-28,5,56,rail);
-      [y-26,y-2,y+22].forEach(py=>{ px(x-9,py,22,5,rail); px(x-8,py+1,20,2,'#7A7A72'); });
-    }
+    drawStoneBridge(x,y,horizontal);
     return;
   }
   // wooden bridge over a pond
