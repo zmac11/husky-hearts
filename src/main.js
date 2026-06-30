@@ -16,13 +16,13 @@ function loop(now){
     const activePlayers=twoPlayer?[p1,p2]:[p1];
     const riverBridges=worldObjects.filter(o=>o.kind==='riverbridge');
     const deckBridges=riverBridges.filter(o=>activePlayers.some(p=>!p.swimming&&isOnSpecificBridge(o,p.x,p.y)));
-    deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone'));
+    deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawLollaCannon(now);
     drawLollaBall(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
     [...activePlayers].sort((a,b)=>a.y-b.y).forEach(p=>drawDog(p,now));
-    riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone'));
+    riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();
     ctx.restore();
     drawMinimap();

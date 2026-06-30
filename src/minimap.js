@@ -13,8 +13,8 @@ function drawMinimap(){
     const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
     ctx.fillStyle='#4AACDC';
     ctx.beginPath();
-    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);}
-    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+river.width/2)*sy);}
+    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);}
+    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
     ctx.closePath();ctx.fill();
   }
   // ponds

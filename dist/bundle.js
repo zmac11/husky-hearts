@@ -110,7 +110,13 @@ function buildWorld(){
   worldObjects.length=0; colliders.length=0;
 
   // ---- RIVER (create first so placements can avoid it) ----
-  river={ pos:WORLD_H*0.38, width:72, amplitude:28, wavelength:520 };
+  river={
+    pos:WORLD_H*0.38,
+    amplitude:34, wavelength:560,                 // broad meander
+    amplitude2:13, wavelength2:190, phase2:1.7,    // smaller wobble layered on top, less mechanical
+    baseWidth:74, widthAmp:22, widthWavelength:430, widthPhase:0.6, // river breathes wider/narrower along its length
+  };
+  river.pebbles=makeRiverPebbles();
 
   // ---- Water exclusion helper (hoisted — usable by pond placement below too) ----
   function inWater(x,y,margin){
@@ -244,10 +250,12 @@ function buildWorld(){
     worldObjects.push({kind:'bridge',x:pond.x,y:pond.y,horizontal:i%2===0,seed:i});
   });
 
-  // ---- RIVER BRIDGES (3 stone crossings — drawn separately so swimmers can pass underneath) ----
-  [0.25,0.5,0.75].forEach((fx,i)=>{
+  // ---- RIVER BRIDGES (3 stone crossings, sized to fully span the river at their spot —
+  //      drawn separately in main.js so swimmers can pass underneath) ----
+  [0.22,0.5,0.78].forEach((fx,i)=>{
     const bx=WORLD_W*fx;
-    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i});
+    const span=riverWidthAt(bx)/2+16; // half-length along the crossing, with margin onto both banks
+    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i,span});
   });
 
   // Sort by y for painter's algorithm
@@ -300,15 +308,41 @@ let friends=makeFriends();
 // ---------- RIVER / POND helpers ----------
 function riverY(x){
   if(!river) return 0;
-  return river.pos + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2);
+  return river.pos
+    + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2)
+    + river.amplitude2*Math.sin(x/river.wavelength2*Math.PI*2+river.phase2);
+}
+
+function riverWidthAt(x){
+  if(!river) return 0;
+  const w=river.baseWidth
+    + river.widthAmp*Math.sin(x/river.widthWavelength*Math.PI*2+river.widthPhase)
+    + river.widthAmp*0.4*Math.sin(x/(river.widthWavelength*0.37)*Math.PI*2);
+  return Math.max(40,w);
+}
+
+function makeRiverPebbles(){
+  const list=[];
+  for(let x=40;x<WORLD_W-40;){
+    const w=riverWidthAt(x), cy=riverY(x);
+    const side=Math.random()<0.5?-1:1;
+    list.push({x, y:cy+side*(w/2+rand(2,9)), big:Math.random()<0.3});
+    x+=rand(26,46);
+  }
+  return list;
 }
 
 function inRiver(x,y,margin=0){
   if(!river) return false;
-  return Math.abs(y-riverY(x)) < river.width/2+margin;
+  return Math.abs(y-riverY(x)) < riverWidthAt(x)/2+margin;
 }
 
 function isOnSpecificBridge(o,px,py){
+  if(o.kind==='riverbridge'){
+    const span=o.span||30, road=9; // span covers the full river crossing; road is the walkway width
+    if(o.horizontal) return Math.abs(px-o.x)<span && Math.abs(py-o.y)<road;
+    return Math.abs(px-o.x)<road && Math.abs(py-o.y)<span;
+  }
   const hw=o.horizontal?28:8, hh=o.horizontal?10:28;
   return Math.abs(px-o.x)<hw && Math.abs(py-o.y)<hh;
 }
@@ -667,10 +701,11 @@ function drawStonePath(x1,y1,x2,y2,seed){
   }
 }
 
-function drawStoneBridge(x,y,horizontal){
+function drawStoneBridge(x,y,horizontal,span){
   // solid masonry bridge: deck slab + thick parapets + bank piers, drawn in a
-  // "spans left-right" local frame, then rotated for the (always vertical) river crossings
-  const HW=30, HH=15;
+  // "spans left-right" local frame, then rotated for the (always vertical) river crossings.
+  // HW (half-length) is sized by the caller to fully cross the river at this spot.
+  const HW=span||30, HH=15;
   ctx.save();
   ctx.translate(x,y);
   if(!horizontal) ctx.rotate(Math.PI/2);
@@ -705,9 +740,9 @@ function drawStoneBridge(x,y,horizontal){
   ctx.restore();
 }
 
-function drawBridge(x,y,horizontal,t,material){
+function drawBridge(x,y,horizontal,t,material,span){
   if(material==='stone'){
-    drawStoneBridge(x,y,horizontal);
+    drawStoneBridge(x,y,horizontal,span);
     return;
   }
   // wooden bridge over a pond
@@ -735,25 +770,43 @@ function drawBridge(x,y,horizontal,t,material){
 
 function drawRiver(t){
   if(!river) return;
-  const steps=100, dx=WORLD_W/steps, phase=t/3000;
+  const steps=120, dx=WORLD_W/steps;
 
+  // soft sandy/muddy bank halo where the water meets the grass
   ctx.beginPath();
   for(let i=0;i<=steps;i++){
-    const x=i*dx;
-    const y=riverY(x)-river.width/2;
+    const x=i*dx, y=riverY(x)-riverWidthAt(x)/2-9;
     if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   }
   for(let i=steps;i>=0;i--){
-    const x=i*dx;
-    const y=riverY(x)+river.width/2;
+    const x=i*dx, y=riverY(x)+riverWidthAt(x)/2+9;
+    ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle='rgba(196,168,116,0.55)';
+  ctx.fill();
+
+  // water body — width breathes wider/narrower along its length
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const x=i*dx, y=riverY(x)-riverWidthAt(x)/2;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  for(let i=steps;i>=0;i--){
+    const x=i*dx, y=riverY(x)+riverWidthAt(x)/2;
     ctx.lineTo(x,y);
   }
   ctx.closePath();
 
-  const grad=ctx.createLinearGradient(0,river.pos-river.width/2,0,river.pos+river.width/2);
-  grad.addColorStop(0,'#7DD4F0');
-  grad.addColorStop(0.5,'#4AACDC');
-  grad.addColorStop(1,'#2A7AAA');
+  const halfSpan=(river.baseWidth+river.widthAmp*1.4)/2+4;
+  const minY=river.pos-river.amplitude-river.amplitude2-halfSpan;
+  const maxY=river.pos+river.amplitude+river.amplitude2+halfSpan;
+  const grad=ctx.createLinearGradient(0,minY,0,maxY);
+  grad.addColorStop(0,   '#82CDEE');
+  grad.addColorStop(0.12,'#7DD4F0');
+  grad.addColorStop(0.5, '#4AACDC');
+  grad.addColorStop(0.88,'#2E80AC');
+  grad.addColorStop(1,   '#235F80');
   ctx.fillStyle=grad; ctx.fill();
 
   // shore lines
@@ -762,23 +815,44 @@ function drawRiver(t){
     const sign=edge===0?-1:1;
     ctx.beginPath();
     for(let i=0;i<=steps;i++){
-      const x=i*dx, y=riverY(x)+sign*river.width/2;
+      const x=i*dx, y=riverY(x)+sign*riverWidthAt(x)/2;
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.stroke();
   }
 
-  // animated ripple lines
+  // animated ripple lines, scaled to the local width
   const rphase=t/1800;
   for(let ri=0;ri<3;ri++){
     ctx.globalAlpha=0.18-ri*0.05;
     ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1;
     ctx.beginPath();
     for(let i=0;i<=steps;i++){
-      const x=i*dx, y=riverY(x)+(ri-1)*20+Math.sin(x/200+rphase+ri)*4;
+      const x=i*dx, w=riverWidthAt(x);
+      const y=riverY(x)+(ri-1)*w*0.27+Math.sin(x/200+rphase+ri)*4;
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+
+  // pebbles scattered along the banks
+  (river.pebbles||[]).forEach(p=>{
+    if(p.big){ px(p.x-4,p.y-2,8,5,'#8C8C82'); px(p.x-3,p.y-3,5,3,'#A6A69A'); }
+    else     { px(p.x-2,p.y-1,4,3,'#9A9A8E'); }
+  });
+
+  // gentle foam flecks sparkling near the edges
+  const fphase=t/700;
+  for(let i=0;i<=steps;i+=3){
+    const x=i*dx, w=riverWidthAt(x), cy=riverY(x);
+    const s=Math.sin(x*0.05+fphase);
+    if(s>0.6){
+      ctx.globalAlpha=(s-0.6)*1.6;
+      ctx.fillStyle='#EAFBFF';
+      ctx.fillRect(Math.round(x),Math.round(cy-w/2+4),2,2);
+      ctx.fillRect(Math.round(x+4),Math.round(cy+w/2-5),2,2);
+    }
   }
   ctx.globalAlpha=1;
 }
@@ -1454,8 +1528,8 @@ function drawMinimap(){
     const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
     ctx.fillStyle='#4AACDC';
     ctx.beginPath();
-    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-river.width/2)*sy);}
-    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+river.width/2)*sy);}
+    for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);}
+    for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
     ctx.closePath();ctx.fill();
   }
   // ponds
@@ -1846,13 +1920,13 @@ function loop(now){
     const activePlayers=twoPlayer?[p1,p2]:[p1];
     const riverBridges=worldObjects.filter(o=>o.kind==='riverbridge');
     const deckBridges=riverBridges.filter(o=>activePlayers.some(p=>!p.swimming&&isOnSpecificBridge(o,p.x,p.y)));
-    deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone'));
+    deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawLollaCannon(now);
     drawLollaBall(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
     [...activePlayers].sort((a,b)=>a.y-b.y).forEach(p=>drawDog(p,now));
-    riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone'));
+    riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();
     ctx.restore();
     drawMinimap();

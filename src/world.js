@@ -58,7 +58,13 @@ function buildWorld(){
   worldObjects.length=0; colliders.length=0;
 
   // ---- RIVER (create first so placements can avoid it) ----
-  river={ pos:WORLD_H*0.38, width:72, amplitude:28, wavelength:520 };
+  river={
+    pos:WORLD_H*0.38,
+    amplitude:34, wavelength:560,                 // broad meander
+    amplitude2:13, wavelength2:190, phase2:1.7,    // smaller wobble layered on top, less mechanical
+    baseWidth:74, widthAmp:22, widthWavelength:430, widthPhase:0.6, // river breathes wider/narrower along its length
+  };
+  river.pebbles=makeRiverPebbles();
 
   // ---- Water exclusion helper (hoisted — usable by pond placement below too) ----
   function inWater(x,y,margin){
@@ -192,10 +198,12 @@ function buildWorld(){
     worldObjects.push({kind:'bridge',x:pond.x,y:pond.y,horizontal:i%2===0,seed:i});
   });
 
-  // ---- RIVER BRIDGES (3 stone crossings — drawn separately so swimmers can pass underneath) ----
-  [0.25,0.5,0.75].forEach((fx,i)=>{
+  // ---- RIVER BRIDGES (3 stone crossings, sized to fully span the river at their spot —
+  //      drawn separately in main.js so swimmers can pass underneath) ----
+  [0.22,0.5,0.78].forEach((fx,i)=>{
     const bx=WORLD_W*fx;
-    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i});
+    const span=riverWidthAt(bx)/2+16; // half-length along the crossing, with margin onto both banks
+    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:10+i,span});
   });
 
   // Sort by y for painter's algorithm
@@ -248,15 +256,41 @@ let friends=makeFriends();
 // ---------- RIVER / POND helpers ----------
 function riverY(x){
   if(!river) return 0;
-  return river.pos + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2);
+  return river.pos
+    + river.amplitude*Math.sin(x/river.wavelength*Math.PI*2)
+    + river.amplitude2*Math.sin(x/river.wavelength2*Math.PI*2+river.phase2);
+}
+
+function riverWidthAt(x){
+  if(!river) return 0;
+  const w=river.baseWidth
+    + river.widthAmp*Math.sin(x/river.widthWavelength*Math.PI*2+river.widthPhase)
+    + river.widthAmp*0.4*Math.sin(x/(river.widthWavelength*0.37)*Math.PI*2);
+  return Math.max(40,w);
+}
+
+function makeRiverPebbles(){
+  const list=[];
+  for(let x=40;x<WORLD_W-40;){
+    const w=riverWidthAt(x), cy=riverY(x);
+    const side=Math.random()<0.5?-1:1;
+    list.push({x, y:cy+side*(w/2+rand(2,9)), big:Math.random()<0.3});
+    x+=rand(26,46);
+  }
+  return list;
 }
 
 function inRiver(x,y,margin=0){
   if(!river) return false;
-  return Math.abs(y-riverY(x)) < river.width/2+margin;
+  return Math.abs(y-riverY(x)) < riverWidthAt(x)/2+margin;
 }
 
 function isOnSpecificBridge(o,px,py){
+  if(o.kind==='riverbridge'){
+    const span=o.span||30, road=9; // span covers the full river crossing; road is the walkway width
+    if(o.horizontal) return Math.abs(px-o.x)<span && Math.abs(py-o.y)<road;
+    return Math.abs(px-o.x)<road && Math.abs(py-o.y)<span;
+  }
   const hw=o.horizontal?28:8, hh=o.horizontal?10:28;
   return Math.abs(px-o.x)<hw && Math.abs(py-o.y)<hh;
 }
