@@ -126,13 +126,37 @@ function drawRockCluster(x,y,seed,t){
   });
 }
 
-function drawPond(x,y,w,h,seed,t){
-  const rng=mulberry32(Math.floor(seed));
+function pondBlobPoints(blobSeed){
+  const rng=mulberry32(Math.floor(blobSeed));
+  const n=10, pts=[];
+  for(let i=0;i<n;i++) pts.push({ang:(i/n)*Math.PI*2, rMul:0.84+rng()*0.32});
+  return pts;
+}
+
+function tracePondPath(x,y,w,h,pts,scale){
+  const n=pts.length;
+  const pt=i=>{
+    const p=pts[(i+n)%n];
+    return [x+Math.cos(p.ang)*(w/2)*p.rMul*scale, y+Math.sin(p.ang)*(h/2)*p.rMul*scale];
+  };
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const [cx,cy]=pt(i), [px0,py0]=pt(i-1);
+    const mx=(cx+px0)/2, my=(cy+py0)/2;
+    if(i===0) ctx.moveTo(mx,my); else ctx.quadraticCurveTo(px0,py0,mx,my);
+  }
+  ctx.closePath();
+}
+
+function drawPond(x,y,w,h,seed,t,blobSeed){
+  const pts=pondBlobPoints(blobSeed!==undefined?blobSeed:seed);
   // shadow
-  ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x+3,y+5,w/2+2,h/2+2,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+  ctx.globalAlpha=0.2;
+  ctx.save(); ctx.translate(3,5); tracePondPath(x,y,w,h,pts,1.04); ctx.restore();
+  ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
   // water base
-  ctx.beginPath(); ctx.ellipse(x,y,w/2,h/2,0,0,Math.PI*2);
-  const grad=ctx.createRadialGradient(x-w*0.15,y-h*0.15,2,x,y,w/2);
+  tracePondPath(x,y,w,h,pts,1);
+  const grad=ctx.createRadialGradient(x-w*0.15,y-h*0.15,2,x,y,Math.max(w,h)/2);
   grad.addColorStop(0,'#7DD4F0'); grad.addColorStop(0.6,'#4AACDC'); grad.addColorStop(1,'#2A7AAA');
   ctx.fillStyle=grad; ctx.fill();
   // shore edge
@@ -140,9 +164,9 @@ function drawPond(x,y,w,h,seed,t){
   // animated ripples
   const rphase=t/1200+seed;
   for(let i=0;i<3;i++){
-    const rscale=0.3+i*0.2+Math.sin(rphase+i)*0.08;
+    const rscale=0.28+i*0.18+Math.sin(rphase+i)*0.06;
     ctx.globalAlpha=0.25-i*0.07;
-    ctx.beginPath(); ctx.ellipse(x+Math.sin(rphase+i)*w*0.05,y,w/2*rscale,h/2*rscale,0,0,Math.PI*2);
+    ctx.beginPath(); ctx.ellipse(x+Math.sin(rphase+i)*w*0.04,y,w/2*rscale,h/2*rscale,0,0,Math.PI*2);
     ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1; ctx.stroke();
   }
   ctx.globalAlpha=1;
@@ -275,10 +299,30 @@ function drawStonePath(x1,y1,x2,y2,seed){
   }
 }
 
-function drawBridge(x,y,horizontal,t){
+function drawBridge(x,y,horizontal,t,material){
+  if(material==='stone'){
+    // stone bridge crossing the river
+    const stoneCol='#9A9A92', darkStone='#7E7E76', mortar='#6A6A62', rail='#5C5C54';
+    if(horizontal){
+      for(let i=0;i<5;i++){
+        px(x-27+i*11,y-6,9,12,i%2===0?stoneCol:darkStone);
+        px(x-27+i*11+1,y-5,4,2,'#B8B8AE'); // highlight
+        px(x-27+i*11,y+5,9,1,mortar); // mortar line
+      }
+      px(x-28,y-9,56,5,rail); px(x-28,y+6,56,5,rail);
+      [x-26,x-2,x+22].forEach(px2=>{ px(px2,y-11,5,22,rail); px(px2+1,y-10,2,20,'#7A7A72'); });
+    } else {
+      for(let i=0;i<5;i++){
+        px(x-6,y-27+i*11,12,9,i%2===0?stoneCol:darkStone);
+        px(x-5,y-27+i*11+1,2,4,'#B8B8AE');
+        px(x+5,y-27+i*11,1,9,mortar);
+      }
+      px(x-9,y-28,5,56,rail); px(x+5,y-28,5,56,rail);
+      [y-26,y-2,y+22].forEach(py=>{ px(x-9,py,22,5,rail); px(x-8,py+1,20,2,'#7A7A72'); });
+    }
+    return;
+  }
   // wooden bridge over a pond
-  const W2=horizontal?54:14, H2=horizontal?14:54;
-  // planks
   const plankCol='#A07040', darkPlank='#8B5E30', rail='#7A4E28';
   if(horizontal){
     // deck planks
@@ -363,7 +407,7 @@ function drawWorld(t){
     switch(obj.kind){
       case 'flower':      drawFlower(obj.x,obj.y,obj.hue,obj.sway,obj.size,t); break;
       case 'tallgrass':   drawTallGrass(obj.x,obj.y,obj.blades,obj.seed,t); break;
-      case 'pond':        drawPond(obj.x,obj.y,obj.w,obj.h,obj.seed,t); break;
+      case 'pond':        drawPond(obj.x,obj.y,obj.w,obj.h,obj.seed,t,obj.blobSeed); break;
       case 'bush':        drawBush(obj.x,obj.y,obj.variant); break;
       case 'rock':        drawRock(obj.x,obj.y,obj.big,t); break;
       case 'rockcluster': drawRockCluster(obj.x,obj.y,obj.seed,t); break;
@@ -373,7 +417,8 @@ function drawWorld(t){
       case 'mushroom':    drawMushroom(obj.x,obj.y,obj.big); break;
       case 'mushroomring':drawMushroomRing(obj.x,obj.y,obj.seed); break;
       case 'stonepath':   drawStonePath(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
-      case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t); break;
+      case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
+      // 'riverbridge' intentionally not drawn here — layered in main.js so swimmers can pass underneath
     }
   });
 }

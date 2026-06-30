@@ -14,7 +14,7 @@ function drawCollectible(item,t){
   roundRect(-13,-13,26,26,6,true,false);
 
   // ---- bright outer glow ring ----
-  const glowColors = {bone:'#FFF0A0', heart:'#FF4466', ball:'#FFD93D', flower:'#D0A0FF'};
+  const glowColors = {bone:'#FFF0A0', heart:'#FF4466', ball:'#FFD93D', flower:'#D0A0FF', fish:'#4AC8FF'};
   ctx.strokeStyle = glowColors[item.type] || '#FFD93D';
   ctx.lineWidth = 2.5;
   ctx.globalAlpha = 0.55 + Math.sin(t/260+item.bob)*0.25;
@@ -64,6 +64,21 @@ function drawCollectible(item,t){
     ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#FFFFFF';
     ctx.fillRect(-1,-2,2,2);
+  } else if(item.type==='fish'){
+    ctx.save();
+    ctx.scale(item.dir||1,1);
+    // body
+    ctx.fillStyle='#FF9E4A';
+    ctx.beginPath(); ctx.ellipse(0,0,8,5,0,0,Math.PI*2); ctx.fill();
+    // belly
+    ctx.fillStyle='#FFD79A';
+    ctx.beginPath(); ctx.ellipse(0,2,6,2.5,0,0,Math.PI*2); ctx.fill();
+    // tail
+    ctx.fillStyle='#FF7A2E';
+    ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(-14,-5); ctx.lineTo(-14,5); ctx.closePath(); ctx.fill();
+    // eye
+    ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(4,-1,1.3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
 
   ctx.restore();

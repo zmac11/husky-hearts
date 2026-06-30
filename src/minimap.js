@@ -24,7 +24,7 @@ function drawMinimap(){
   });
   const sx=MW/WORLD_W,sy=MH/WORLD_H;
   // collectibles
-  collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle='#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
+  collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
   // viewport
