@@ -33,10 +33,8 @@ function drawDog(p,t){
   else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
   else _drawHusky(x,by,t,C,D,L,W,K,p);
 
-  // Lolla ball in mouth
-  if(breed==='lolla' && typeof lollaBall!=='undefined' && lollaBall && lollaBall.state==='held' && lollaBall.carrier===p.id){
-    drawBallInMouth(x,by,p.dir);
-  }
+  // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
+  Abilities.drawOnDog(p,x,by);
 
   if(p.swimming){
     ctx.restore(); // remove clip

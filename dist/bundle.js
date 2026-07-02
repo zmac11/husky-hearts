@@ -4,6 +4,232 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+// ===== src/core/rng.js =====
+// ====================== RNG ======================
+// Seeded, reproducible pseudo-random generator.
+//
+// `mulberry32` was previously defined inline in world-draw.js for ground texture only.
+// It's promoted here so level generation and save/load can seed a whole world
+// reproducibly (a saved level regenerates identically from its stored seed).
+//
+// Existing callers use the bare `mulberry32(seed)` function unchanged. New code
+// should prefer the `RNG` facade so there's a single shared, reseedable stream.
+
+function mulberry32(seed){ // tiny deterministic RNG — returns a function producing [0,1)
+  return function(){
+    seed|=0; seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+
+const RNG = {
+  seed: (Math.random()*1e9)|0,  // default run seed; LevelManager overrides per level
+  _fn: null,
+
+  // Reseed the shared stream (e.g. when (re)generating a level, or after loading a save).
+  reseed(s){ this.seed = s>>>0; this._fn = mulberry32(this.seed); return this.seed; },
+
+  next(){ if(!this._fn) this._fn = mulberry32(this.seed); return this._fn(); },
+  range(a,b){ return a + this.next()*(b-a); },
+  int(a,b){ return Math.floor(this.range(a, b+1)); },        // inclusive [a,b]
+  pick(arr){ return arr[Math.floor(this.next()*arr.length)]; },
+  chance(p){ return this.next() < p; },
+
+  // A fresh independent stream derived from the current seed — handy for a subsystem
+  // that needs its own reproducible sequence without disturbing the main stream.
+  fork(salt){ return mulberry32((this.seed ^ (salt>>>0)) >>> 0); },
+};
+
+// ===== src/core/state.js =====
+// ====================== GAME STATE ======================
+// Central runtime state for a play session. This is the seam the planned features
+// (pause menu, save/load, levels, inventory, dialog) build on: instead of scattered
+// boolean flags, flow is a single scene value and all "current run" state hangs here.
+//
+// To keep this refactor low-risk, the canonical player/world globals still live where
+// they always have (p1/p2/twoPlayer/cheeredCount in world.js; worldObjects/colliders/
+// cam/WORLD_* in world.js). `Game` and `World` are thin facades that delegate to them,
+// so old code keeps working while new code reads/writes through these namespaces.
+// The getter/setter bodies run at call time (well after world.js has initialised), so
+// referencing those globals here is safe despite load order.
+
+const SCENES = Object.freeze({
+  MENU:      'menu',       // title / start screen
+  CHARSELECT:'charselect', // choosing breed + colour
+  PLAYING:   'playing',    // world is simulating
+  PAUSED:    'paused',     // ESC menu (Phase 5)
+  DIALOG:    'dialog',     // talking to an NPC (Phase 3/5)
+  INVENTORY: 'inventory',  // inventory panel open (Phase 5)
+  WIN:       'win',        // victory screen
+});
+
+const Game = {
+  state: SCENES.MENU,
+
+  // --- scene helpers ---
+  is(s){ return this.state === s; },
+  set(s){ this.state = s; },
+  get running(){ return this.state === SCENES.PLAYING; }, // world actively simulating?
+
+  // --- player access (delegates to canonical globals) ---
+  get players(){ return this.twoPlayer ? [p1, p2] : [p1]; },
+  get p1(){ return p1; },
+  get p2(){ return p2; },
+  get twoPlayer(){ return typeof twoPlayer !== 'undefined' ? twoPlayer : false; },
+  set twoPlayer(v){ twoPlayer = v; },
+  get cheeredCount(){ return cheeredCount; },
+  set cheeredCount(v){ cheeredCount = v; },
+};
+
+// World data facade — same delegation pattern for the current level's world.
+const World = {
+  get objects(){ return worldObjects; },
+  get colliders(){ return colliders; },
+  get cam(){ return cam; },
+  get W(){ return WORLD_W; },
+  get H(){ return WORLD_H; },
+};
+
+// ===== src/core/input.js =====
+// ====================== INPUT ======================
+// Owns the raw key state and per-player control maps (previously the `keys` object
+// and inline listeners lived in world.js, and the c1/c2 maps were defined inside the
+// main loop). Centralising here gives one place to add rebinding, gamepad support,
+// and the global ESC → pause hook.
+
+const keys = {};
+
+window.addEventListener('keydown', e=>{
+  keys[e.code] = true;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
+  if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
+  if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+});
+window.addEventListener('keyup', e=>{ keys[e.code] = false; });
+
+const Input = {
+  keys,
+
+  // Per-player control maps. `ability` is the active-ability trigger (Phase 1);
+  // it matches the keys Lolla's ball cannon already used (Q / period).
+  CONTROLS: {
+    p1: { up:'KeyW',    down:'KeyS',      left:'KeyA',       right:'KeyD',        action:'Space', ability:'KeyQ'   },
+    p2: { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft',  right:'ArrowRight',  action:'Enter', ability:'Period' },
+  },
+
+  down(code){ return !!keys[code]; },
+
+  // ESC hook. Real pause-menu wiring lands in Phase 5 (UI.togglePause); until then
+  // this is a guarded no-op so ESC is harmless.
+  onEscape(){ if(typeof UI !== 'undefined' && UI.togglePause) UI.togglePause(); },
+};
+
+// ===== src/data/breeds.js =====
+// ====================== BREEDS (data) ======================
+// Single source of truth for breed identity + stats + which active ability the breed
+// carries. charselect.js builds its cards from Breeds.list(); makePlayer() (world.js)
+// reads stats/abilityId. This is the seam for "each dog has unique + passive abilities
+// and different stats": tune numbers here, and add an entry in abilities/ for a new
+// active ability, then point a breed's abilityId at it.
+//
+// stats:
+//   speed — base walking speed (px/frame). Was hardcoded 2.6 for everyone.
+//   swim  — multiplier applied to speed while swimming (was hardcoded 0.5).
+// passive — human-readable description of the stat-based perk (shown in UI later).
+// abilityId — key into the Abilities registry for an active ability (null = none yet).
+
+const BREEDS_DATA = {
+  dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️',
+               stats:{ speed:2.8, swim:0.55 }, passive:'Alpha — a step faster than the pack', abilityId:null },
+  lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟',
+               stats:{ speed:2.6, swim:0.5  }, passive:'Playful — loves a good game of fetch', abilityId:'ballCannon' },
+  husky:     { name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕',
+               stats:{ speed:2.7, swim:0.5  }, passive:'Tireless runner',                       abilityId:null },
+  shiba:     { name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊',
+               stats:{ speed:2.6, swim:0.5  }, passive:'Sure-footed',                           abilityId:null },
+  corgi:     { name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾',
+               stats:{ speed:2.3, swim:0.45 }, passive:'Short legs — steady but slower',        abilityId:null },
+  poodle:    { name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨',
+               stats:{ speed:2.6, swim:0.75 }, passive:'Natural swimmer — glides through water', abilityId:null },
+  dalmatian: { name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫',
+               stats:{ speed:2.9, swim:0.5  }, passive:'Spirited sprinter',                     abilityId:null },
+};
+
+// Display order for the character-select screen.
+const BREED_ORDER = ['dinno','lolla','husky','shiba','corgi','poodle','dalmatian'];
+
+const Breeds = {
+  all: BREEDS_DATA,
+  get(id){ return BREEDS_DATA[id] || BREEDS_DATA.husky; },
+  // {id, name, desc, emoji, stats, passive, abilityId} for each breed, in display order.
+  list(){ return BREED_ORDER.map(id => Object.assign({ id }, BREEDS_DATA[id])); },
+};
+
+// ===== src/data/items.js =====
+// ====================== ITEMS (data) ======================
+// Definitions for everything that can live in a player's inventory: collectibles,
+// and (future) shop wares / quest items. `type` groups items; `value` is a coin/trade
+// worth for the shop seam. The collectible ids here match the collectible `type`
+// strings produced by makeCollectibles() (world.js), so a pickup maps straight in.
+
+const ITEMS_DATA = {
+  // collectibles found in the world
+  bone:   { name:'Bone',   icon:'🦴', type:'treat', value:1 },
+  heart:  { name:'Heart',  icon:'💛', type:'treat', value:1 },
+  ball:   { name:'Ball',   icon:'🎾', type:'toy',   value:2 },
+  flower: { name:'Flower', icon:'🌸', type:'treat', value:1 },
+  fish:   { name:'Fish',   icon:'🐟', type:'food',  value:2 },
+
+  // sample shop / quest items (wired into the shop UI in a later step)
+  ribbon: { name:'Ribbon', icon:'🎀', type:'cosmetic', value:5 },
+  biscuit:{ name:'Biscuit',icon:'🍪', type:'consumable', value:3 },
+};
+
+const Items = {
+  all: ITEMS_DATA,
+  get(id){ return ITEMS_DATA[id] || null; },
+  list(){ return Object.keys(ITEMS_DATA).map(id => Object.assign({ id }, ITEMS_DATA[id])); },
+};
+
+// ===== src/inventory.js =====
+// ====================== INVENTORY ======================
+// A per-player bag of items, stored as { itemId: qty } on player.inventory.
+// This is the seam for pickups, quest items, and buying/selling from NPCs.
+// `treats` stays as the delivery currency; inventory is the general item store.
+
+const Inventory = {
+  create(){ return {}; },
+
+  add(p, id, n=1){
+    const inv = p.inventory || (p.inventory = {});
+    inv[id] = (inv[id] || 0) + n;
+    return inv[id];
+  },
+
+  remove(p, id, n=1){
+    const inv = p.inventory;
+    if(!inv || !inv[id]) return false;
+    inv[id] = Math.max(0, inv[id] - n);
+    if(inv[id] === 0) delete inv[id];
+    return true;
+  },
+
+  count(p, id){ return (p.inventory && p.inventory[id]) || 0; },
+  has(p, id, n=1){ return this.count(p, id) >= n; },
+
+  // [{id, qty, def}] for UI rendering.
+  list(p){
+    const inv = p.inventory || {};
+    return Object.keys(inv).map(id => ({ id, qty: inv[id], def: Items.get(id) }));
+  },
+  total(p){
+    const inv = p.inventory || {};
+    return Object.keys(inv).reduce((sum, id) => sum + inv[id], 0);
+  },
+};
+
 // ===== src/audio.js =====
 // ====================== AUDIO ENGINE ======================
 let audioCtx=null, bgGain=null, bgNodes=[], musicStarted=false;
@@ -51,7 +277,10 @@ function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.stat
 
 // ===== src/world.js =====
 // ====================== WORLD ======================
-const WORLD_W=1920, WORLD_H=1280, VIEW_W=640, VIEW_H=416;
+// World dimensions are `let` so a level can resize the world on load (LevelManager);
+// the viewport is fixed. All references read these dynamically.
+let WORLD_W=1920, WORLD_H=1280;
+const VIEW_W=640, VIEW_H=416;
 const cam={x:0,y:0};
 function updateCamera(){
   let tx=p1.x,ty=p1.y;
@@ -60,13 +289,12 @@ function updateCamera(){
   cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,ty-VIEW_H/2));
 }
 
-let twoPlayer=false,gameStarted=false,cheeredCount=0;
+// Scene flow now lives in Game.state (see core/state.js); twoPlayer & cheeredCount
+// remain the canonical globals that Game delegates to.
+let twoPlayer=false,cheeredCount=0;
 const CHEER_TOTAL=5;
 
-// ---------- INPUT ----------
-const keys={};
-window.addEventListener('keydown',e=>{ keys[e.code]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code))e.preventDefault(); });
-window.addEventListener('keyup',e=>{ keys[e.code]=false; });
+// Raw key state (`keys`) and listeners moved to core/input.js.
 
 // ---------- HELPERS ----------
 function rand(a,b){ return a+Math.random()*(b-a); }
@@ -261,7 +489,8 @@ function buildWorld(){
   // Sort by y for painter's algorithm
   worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 }
-buildWorld();
+// The world is now built via LevelManager.load() (called from main.js at startup and
+// on each game start), not once at module load.
 
 // ---------- COLLECTIBLES ----------
 function makeCollectibles(){
@@ -281,7 +510,7 @@ function makeCollectibles(){
   }
   return items;
 }
-let collectibles=makeCollectibles();
+let collectibles=[]; // populated by LevelManager.load() → level.generate()
 
 function updateCollectibles(t){
   collectibles.forEach(item=>{
@@ -303,7 +532,7 @@ function makeFriends(){
     {name:'Old Tortoise',    x:960,  y:640,  need:4,given:0,cheered:false,kind:'tortoise', msg:"It's been so quiet around here lately."},
   ];
 }
-let friends=makeFriends();
+let friends=[]; // populated by LevelManager.load() → level.generate()
 
 // ---------- RIVER / POND helpers ----------
 function riverY(x){
@@ -370,8 +599,10 @@ function isInPond(px,py,wasSwimming){
 }
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
+  const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings,swimming:false};
+    treats:0,inventory:{},speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
+    howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);
 let p2=makePlayer(2,'#E0855B',260,200);
@@ -381,6 +612,72 @@ function spawnSparkles(x,y,color,count=14){
   for(let i=0;i<count;i++) sparkles.push({x,y,vx:rand(-1.8,1.8),vy:rand(-2.8,-0.8),life:rand(30,55),maxLife:50,color:color||(Math.random()<.5?'#FFD93D':'#FF8FA3'),size:rand(2,4)});
 }
 
+
+// ===== src/levels/index.js =====
+// ====================== LEVELS REGISTRY ======================
+// Levels register themselves here (see levels/meadow.js). Adding a new level =
+// a new file that declares its size/theme/quest/generate and calls Levels.register().
+
+const Levels = {
+  _byId: {},
+  _order: [],
+
+  register(level){
+    if(!this._byId[level.id]) this._order.push(level.id);
+    this._byId[level.id] = level;
+    return level;
+  },
+  get(id){ return this._byId[id] || null; },
+  first(){ return this._byId[this._order[0]] || null; },
+  ids(){ return this._order.slice(); },
+};
+
+// ===== src/levels/meadow.js =====
+// ====================== LEVEL: SUNNY MEADOW ======================
+// Level 1. Wraps the existing world generators (buildWorld / makeCollectibles /
+// makeFriends) so the current layout logic is unchanged — the level system just
+// gives it a name, size, visual theme, and a completion quest. A second level is
+// now a sibling file: declare a different theme/generate/quest and register it.
+
+Levels.register({
+  id: 'meadow',
+  name: 'Sunny Meadow',
+  seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
+  size: { w: 1920, h: 1280 },
+
+  // Visual palette — moved out of world-draw.js so different levels look different.
+  theme: {
+    grass:'#9ED87A', grassDark:'#8DCF6A', grassLight:'#AADE88',
+    dirt:'rgba(190,155,100,0.15)',
+    fenceA:'#8B6340', fenceB:'#A07040', rail:'#C4904A',
+    minimapGrass:'#4A9A3A', minimapWater:'#4AACDC',
+  },
+
+  // Populate world objects + colliders + entities. Runs after WORLD_W/H are set and
+  // RNG is reseeded (see level-manager.js).
+  generate(){
+    buildWorld();
+    collectibles = makeCollectibles();
+    friends = makeFriends();
+
+    // Dynamic entities (registry-driven). Placed on open ground near the map centre.
+    Entities.clear();
+    Entities.spawn('npc', {
+      x: WORLD_W*0.5, y: WORLD_H*0.30,
+      name: 'Marla the Merchant',
+      greeting: "Welcome, pup! I'll have wares to trade soon.",
+    });
+    Entities.spawn('enemy', { x: WORLD_W*0.32, y: WORLD_H*0.72, speed: 0.9 });
+  },
+
+  // Completion condition (the "quest"). checkWin() consults this.
+  quest: {
+    id: 'cheer-all',
+    label: 'Cheer up every lonely friend',
+    describe(){ return `Cheered ${Game.cheeredCount}/${CHEER_TOTAL} friends`; },
+    isComplete(){ return Game.cheeredCount >= CHEER_TOTAL; },
+  },
+});
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
@@ -418,9 +715,7 @@ function drawGround(){
   ctx.fillRect(WORLD_W/2-22,0,44,WORLD_H);
 }
 
-function mulberry32(seed){ // tiny deterministic RNG for ground texture
-  return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
-}
+// mulberry32 (deterministic RNG) now lives in core/rng.js.
 
 // PRE-DRAWN ground (offscreen canvas so we don't recalculate every frame)
 let groundCanvas=null;
@@ -429,33 +724,35 @@ function buildGroundCanvas(){
   groundCanvas.width=WORLD_W; groundCanvas.height=WORLD_H;
   const gc=groundCanvas.getContext('2d');
   gc.imageSmoothingEnabled=false;
-  // Save/restore ctx, draw into gc
-  const save=ctx;
-  const _ctx=ctx; // we'll draw directly with gc
+  // Palette comes from the current level's theme (falls back to the meadow colours).
+  const th=(typeof LevelManager!=='undefined'&&LevelManager.theme)||{};
+  const grass=th.grass||'#9ED87A', grassDark=th.grassDark||'#8DCF6A',
+        grassLight=th.grassLight||'#AADE88', dirt=th.dirt||'rgba(190,155,100,0.15)',
+        fenceA=th.fenceA||'#8B6340', fenceB=th.fenceB||'#A07040', rail=th.rail||'#C4904A';
   // grass base
-  gc.fillStyle='#9ED87A'; gc.fillRect(0,0,WORLD_W,WORLD_H);
+  gc.fillStyle=grass; gc.fillRect(0,0,WORLD_W,WORLD_H);
   const rng=mulberry32(42);
   for(let i=0;i<800;i++){
     const gx=Math.floor(rng()*WORLD_W),gy=Math.floor(rng()*WORLD_H);
     const s=Math.floor(rng()*24)+6;
-    gc.fillStyle=rng()<0.5?'#8DCF6A':'#AADE88';
+    gc.fillStyle=rng()<0.5?grassDark:grassLight;
     gc.fillRect(gx,gy,s,Math.floor(s*0.45));
   }
   // subtle dirt cross-paths
-  gc.fillStyle='rgba(190,155,100,0.15)';
+  gc.fillStyle=dirt;
   gc.fillRect(0,WORLD_H/2-24,WORLD_W,48);
   gc.fillRect(WORLD_W/2-24,0,48,WORLD_H);
   // fence border
   for(let x=0;x<WORLD_W;x+=24){
-    gc.fillStyle=x%48===0?'#8B6340':'#A07040';
+    gc.fillStyle=x%48===0?fenceA:fenceB;
     gc.fillRect(x,0,12,14); gc.fillRect(x,WORLD_H-14,12,14);
   }
   for(let y=0;y<WORLD_H;y+=24){
-    gc.fillStyle=y%48===0?'#8B6340':'#A07040';
+    gc.fillStyle=y%48===0?fenceA:fenceB;
     gc.fillRect(0,y,14,12); gc.fillRect(WORLD_W-14,y,14,12);
   }
   // fence rails
-  gc.fillStyle='#C4904A';
+  gc.fillStyle=rail;
   gc.fillRect(0,4,WORLD_W,4); gc.fillRect(0,WORLD_H-8,WORLD_W,4);
   gc.fillRect(4,0,4,WORLD_H); gc.fillRect(WORLD_W-8,0,4,WORLD_H);
 }
@@ -1093,6 +1390,191 @@ function drawFriend(f,t){
 
 
 
+// ===== src/entities/registry.js =====
+// ====================== ENTITIES ======================
+// Level-owned dynamic actors (enemies, NPCs, and future kinds). Each entity is a
+// plain data object with a `kind`; its behaviour comes from a def registered here.
+// Adding a new kind of thing in the world = register a kind + spawn instances from a
+// level's generate(). (Collectibles and friends predate this system and keep their
+// own specialised arrays for now; they can fold into this registry later.)
+//
+// A def may implement:
+//   init(e)            — one-time setup when spawned
+//   update(e, t, dt)   — per-frame logic
+//   draw(e, t)         — world-space render (y-sorted with players in the main loop)
+//   onInteract(e, p)   — called when player p interacts (action key) within range
+//   radius             — default interaction radius
+
+let entities = [];   // rebuilt per level by generate() via Entities.clear()/spawn()
+
+const Entities = {
+  _kinds: {},
+
+  register(kind, def){ this._kinds[kind] = def; return def; },
+  def(kind){ return this._kinds[kind] || null; },
+
+  spawn(kind, props){
+    const e = Object.assign({ kind }, props);
+    const d = this.def(kind);
+    if(d && d.init) d.init(e);
+    entities.push(e);
+    return e;
+  },
+  clear(){ entities.length = 0; },
+  all(){ return entities; },
+
+  updateAll(t, dt){ for(const e of entities){ const d=this.def(e.kind); if(d && d.update) d.update(e, t, dt); } },
+
+  // Nearest interactable entity to player p within range.
+  interactableNear(p){
+    let best=null, bestD=Infinity;
+    for(const e of entities){
+      const d=this.def(e.kind);
+      if(!d || !d.onInteract) continue;
+      const r=e.radius || d.radius || 36;
+      const dist=Math.hypot(p.x-e.x, p.y-e.y);
+      if(dist<r && dist<bestD){ best=e; bestD=dist; }
+    }
+    return best;
+  },
+  interact(p){
+    const e=this.interactableNear(p);
+    if(e){ this.def(e.kind).onInteract(e, p); return true; }
+    return false;
+  },
+};
+
+// ===== src/entities/enemy.js =====
+// ====================== ENTITY: ENEMY (grumpy badger) ======================
+// A simple wander-then-chase critter. Proof that the entity registry supports
+// active adversaries; tune/extend by adding fields to the spawned instance.
+
+function _nearestPlayer(e){
+  let best=null, bestD=Infinity;
+  for(const p of Game.players){ const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
+  return best;
+}
+
+Entities.register('enemy', {
+  radius: 30,
+
+  init(e){
+    e.speed   = e.speed || 0.9;
+    e.chaseR  = e.chaseR || 120;   // start chasing within this range
+    e.dir     = 1;
+    e.wanderT = 0;
+    e.wanderAng = 0;
+    e.cool    = 0;                  // touch cooldown (ms)
+    e.bob     = 0;
+  },
+
+  update(e, t, dt){
+    const target=_nearestPlayer(e);
+    const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
+
+    if(target && dist<e.chaseR){
+      // chase
+      const ang=Math.atan2(target.y-e.y, target.x-e.x);
+      e.x+=Math.cos(ang)*e.speed*1.4;
+      e.y+=Math.sin(ang)*e.speed*1.4;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
+    } else {
+      // wander
+      e.wanderT-=dt;
+      if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
+      e.x+=Math.cos(e.wanderAng)*e.speed;
+      e.y+=Math.sin(e.wanderAng)*e.speed;
+      e.dir=Math.cos(e.wanderAng)>=0?1:-1;
+    }
+
+    e.x=clamp(e.x, 20, WORLD_W-20);
+    e.y=clamp(e.y, 26, WORLD_H-20);
+    if(e.cool>0) e.cool=Math.max(0, e.cool-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/300)*1);
+    const D=e.dir; // 1 right, -1 left
+    // shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+10,13,4,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+    // body (dark grey badger)
+    px(x-11,y-4,22,13,'#5A5650');
+    px(x-8,y+2,16,7,'#8A8680');   // lighter belly
+    // legs
+    px(x-8,y+8,4,5,'#3A3630'); px(x+4,y+8,4,5,'#3A3630');
+    // head
+    px(x+D*6-6,y-10,12,11,'#4A4640');
+    // white face stripe (badger)
+    px(x+D*6-1,y-10,2,10,'#F0ECE4');
+    // ears
+    px(x+D*6-6,y-13,3,4,'#3A3630'); px(x+D*6+3,y-13,3,4,'#3A3630');
+    // eyes (angry)
+    px(x+D*6-4,y-6,2,2,'#FF3030'); px(x+D*6+2,y-6,2,2,'#FF3030');
+    // grumpy brow
+    px(x+D*6-5,y-7,10,1,'#1A1616');
+  },
+});
+
+function _enemyTouch(e, p){
+  spawnSparkles(p.x, p.y-8, '#E05555', 10);
+  if(p.treats>0){ p.treats--; if(typeof updateHUD==='function') updateHUD(); showToast('😾 A grumpy badger snatched a treat!',1600); }
+  else showToast('😾 A grumpy badger! Keep your distance!',1500);
+  // knock the dog back a little
+  const ang=Math.atan2(p.y-e.y, p.x-e.x);
+  p.x=clamp(p.x+Math.cos(ang)*14, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*14, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
+
+// ===== src/entities/npc.js =====
+// ====================== ENTITY: NPC (interactable critter) ======================
+// A stationary character you can walk up to and interact with (action key). Phase 3
+// shows a toast; once the dialog/shop UI exists (Phase 5) onInteract routes there.
+// This is the seam for talking NPCs, shopkeepers, and quest-givers.
+
+Entities.register('npc', {
+  radius: 42,
+
+  init(e){
+    e.name     = e.name     || 'Wanderer';
+    e.greeting = e.greeting || 'Hello there, friend!';
+    e.bob      = 0;
+  },
+
+  update(e, t, dt){ e.bob = t; },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/500)*1.5);
+    // shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+14,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
+    // little merchant critter (warm brown, wearing a green scarf)
+    px(x-10,y-2,20,16,'#B07A44');
+    px(x-6,y+4,12,9,'#E8C48A');    // apron/belly
+    px(x-9,y-16,18,15,'#B07A44');  // head
+    px(x-10,y-22,6,8,'#9A6636'); px(x+4,y-22,6,8,'#9A6636'); // ears
+    px(x-8,y-20,3,5,'#C89060'); px(x+5,y-20,3,5,'#C89060');
+    px(x-5,y-10,3,3,'#2A2A2A'); px(x+2,y-10,3,3,'#2A2A2A'); // eyes
+    px(x-4,y-10,1,1,'#fff'); px(x+3,y-10,1,1,'#fff');
+    px(x-3,y-5,6,3,'#E8C48A'); px(x-1,y-6,3,3,'#2A2A2A'); // muzzle+nose
+    px(x-10,y-1,20,3,'#3E9A5A'); // green scarf
+
+    // floating "!" prompt bubble
+    const by=y-30+Math.sin(t/220)*3;
+    ctx.fillStyle='#FFF8EF'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
+    roundRect(x-8,by-9,16,16,4,true,true);
+    ctx.fillStyle='#4A3F35'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
+    ctx.fillText('!', x, by+3);
+  },
+
+  onInteract(e, p){
+    // Phase 5 upgrades this to a real dialog/shop panel.
+    if(typeof UI !== 'undefined' && UI.openDialog){ UI.openDialog(e, p); return; }
+    showToast(`${e.name}: "${e.greeting}"`, 2400);
+  },
+});
+
 // ===== src/dog-sprite.js =====
 // ====================== DOG SPRITE ======================
 function drawDog(p,t){
@@ -1129,10 +1611,8 @@ function drawDog(p,t){
   else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
   else _drawHusky(x,by,t,C,D,L,W,K,p);
 
-  // Lolla ball in mouth
-  if(breed==='lolla' && typeof lollaBall!=='undefined' && lollaBall && lollaBall.state==='held' && lollaBall.carrier===p.id){
-    drawBallInMouth(x,by,p.dir);
-  }
+  // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
+  Abilities.drawOnDog(p,x,by);
 
   if(p.swimming){
     ctx.restore(); // remove clip
@@ -1521,12 +2001,14 @@ function drawMinimap(){
   ctx.fillStyle='#1A3A1A'; roundRect(MX,MY,MW,MH,6,true,false);
   ctx.strokeStyle='#8ACA5A'; ctx.lineWidth=1.5; roundRect(MX,MY,MW,MH,6,false,true);
   ctx.globalAlpha=1;
+  const th=(typeof LevelManager!=='undefined'&&LevelManager.theme)||{};
+  const mmGrass=th.minimapGrass||'#4A9A3A', mmWater=th.minimapWater||'#4AACDC';
   // grass
-  ctx.fillStyle='#4A9A3A'; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
+  ctx.fillStyle=mmGrass; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
   // river
   if(river){
     const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
-    ctx.fillStyle='#4AACDC';
+    ctx.fillStyle=mmWater;
     ctx.beginPath();
     for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);}
     for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
@@ -1534,7 +2016,7 @@ function drawMinimap(){
   }
   // ponds
   worldObjects.filter(o=>o.kind==='pond').forEach(o=>{
-    ctx.fillStyle='#4AACDC';
+    ctx.fillStyle=mmWater;
     ctx.beginPath(); ctx.ellipse(MX+o.x*(MW/WORLD_W),MY+o.y*(MH/WORLD_H),(o.w/2)*(MW/WORLD_W),(o.h/2)*(MH/WORLD_H),0,0,Math.PI*2); ctx.fill();
   });
   const sx=MW/WORLD_W,sy=MH/WORLD_H;
@@ -1542,6 +2024,8 @@ function drawMinimap(){
   collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
+  // registry entities (enemies red, NPCs warm yellow)
+  entities.forEach(e=>{ ctx.fillStyle=e.kind==='enemy'?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); });
   // viewport
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
   ctx.strokeRect(MX+cam.x*sx,MY+cam.y*sy,VIEW_W*sx,VIEW_H*sy);
@@ -1552,264 +2036,320 @@ function drawMinimap(){
 }
 
 
-// ===== src/lolla.js =====
-// ====================== LOLLA SPECIAL: TENNIS BALL + CANNON ======================
+// ===== src/abilities/registry.js =====
+// ====================== ABILITY REGISTRY ======================
+// Active abilities are plugins keyed by id. A breed opts in via its `abilityId`
+// (see data/breeds.js). Each ability def may implement any of:
+//
+//   spawn()               — create world state at game/level start (all abilities polled)
+//   reset()               — clear world state on reset
+//   update(p, controls, dt) — per-player, per-frame logic (only for the owning player)
+//   drawWorld(t)          — world-space visuals, drawn once per frame
+//   drawOnDog(p, x, by)   — overlay drawn on top of a specific dog sprite
+//
+// This replaces the bespoke Lolla globals: the ball-cannon is now just the first
+// registered ability (abilities/ballCannon.js).
 
-let lollaBall   = null;
-let lollaCannon = null;  // { x, y, angle, firingT, smoke[] }
-let _lollaDropHeld = false;
+const Abilities = {
+  _defs: {},
 
-function getLollaPlayer(){
-  if(p1 && p1.breed==='lolla') return p1;
-  if(typeof twoPlayer!=='undefined' && twoPlayer && p2 && p2.breed==='lolla') return p2;
-  return null;
-}
+  register(id, def){ this._defs[id] = def; return def; },
+  get(id){ return id ? (this._defs[id] || null) : null; },
+  forPlayer(p){ return this.get(p && p.abilityId); },
 
-function spawnLollaItems(){
-  lollaBall=null; lollaCannon=null;
-  const lolla=getLollaPlayer();
-  if(!lolla) return;
+  // Poll every registered ability; each guards internally on whether its owner exists.
+  spawnAll(){ for(const id in this._defs){ const d=this._defs[id]; if(d.spawn) d.spawn(); } },
+  reset(){ for(const id in this._defs){ const d=this._defs[id]; if(d.reset) d.reset(); } },
 
-  let bx,by;
-  do{ bx=rand(200,WORLD_W-200); by=rand(200,WORLD_H-200); }
-  while(Math.hypot(bx-lolla.x,by-lolla.y)<160 || isInPond(bx,by));
+  update(p, controls, dt){ const d=this.forPlayer(p); if(d && d.update) d.update(p, controls, dt); },
+  drawWorld(t){ for(const id in this._defs){ const d=this._defs[id]; if(d.drawWorld) d.drawWorld(t); } },
+  drawOnDog(p, x, by){ const d=this.forPlayer(p); if(d && d.drawOnDog) d.drawOnDog(p, x, by); },
+};
 
-  lollaBall={ x:bx, y:by, state:'idle', carrier:null,
-              startX:bx, startY:by, landX:bx, landY:by,
-              flightProgress:0, flightDuration:1500 };
+// ===== src/abilities/ballCannon.js =====
+// ====================== ABILITY: BALL CANNON ======================
+// Formerly src/lolla.js. The tennis-ball + cannon fetch mini-game, now registered
+// as an ability so ANY breed with abilityId:'ballCannon' gets it (currently Lolla).
+// State (ball, cannon, dropHeld) is private to this module instead of being global.
 
-  let cx,cy;
-  do{ cx=rand(250,WORLD_W-250); cy=rand(250,WORLD_H-250); }
-  while(Math.hypot(cx-bx,cy-by)<220 || Math.hypot(cx-lolla.x,cy-lolla.y)<180 || isInPond(cx,cy));
+(function(){
+  let ball   = null;   // { x, y, state:'idle'|'held'|'flying', carrier, ... }
+  let cannon = null;   // { x, y, angle, firingT, smoke[] }
+  let dropHeld = false;
 
-  lollaCannon={ x:cx, y:cy, angle:Math.random()*Math.PI*2, firingT:0, smoke:[] };
-}
-
-function updateLollaBall(p, controls, dt){
-  if(!lollaBall || !lollaCannon) return false;
-  const lolla=getLollaPlayer();
-  if(!lolla || lolla.id!==p.id) return false;
-
-  const ball=lollaBall;
-  const cannon=lollaCannon;
-  const dropKey = lolla.id===1 ? 'KeyQ' : 'Period';
-
-  // Advance cannon animation
-  if(cannon.firingT>0){
-    cannon.firingT=Math.max(0, cannon.firingT-dt);
-    cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
-    cannon.smoke=cannon.smoke.filter(s=>s.life>0);
+  // The active player carrying this ability (replaces getLollaPlayer()).
+  function owner(){
+    for(const p of Game.players){ if(p && p.abilityId==='ballCannon') return p; }
+    return null;
   }
 
-  if(ball.state==='idle'){
-    if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
-      ball.state='held'; ball.carrier=p.id;
-      showToast('🎾 Ball! [Q] near cannon to fire · [Q] elsewhere to drop',2800);
+  function spawn(){
+    ball=null; cannon=null;
+    const dog=owner();
+    if(!dog) return;
+
+    let bx,by;
+    do{ bx=rand(200,WORLD_W-200); by=rand(200,WORLD_H-200); }
+    while(Math.hypot(bx-dog.x,by-dog.y)<160 || isInPond(bx,by));
+
+    ball={ x:bx, y:by, state:'idle', carrier:null,
+           startX:bx, startY:by, landX:bx, landY:by,
+           flightProgress:0, flightDuration:1500 };
+
+    let cx,cy;
+    do{ cx=rand(250,WORLD_W-250); cy=rand(250,WORLD_H-250); }
+    while(Math.hypot(cx-bx,cy-by)<220 || Math.hypot(cx-dog.x,cy-dog.y)<180 || isInPond(cx,cy));
+
+    cannon={ x:cx, y:cy, angle:Math.random()*Math.PI*2, firingT:0, smoke:[] };
+  }
+
+  function reset(){ ball=null; cannon=null; dropHeld=false; }
+
+  function update(p, controls, dt){
+    if(!ball || !cannon) return;
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+
+    const dropKey = controls.ability;
+
+    // Advance cannon animation
+    if(cannon.firingT>0){
+      cannon.firingT=Math.max(0, cannon.firingT-dt);
+      cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
+      cannon.smoke=cannon.smoke.filter(s=>s.life>0);
     }
-  }
 
-  if(ball.state==='held' && ball.carrier===p.id){
-    ball.x=p.x; ball.y=p.y;
-
-    if(keys[dropKey] && !_lollaDropHeld){
-      _lollaDropHeld=true;
-      const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
-      if(nearCannon){
-        _fireBallCannon();
-        showToast('💥 Fired! Go fetch!',1600);
-        sfxCollect();
-      } else {
-        const ox=p.dir==='right'?14:p.dir==='left'?-14:0;
-        const oy=p.dir==='down'?12:p.dir==='up'?-12:0;
-        ball.x=clamp(p.x+ox,60,WORLD_W-60);
-        ball.y=clamp(p.y+oy,60,WORLD_H-60);
-        ball.state='idle'; ball.carrier=null;
+    if(ball.state==='idle'){
+      if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
+        ball.state='held'; ball.carrier=p.id;
+        showToast('🎾 Ball! [ability key] near cannon to fire · elsewhere to drop',2800);
       }
     }
-    if(!keys[dropKey]) _lollaDropHeld=false;
-  }
 
-  if(ball.state==='flying'){
-    ball.flightProgress+=dt/ball.flightDuration;
-    if(ball.flightProgress>=1){
-      ball.flightProgress=1;
-      ball.x=ball.landX; ball.y=ball.landY;
-      ball.state='idle'; ball.carrier=null;
-      spawnSparkles(ball.x,ball.y,'#B5E853',8);
-      showToast('🎾 Fetch!',1200);
-    } else {
-      ball.x=ball.startX+(ball.landX-ball.startX)*ball.flightProgress;
-      ball.y=ball.startY+(ball.landY-ball.startY)*ball.flightProgress;
+    if(ball.state==='held' && ball.carrier===p.id){
+      ball.x=p.x; ball.y=p.y;
+
+      if(keys[dropKey] && !dropHeld){
+        dropHeld=true;
+        const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
+        if(nearCannon){
+          fire();
+          showToast('💥 Fired! Go fetch!',1600);
+          sfxCollect();
+        } else {
+          const ox=p.dir==='right'?14:p.dir==='left'?-14:0;
+          const oy=p.dir==='down'?12:p.dir==='up'?-12:0;
+          ball.x=clamp(p.x+ox,60,WORLD_W-60);
+          ball.y=clamp(p.y+oy,60,WORLD_H-60);
+          ball.state='idle'; ball.carrier=null;
+        }
+      }
+      if(!keys[dropKey]) dropHeld=false;
+    }
+
+    if(ball.state==='flying'){
+      ball.flightProgress+=dt/ball.flightDuration;
+      if(ball.flightProgress>=1){
+        ball.flightProgress=1;
+        ball.x=ball.landX; ball.y=ball.landY;
+        ball.state='idle'; ball.carrier=null;
+        spawnSparkles(ball.x,ball.y,'#B5E853',8);
+        showToast('🎾 Fetch!',1200);
+      } else {
+        ball.x=ball.startX+(ball.landX-ball.startX)*ball.flightProgress;
+        ball.y=ball.startY+(ball.landY-ball.startY)*ball.flightProgress;
+      }
     }
   }
 
-  return false;
-}
+  function fire(){
+    // New random direction every shot
+    cannon.angle=Math.random()*Math.PI*2;
 
-function _fireBallCannon(){
-  const ball=lollaBall; const cannon=lollaCannon;
+    const dist=300+rand(0,120);
+    ball.startX=cannon.x; ball.startY=cannon.y;
+    ball.landX=clamp(cannon.x+Math.cos(cannon.angle)*dist, 80, WORLD_W-80);
+    ball.landY=clamp(cannon.y+Math.sin(cannon.angle)*dist, 80, WORLD_H-80);
+    ball.flightProgress=0; ball.state='flying'; ball.carrier=null;
+    ball.x=cannon.x; ball.y=cannon.y;
 
-  // New random direction every shot
-  cannon.angle=Math.random()*Math.PI*2;
+    cannon.firingT=500; // ms total animation
 
-  const dist=300+rand(0,120);
-  ball.startX=cannon.x; ball.startY=cannon.y;
-  ball.landX=clamp(cannon.x+Math.cos(cannon.angle)*dist, 80, WORLD_W-80);
-  ball.landY=clamp(cannon.y+Math.sin(cannon.angle)*dist, 80, WORLD_H-80);
-  ball.flightProgress=0; ball.state='flying'; ball.carrier=null;
-  ball.x=cannon.x; ball.y=cannon.y;
-
-  // Trigger animation
-  cannon.firingT=500; // ms total animation
-
-  // Spawn smoke puffs from barrel tip
-  const tipX=cannon.x+Math.cos(cannon.angle)*35;
-  const tipY=cannon.y+Math.sin(cannon.angle)*35;
-  for(let i=0;i<6;i++){
-    cannon.smoke.push({
-      x:tipX+rand(-3,3), y:tipY+rand(-3,3),
-      vx:Math.cos(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3),
-      vy:Math.sin(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3)-0.3,
-      r:rand(3,6), life:rand(280,500),
-      col:Math.random()<0.5?'#CCCCCC':'#AAAAAA'
-    });
-  }
-}
-
-// ---- Drawing ----
-
-function drawLollaBall(t){
-  if(!lollaBall || lollaBall.state==='held') return;
-  const ball=lollaBall;
-  const flightH=ball.state==='flying'
-    ? Math.sin(ball.flightProgress*Math.PI)*50 : 0;
-  const bx=Math.round(ball.x), by=Math.round(ball.y);
-  const visualY=by-flightH;
-
-  // shadow shrinks/fades with height
-  ctx.globalAlpha=Math.max(0.04, 0.3*(1-flightH/60));
-  ctx.beginPath();
-  ctx.ellipse(bx, by, Math.max(2,7-flightH*0.06), Math.max(1,3-flightH*0.03), 0,0,Math.PI*2);
-  ctx.fillStyle='#1A2A1A'; ctx.fill();
-  ctx.globalAlpha=1;
-
-  // tennis ball
-  ctx.fillStyle='#B5E853';
-  ctx.beginPath(); ctx.arc(bx, visualY, 5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle='#CCFF77';
-  ctx.beginPath(); ctx.arc(bx-1, visualY-1, 2.5, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.arc(bx, visualY, 5, 0.35, Math.PI-0.35); ctx.stroke();
-  ctx.beginPath(); ctx.arc(bx, visualY, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
-
-  if(ball.state==='flying'){
-    const spin=ball.flightProgress*Math.PI*6;
-    ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
-    ctx.beginPath(); ctx.arc(bx, visualY, 5, spin, spin+Math.PI); ctx.stroke();
-  }
-}
-
-function drawLollaCannon(t){
-  if(!lollaCannon) return;
-  const cannon=lollaCannon;
-  const cx=Math.round(cannon.x), cy=Math.round(cannon.y);
-
-  // Idle bob (stops during firing)
-  const bob=cannon.firingT>0 ? 0 : Math.sin(t/700)*1;
-
-  // --- Smoke particles (drawn before cannon body so cannon is on top) ---
-  cannon.smoke.forEach(s=>{
-    const a=Math.max(0, (s.life/400)*0.55);
-    ctx.globalAlpha=a;
-    ctx.fillStyle=s.col;
-    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-  });
-  ctx.globalAlpha=1;
-
-  ctx.save();
-  ctx.translate(cx, cy+bob);
-
-  // shadow
-  ctx.globalAlpha=0.18;
-  ctx.beginPath(); ctx.ellipse(2,8,18,7,0,0,Math.PI*2);
-  ctx.fillStyle='#1A2A1A'; ctx.fill();
-  ctx.globalAlpha=1;
-
-  // base platform
-  ctx.fillStyle='#6B4C2A'; ctx.fillRect(-16,2,32,8);
-  ctx.fillStyle='#7A5830'; ctx.fillRect(-14,0,28,6);
-  [-10,10].forEach(wx=>{
-    ctx.fillStyle='#4A3018'; ctx.beginPath(); ctx.arc(wx,6,5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#7A5830'; ctx.beginPath(); ctx.arc(wx,6,3,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#AA8850'; ctx.beginPath(); ctx.arc(wx,6,1,0,Math.PI*2); ctx.fill();
-  });
-
-  // barrel with recoil
-  ctx.rotate(cannon.angle);
-  // firingT: 500→400 = recoil back, 400→300 = return, 300→0 = settled
-  let recoil=0;
-  if(cannon.firingT>400){
-    recoil=((500-cannon.firingT)/100)*8; // 0→8 px back
-  } else if(cannon.firingT>300){
-    recoil=((cannon.firingT-300)/100)*8; // 8→0 px back
-  }
-
-  ctx.fillStyle='#4A4A4A';
-  ctx.beginPath(); ctx.roundRect(4-recoil,-5,28,10,3); ctx.fill();
-  ctx.fillStyle='#666';
-  ctx.fillRect(6-recoil,-3,24,6);
-  ctx.fillStyle='#FFD700';
-  ctx.fillRect(14-recoil,-3,4,6);
-  ctx.fillStyle='#2A2A2A'; ctx.fillRect(30-recoil,-6,5,12);
-  ctx.fillStyle='#555';   ctx.fillRect(31-recoil,-5,3,10);
-
-  // muzzle flash when just fired (firingT 500→400)
-  if(cannon.firingT>400){
-    const flashA=(cannon.firingT-400)/100;
-    ctx.globalAlpha=flashA*0.9;
-    const tipX=35-recoil;
-    // outer glow
-    ctx.fillStyle='#FFAA00';
-    ctx.beginPath(); ctx.arc(tipX,0,10,0,Math.PI*2); ctx.fill();
-    // inner bright core
-    ctx.fillStyle='#FFFFFF';
-    ctx.beginPath(); ctx.arc(tipX,0,5,0,Math.PI*2); ctx.fill();
-    // star rays
-    ctx.strokeStyle='#FFDD00'; ctx.lineWidth=2;
+    const tipX=cannon.x+Math.cos(cannon.angle)*35;
+    const tipY=cannon.y+Math.sin(cannon.angle)*35;
     for(let i=0;i<6;i++){
-      const a=i*Math.PI/3;
-      ctx.beginPath();
-      ctx.moveTo(tipX+Math.cos(a)*5, Math.sin(a)*5);
-      ctx.lineTo(tipX+Math.cos(a)*13, Math.sin(a)*13);
-      ctx.stroke();
+      cannon.smoke.push({
+        x:tipX+rand(-3,3), y:tipY+rand(-3,3),
+        vx:Math.cos(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3),
+        vy:Math.sin(cannon.angle)*rand(0.4,1.2)+rand(-0.3,0.3)-0.3,
+        r:rand(3,6), life:rand(280,500),
+        col:Math.random()<0.5?'#CCCCCC':'#AAAAAA'
+      });
     }
-    ctx.globalAlpha=1;
   }
 
-  ctx.restore();
+  // ---- Drawing ----
 
-  // label (unaffected by rotation)
-  ctx.fillStyle='rgba(255,248,220,0.88)';
-  roundRect(cx-30,cy+bob-32,60,13,3,true,false);
-  ctx.fillStyle='#4A3F35';
-  ctx.font='bold 7px monospace'; ctx.textAlign='center';
-  ctx.fillText('BALL CANNON',cx,cy+bob-22);
-}
+  function drawWorld(t){ drawCannon(t); drawBall(t); }
 
-function drawBallInMouth(x, by, dir){
-  let bx, bly;
-  if(dir==='right')     { bx=x+18; bly=by-8; }
-  else if(dir==='left') { bx=x-18; bly=by-8; }
-  else if(dir==='down') { bx=x+1;  bly=by-4; }
-  else return;
+  function drawBall(t){
+    if(!ball || ball.state==='held') return;
+    const flightH=ball.state==='flying' ? Math.sin(ball.flightProgress*Math.PI)*50 : 0;
+    const bx=Math.round(ball.x), by=Math.round(ball.y);
+    const visualY=by-flightH;
 
-  ctx.fillStyle='#B5E853';
-  ctx.beginPath(); ctx.arc(bx,bly,4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#CCFF77';
-  ctx.beginPath(); ctx.arc(bx-1,bly-1,2,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
-}
+    ctx.globalAlpha=Math.max(0.04, 0.3*(1-flightH/60));
+    ctx.beginPath();
+    ctx.ellipse(bx, by, Math.max(2,7-flightH*0.06), Math.max(1,3-flightH*0.03), 0,0,Math.PI*2);
+    ctx.fillStyle='#1A2A1A'; ctx.fill();
+    ctx.globalAlpha=1;
+
+    ctx.fillStyle='#B5E853';
+    ctx.beginPath(); ctx.arc(bx, visualY, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#CCFF77';
+    ctx.beginPath(); ctx.arc(bx-1, visualY-1, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(bx, visualY, 5, 0.35, Math.PI-0.35); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, visualY, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
+
+    if(ball.state==='flying'){
+      const spin=ball.flightProgress*Math.PI*6;
+      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(bx, visualY, 5, spin, spin+Math.PI); ctx.stroke();
+    }
+  }
+
+  function drawCannon(t){
+    if(!cannon) return;
+    const cx=Math.round(cannon.x), cy=Math.round(cannon.y);
+    const bob=cannon.firingT>0 ? 0 : Math.sin(t/700)*1;
+
+    cannon.smoke.forEach(s=>{
+      const a=Math.max(0, (s.life/400)*0.55);
+      ctx.globalAlpha=a;
+      ctx.fillStyle=s.col;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    ctx.save();
+    ctx.translate(cx, cy+bob);
+
+    ctx.globalAlpha=0.18;
+    ctx.beginPath(); ctx.ellipse(2,8,18,7,0,0,Math.PI*2);
+    ctx.fillStyle='#1A2A1A'; ctx.fill();
+    ctx.globalAlpha=1;
+
+    ctx.fillStyle='#6B4C2A'; ctx.fillRect(-16,2,32,8);
+    ctx.fillStyle='#7A5830'; ctx.fillRect(-14,0,28,6);
+    [-10,10].forEach(wx=>{
+      ctx.fillStyle='#4A3018'; ctx.beginPath(); ctx.arc(wx,6,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#7A5830'; ctx.beginPath(); ctx.arc(wx,6,3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#AA8850'; ctx.beginPath(); ctx.arc(wx,6,1,0,Math.PI*2); ctx.fill();
+    });
+
+    ctx.rotate(cannon.angle);
+    let recoil=0;
+    if(cannon.firingT>400){
+      recoil=((500-cannon.firingT)/100)*8;
+    } else if(cannon.firingT>300){
+      recoil=((cannon.firingT-300)/100)*8;
+    }
+
+    ctx.fillStyle='#4A4A4A';
+    ctx.beginPath(); ctx.roundRect(4-recoil,-5,28,10,3); ctx.fill();
+    ctx.fillStyle='#666';
+    ctx.fillRect(6-recoil,-3,24,6);
+    ctx.fillStyle='#FFD700';
+    ctx.fillRect(14-recoil,-3,4,6);
+    ctx.fillStyle='#2A2A2A'; ctx.fillRect(30-recoil,-6,5,12);
+    ctx.fillStyle='#555';   ctx.fillRect(31-recoil,-5,3,10);
+
+    if(cannon.firingT>400){
+      const flashA=(cannon.firingT-400)/100;
+      ctx.globalAlpha=flashA*0.9;
+      const tipX=35-recoil;
+      ctx.fillStyle='#FFAA00';
+      ctx.beginPath(); ctx.arc(tipX,0,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#FFFFFF';
+      ctx.beginPath(); ctx.arc(tipX,0,5,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#FFDD00'; ctx.lineWidth=2;
+      for(let i=0;i<6;i++){
+        const a=i*Math.PI/3;
+        ctx.beginPath();
+        ctx.moveTo(tipX+Math.cos(a)*5, Math.sin(a)*5);
+        ctx.lineTo(tipX+Math.cos(a)*13, Math.sin(a)*13);
+        ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+
+    ctx.restore();
+
+    ctx.fillStyle='rgba(255,248,220,0.88)';
+    roundRect(cx-30,cy+bob-32,60,13,3,true,false);
+    ctx.fillStyle='#4A3F35';
+    ctx.font='bold 7px monospace'; ctx.textAlign='center';
+    ctx.fillText('BALL CANNON',cx,cy+bob-22);
+  }
+
+  function drawOnDog(p, x, by){
+    if(!ball || ball.state!=='held' || ball.carrier!==p.id) return;
+    const dir=p.dir;
+    let bx, bly;
+    if(dir==='right')     { bx=x+18; bly=by-8; }
+    else if(dir==='left') { bx=x-18; bly=by-8; }
+    else if(dir==='down') { bx=x+1;  bly=by-4; }
+    else return;
+
+    ctx.fillStyle='#B5E853';
+    ctx.beginPath(); ctx.arc(bx,bly,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#CCFF77';
+    ctx.beginPath(); ctx.arc(bx-1,bly-1,2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
+  }
+
+  Abilities.register('ballCannon', { spawn, reset, update, drawWorld, drawOnDog });
+})();
+
+// ===== src/level-manager.js =====
+// ====================== LEVEL MANAGER ======================
+// Loads a level: sets world size, reseeds RNG, runs the level's generator, and
+// rebuilds the themed ground canvas. This is the single entry point for (re)building
+// the world — called at startup (main.js) and on each game start (resetGame).
+
+let _currentLevel = null;
+
+const LevelManager = {
+  get current(){ return _currentLevel; },
+  get theme(){ return _currentLevel ? _currentLevel.theme : null; },
+
+  // Set the active level (for theme/quest) WITHOUT regenerating — used by Save.load(),
+  // which restores a world snapshot instead of building a fresh one.
+  _setCurrent(level){ _currentLevel = level; },
+
+  load(id){
+    const level = Levels.get(id) || Levels.first();
+    if(!level){ console.warn('LevelManager: no levels registered'); return null; }
+    _currentLevel = level;
+
+    // Resize world + reseed RNG, then generate.
+    if(level.size){ WORLD_W = level.size.w; WORLD_H = level.size.h; }
+    if(typeof level.seed === 'number') RNG.reseed(level.seed);
+    level.generate();
+
+    // Rebuild the pre-rendered ground with this level's theme.
+    buildGroundCanvas();
+
+    // Fresh quest progress for the new level.
+    Game.cheeredCount = 0;
+    return level;
+  },
+
+  // Convenience: (re)load whatever level is current, defaulting to the first.
+  reload(){ return this.load(_currentLevel ? _currentLevel.id : (Levels.first() && Levels.first().id)); },
+};
 
 // ===== src/update.js =====
 // ====================== UPDATE ======================
@@ -1820,7 +2360,8 @@ function updatePlayer(p,controls,t,dt){
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
-    const spd=p.swimming?p.speed*0.5:p.speed;
+    const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
+    const spd=p.swimming?p.speed*swimMul:p.speed;
     p.x+=dx*spd; p.y+=dy*spd;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
@@ -1829,7 +2370,7 @@ function updatePlayer(p,controls,t,dt){
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
-  updateLollaBall(p,controls,dt);
+  Abilities.update(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
@@ -1838,7 +2379,8 @@ function tryCollect(p){
   collectibles.forEach(item=>{
     if(item.taken)return;
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
-      item.taken=true;p.treats++;spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
+      item.taken=true;p.treats++;Inventory.add(p,item.type,1);
+      spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
     }
   });
 }
@@ -1864,6 +2406,14 @@ function tryDeliver(p,controls){
   });
 }
 
+// Interact with the nearest interactable entity (NPC) on an action-key press.
+// Edge-triggered per player so a held key fires once.
+function tryInteract(p,controls){
+  const pressed=!!keys[controls.action];
+  if(pressed && !p._actionPrev) Entities.interact(p);
+  p._actionPrev=pressed;
+}
+
 function checkGroupHowl(){
   if(!twoPlayer)return;
   if(Math.hypot(p1.x-p2.x,p1.y-p2.y)<55&&p1.howling&&p2.howling){
@@ -1880,14 +2430,13 @@ function updateSparkles(){
   sparkles.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=0.06;s.life--;});
 }
 
-function updateHUD(){
-  document.getElementById('p1count').textContent=p1.treats;
-  document.getElementById('p2count').textContent=p2.treats;
-  document.getElementById('cheerCount').textContent=cheeredCount;
-}
+// updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
 
 function checkWin(){
-  if(cheeredCount>=CHEER_TOTAL){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
+  // Completion is defined by the current level's quest (falls back to the cheer count).
+  const q=LevelManager.current&&LevelManager.current.quest;
+  const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
+  if(done){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
 }
 
 
@@ -1901,19 +2450,270 @@ function showToast(msg,time=2200){
 }
 
 
+// ===== src/save.js =====
+// ====================== SAVE / LOAD ======================
+// Serialises a run to localStorage and restores it. Rather than rely on seeded
+// regeneration, we snapshot the whole dynamic world (objects, colliders, entities,
+// collectibles, friends) so a loaded game is exactly what was saved — including the
+// procedurally-placed layout. All of these are plain data (no functions), so JSON
+// round-trips cleanly; behaviour lives in the registries (Breeds/Abilities/Entities).
+
+const Save = {
+  KEY: 'husky-hearts-save-v1',
+
+  has(){ try { return !!localStorage.getItem(this.KEY); } catch(e){ return false; } },
+
+  _serializePlayer(p){
+    return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
+             treats:p.treats, inventory:Object.assign({}, p.inventory) };
+  },
+
+  save(){
+    if(Game.state!==SCENES.PLAYING && Game.state!==SCENES.PAUSED){
+      showToast('Can only save while playing.', 1600); return false;
+    }
+    const data = {
+      version: 1,
+      levelId: LevelManager.current ? LevelManager.current.id : null,
+      worldW: WORLD_W, worldH: WORLD_H,
+      twoPlayer: Game.twoPlayer,
+      cheeredCount: Game.cheeredCount,
+      players: Game.players.map(p=>this._serializePlayer(p)),
+      cam: { x:cam.x, y:cam.y },
+      world: { objects: worldObjects, colliders: colliders, river: river },
+      collectibles: collectibles,
+      friends: friends,
+      entities: entities,
+    };
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(data));
+      showToast('💾 Game saved!', 1500);
+      return true;
+    } catch(e){
+      showToast('Save failed: ' + e.message, 2000);
+      return false;
+    }
+  },
+
+  load(){
+    let data;
+    try { data = JSON.parse(localStorage.getItem(this.KEY)); }
+    catch(e){ data = null; }
+    if(!data){ showToast('No saved game found.', 1600); return false; }
+
+    // --- level context (theme/quest) without regenerating the world ---
+    const level = Levels.get(data.levelId) || Levels.first();
+    if(typeof level !== 'undefined' && level) LevelManager._setCurrent(level);
+    WORLD_W = data.worldW; WORLD_H = data.worldH;
+
+    // --- world snapshot (const arrays: mutate in place; river is reassignable) ---
+    worldObjects.length = 0; (data.world.objects||[]).forEach(o=>worldObjects.push(o));
+    colliders.length = 0;    (data.world.colliders||[]).forEach(c=>colliders.push(c));
+    river = data.world.river || null;
+    collectibles = data.collectibles || [];
+    friends = data.friends || [];
+    entities = data.entities || [];
+
+    // --- players ---
+    twoPlayer = !!data.twoPlayer;
+    const restore = (sp)=>{
+      const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
+      pl.dir = sp.dir; pl.treats = sp.treats; pl.inventory = sp.inventory || {};
+      return pl;
+    };
+    if(data.players[0]) p1 = restore(data.players[0]);
+    if(data.players[1]) p2 = restore(data.players[1]);
+
+    Game.cheeredCount = data.cheeredCount || 0;
+    cam.x = data.cam ? data.cam.x : 0; cam.y = data.cam ? data.cam.y : 0;
+
+    // Rebuild themed ground for this level's size, and refresh ability world items.
+    buildGroundCanvas();
+    Abilities.reset(); Abilities.spawnAll();
+
+    // --- enter play ---
+    if(typeof UI !== 'undefined' && UI.closePanel) UI.closePanel();
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('winScreen').style.display = 'none';
+    document.getElementById('p2panel').style.display = twoPlayer ? 'flex' : 'none';
+    const p2c = document.getElementById('p2controls'); if(p2c) p2c.style.display = twoPlayer ? 'block' : 'none';
+    sparkles = [];
+    Game.state = SCENES.PLAYING;
+    updateHUD();
+    if(typeof startMusic === 'function') startMusic();
+    showToast('📂 Game loaded!', 1500);
+    return true;
+  },
+};
+
+// ===== src/ui.js =====
+// ====================== UI LAYER ======================
+// Manages the DOM overlay panels (pause menu, inventory/stats, NPC dialog) and the
+// HUD. Follows the existing #gameFrame overlay pattern (see charselect.js). Only one
+// panel is open at a time; opening a panel moves Game.state to the matching scene so
+// the main loop freezes world updates while still drawing the frozen frame behind it.
+
+const UI = {
+  panel: null,        // null | 'pause' | 'inventory' | 'dialog'
+  _dialog: null,      // { npc, player }
+
+  $(id){ return document.getElementById(id); },
+  _show(id, on){ const el=this.$(id); if(el) el.style.display = on ? 'flex' : 'none'; },
+
+  // ---------- HUD ----------
+  updateHUD(){
+    const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
+    set('p1count', p1 ? p1.treats : 0);
+    set('p2count', (typeof p2!=='undefined' && p2) ? p2.treats : 0);
+    set('cheerCount', Game.cheeredCount);
+    const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
+    set('levelName', lvl ? lvl.name : '—');
+    set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
+  },
+
+  // ---------- panel plumbing ----------
+  closePanel(){
+    this._show('pauseScreen', false);
+    this._show('inventoryScreen', false);
+    this._show('dialogScreen', false);
+    this.panel=null; this._dialog=null;
+    if(Game.state!==SCENES.MENU && Game.state!==SCENES.WIN) Game.state=SCENES.PLAYING;
+  },
+
+  // ESC: close any open panel, else pause when playing.
+  togglePause(){
+    if(this.panel){ this.closePanel(); return; }
+    if(Game.state===SCENES.PLAYING) this.openPause();
+  },
+
+  openPause(){
+    if(Game.state!==SCENES.PLAYING) return;
+    this.panel='pause'; Game.state=SCENES.PAUSED;
+    this._show('pauseScreen', true);
+  },
+
+  // ---------- inventory + stats ----------
+  toggleInventory(){
+    if(Game.state===SCENES.INVENTORY){ this.closePanel(); return; }
+    if(Game.state===SCENES.PLAYING) this.openInventory();
+  },
+
+  openInventory(){
+    this.panel='inventory'; Game.state=SCENES.INVENTORY;
+    this.renderInventory();
+    this._show('inventoryScreen', true);
+  },
+
+  renderInventory(){
+    const body=this.$('invBody'); if(!body) return;
+    const players=Game.players;
+    body.innerHTML=players.map(p=>{
+      const b=Breeds.get(p.breed);
+      const items=Inventory.list(p);
+      const cells=items.length
+        ? items.map(e=>`<span class="inv-cell">${e.def?e.def.icon:'❓'} ${e.id}<span class="qty">×${e.qty}</span></span>`).join('')
+        : `<span class="inv-empty">No items yet — go collect some!</span>`;
+      return `<div class="inv-player">
+        <h3>🐾 P${p.id} · ${b.name}</h3>
+        <div class="inv-stats">
+          Treats: <b>${p.treats}</b><br>
+          Speed: <b>${p.stats.speed}</b> · Swim: <b>${p.stats.swim}</b><br>
+          Passive: ${b.passive}${b.abilityId?`<br>Ability: <b>${b.abilityId}</b>`:''}
+        </div>
+        <div class="inv-grid">${cells}</div>
+      </div>`;
+    }).join('');
+  },
+
+  // ---------- dialog / shop ----------
+  openDialog(npc, player){
+    this.panel='dialog'; Game.state=SCENES.DIALOG;
+    this._dialog={ npc, player };
+    this.renderDialog(npc.greeting);
+    this._show('dialogScreen', true);
+  },
+
+  renderDialog(text){
+    const d=this._dialog; if(!d) return;
+    this.$('dialogName').textContent=d.npc.name;
+    this.$('dialogText').textContent=text;
+    const choices=this.$('dialogChoices');
+    choices.innerHTML='';
+
+    // Sample shop: buy items with treats as currency. Future NPCs can supply their
+    // own choice lists via npc.choices.
+    const wares=[{id:'biscuit',cost:3},{id:'ribbon',cost:5}];
+    wares.forEach(w=>{
+      const def=Items.get(w.id);
+      const afford=d.player.treats>=w.cost;
+      const btn=document.createElement('button');
+      btn.className='dialog-choice'+(afford?'':' disabled');
+      btn.textContent=`${def.icon} Buy ${def.name} — ${w.cost} 🦴`;
+      btn.addEventListener('click',()=>{
+        if(d.player.treats<w.cost){ this.renderDialog("You don't have enough treats for that."); return; }
+        d.player.treats-=w.cost; Inventory.add(d.player, w.id, 1); this.updateHUD();
+        if(typeof sfxCollect==='function') sfxCollect();
+        this.renderDialog(`Enjoy your ${def.name}! Anything else?`);
+      });
+      choices.appendChild(btn);
+    });
+
+    const bye=document.createElement('button');
+    bye.className='dialog-choice';
+    bye.textContent='👋 Goodbye';
+    bye.addEventListener('click',()=>this.closePanel());
+    choices.appendChild(bye);
+  },
+
+  // ---------- menu transitions ----------
+  quitToMenu(){
+    this.closePanel();
+    if(typeof stopMusic==='function') stopMusic();
+    this._show('winScreen', false);
+    this.$('startScreen').style.display='flex';
+    Game.state=SCENES.MENU;
+  },
+
+  // Wire buttons + inventory key. Called once at startup.
+  init(){
+    const on=(id,fn)=>{ const el=this.$(id); if(el) el.addEventListener('click',fn); };
+    on('btnResume', ()=>this.closePanel());
+    on('btnInvClose', ()=>this.closePanel());
+    on('btnQuit', ()=>this.quitToMenu());
+    on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
+    on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    // Start-screen "Continue" appears only when a save exists.
+    on('btnContinue', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    if(typeof Save!=='undefined' && Save.has()){
+      const c=this.$('btnContinue'); if(c) c.style.display='inline-block';
+    }
+  },
+};
+
+// Global HUD hook used across modules (formerly defined in update.js).
+function updateHUD(){ UI.updateHUD(); }
+
+UI.init();
+
 // ===== src/main.js =====
 // ====================== MAIN LOOP ======================
 let lastTime=performance.now();
 function loop(now){
   const dt=now-lastTime;lastTime=now;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
-  if(gameStarted){
-    const c1={up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',action:'Space'};
-    const c2={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',action:'Enter'};
+  // Update only while actively playing; keep drawing the frozen world behind any
+  // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
+  const playing=Game.state===SCENES.PLAYING;
+  const showWorld=playing||Game.state===SCENES.PAUSED||Game.state===SCENES.INVENTORY||Game.state===SCENES.DIALOG;
+  if(playing){
+    const c1=Input.CONTROLS.p1, c2=Input.CONTROLS.p2;
     updateCollectibles(now);
-    updatePlayer(p1,c1,now,dt);tryCollect(p1);tryDeliver(p1,c1);
-    if(twoPlayer){updatePlayer(p2,c2,now,dt);tryCollect(p2);tryDeliver(p2,c2);checkGroupHowl();}
+    Entities.updateAll(now,dt);
+    updatePlayer(p1,c1,now,dt);tryCollect(p1);tryDeliver(p1,c1);tryInteract(p1,c1);
+    if(twoPlayer){updatePlayer(p2,c2,now,dt);tryCollect(p2);tryDeliver(p2,c2);tryInteract(p2,c2);checkGroupHowl();}
     updateSparkles();updateCamera();
+  }
+  if(showWorld){
     ctx.save();ctx.translate(-cam.x,-cam.y);
     drawWorld(now);
     // river bridges draw above swimmers passing underneath, but below anyone walking across the deck
@@ -1921,11 +2721,13 @@ function loop(now){
     const riverBridges=worldObjects.filter(o=>o.kind==='riverbridge');
     const deckBridges=riverBridges.filter(o=>activePlayers.some(p=>!p.swimming&&isOnSpecificBridge(o,p.x,p.y)));
     deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
-    drawLollaCannon(now);
-    drawLollaBall(now);
+    Abilities.drawWorld(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
-    [...activePlayers].sort((a,b)=>a.y-b.y).forEach(p=>drawDog(p,now));
+    // Dogs + registry entities (enemies/NPCs) share one painter's-algorithm pass by y.
+    const actors=activePlayers.map(p=>({y:p.y, d:()=>drawDog(p,now)}));
+    entities.forEach(e=>{ const def=Entities.def(e.kind); if(def&&def.draw) actors.push({y:e.y, d:()=>def.draw(e,now)}); });
+    actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();
     ctx.restore();
@@ -1934,8 +2736,8 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 
-// Pre-build ground canvas, then start loop
-buildGroundCanvas();
+// Build the initial level (world objects + entities + themed ground), then start loop.
+LevelManager.load(Levels.first().id);
 requestAnimationFrame(loop);
 
 
@@ -2025,15 +2827,9 @@ function resetGame(cfg1, cfg2){
 // ===== src/charselect.js =====
 // ====================== CHARACTER SELECTION ======================
 
-const BREEDS = [
-  { id:'dinno',    name:'Dinno',     desc:'The real husky boss',  emoji:'❤️' },
-  { id:'lolla',    name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟' },
-  { id:'husky',    name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕' },
-  { id:'shiba',    name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊' },
-  { id:'corgi',    name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾' },
-  { id:'poodle',   name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨' },
-  { id:'dalmatian',name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫' },
-];
+// Breed metadata now comes from the shared registry (data/breeds.js) so charselect
+// and gameplay share one source. Shape: {id,name,desc,emoji,stats,passive,abilityId}.
+const BREEDS = Breeds.list();
 
 const COLORS = [
   { id:'blue',    hex:'#6FA8C9', label:'Ice Blue'   },
@@ -2377,8 +3173,8 @@ function launchGame(){
 
   document.getElementById('startScreen').style.display='none';
   resetGame(cfg1, cfg2);
-  spawnLollaItems();
-  gameStarted=true;
+  Abilities.spawnAll();
+  Game.state=SCENES.PLAYING;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
@@ -2386,8 +3182,8 @@ function launchGame(){
 // Override resetGame to accept configs
 function resetGame(cfg1, cfg2){
   stopMusic();
-  collectibles=makeCollectibles(); friends=makeFriends(); cheeredCount=0;
-  lollaBall=null; lollaCannon=null; _lollaDropHeld=false;
+  LevelManager.reload();   // regenerate world + entities + themed ground; resets cheeredCount
+  Abilities.reset();
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
   p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);
@@ -2399,11 +3195,13 @@ function resetGame(cfg1, cfg2){
 // Wire main menu buttons → char select flow
 document.getElementById('btn1p').addEventListener('click',()=>{
   pendingMode='solo';
+  Game.state=SCENES.CHARSELECT;
   document.getElementById('startScreen').style.display='none';
   showCharSelect(1);
 });
 document.getElementById('btn2p').addEventListener('click',()=>{
   pendingMode='2p';
+  Game.state=SCENES.CHARSELECT;
   document.getElementById('startScreen').style.display='none';
   showCharSelect(1);
 });
@@ -2411,5 +3209,5 @@ document.getElementById('btnReplay').addEventListener('click',()=>{
   stopMusic();
   document.getElementById('winScreen').style.display='none';
   document.getElementById('startScreen').style.display='flex';
-  gameStarted=false;
+  Game.state=SCENES.MENU;
 });

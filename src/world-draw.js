@@ -16,9 +16,7 @@ function drawGround(){
   ctx.fillRect(WORLD_W/2-22,0,44,WORLD_H);
 }
 
-function mulberry32(seed){ // tiny deterministic RNG for ground texture
-  return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
-}
+// mulberry32 (deterministic RNG) now lives in core/rng.js.
 
 // PRE-DRAWN ground (offscreen canvas so we don't recalculate every frame)
 let groundCanvas=null;
@@ -27,33 +25,35 @@ function buildGroundCanvas(){
   groundCanvas.width=WORLD_W; groundCanvas.height=WORLD_H;
   const gc=groundCanvas.getContext('2d');
   gc.imageSmoothingEnabled=false;
-  // Save/restore ctx, draw into gc
-  const save=ctx;
-  const _ctx=ctx; // we'll draw directly with gc
+  // Palette comes from the current level's theme (falls back to the meadow colours).
+  const th=(typeof LevelManager!=='undefined'&&LevelManager.theme)||{};
+  const grass=th.grass||'#9ED87A', grassDark=th.grassDark||'#8DCF6A',
+        grassLight=th.grassLight||'#AADE88', dirt=th.dirt||'rgba(190,155,100,0.15)',
+        fenceA=th.fenceA||'#8B6340', fenceB=th.fenceB||'#A07040', rail=th.rail||'#C4904A';
   // grass base
-  gc.fillStyle='#9ED87A'; gc.fillRect(0,0,WORLD_W,WORLD_H);
+  gc.fillStyle=grass; gc.fillRect(0,0,WORLD_W,WORLD_H);
   const rng=mulberry32(42);
   for(let i=0;i<800;i++){
     const gx=Math.floor(rng()*WORLD_W),gy=Math.floor(rng()*WORLD_H);
     const s=Math.floor(rng()*24)+6;
-    gc.fillStyle=rng()<0.5?'#8DCF6A':'#AADE88';
+    gc.fillStyle=rng()<0.5?grassDark:grassLight;
     gc.fillRect(gx,gy,s,Math.floor(s*0.45));
   }
   // subtle dirt cross-paths
-  gc.fillStyle='rgba(190,155,100,0.15)';
+  gc.fillStyle=dirt;
   gc.fillRect(0,WORLD_H/2-24,WORLD_W,48);
   gc.fillRect(WORLD_W/2-24,0,48,WORLD_H);
   // fence border
   for(let x=0;x<WORLD_W;x+=24){
-    gc.fillStyle=x%48===0?'#8B6340':'#A07040';
+    gc.fillStyle=x%48===0?fenceA:fenceB;
     gc.fillRect(x,0,12,14); gc.fillRect(x,WORLD_H-14,12,14);
   }
   for(let y=0;y<WORLD_H;y+=24){
-    gc.fillStyle=y%48===0?'#8B6340':'#A07040';
+    gc.fillStyle=y%48===0?fenceA:fenceB;
     gc.fillRect(0,y,14,12); gc.fillRect(WORLD_W-14,y,14,12);
   }
   // fence rails
-  gc.fillStyle='#C4904A';
+  gc.fillStyle=rail;
   gc.fillRect(0,4,WORLD_W,4); gc.fillRect(0,WORLD_H-8,WORLD_W,4);
   gc.fillRect(4,0,4,WORLD_H); gc.fillRect(WORLD_W-8,0,4,WORLD_H);
 }

@@ -22,18 +22,33 @@ HTML = ROOT / 'index.html'
 # Load order matters: shared globals (let/const) must be declared before use.
 LOAD_ORDER = [
     'init.js',            # canvas + ctx
+    'core/rng.js',        # seeded RNG (mulberry32) — used by world gen + save
+    'core/state.js',      # SCENES enum + Game/World state facades
+    'core/input.js',      # keys, control maps, ESC hook
+    'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
+    'data/items.js',      # item definitions (inventory / shop)
+    'inventory.js',       # per-player inventory add/remove/has
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
+    'levels/index.js',    # Levels registry
+    'levels/meadow.js',   # level 1 definition (size, theme, quest, generate)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
     'friends.js',         # drawFriend
+    'entities/registry.js', # Entities registry + level entity list
+    'entities/enemy.js',    # enemy kind (wander/chase)
+    'entities/npc.js',      # NPC kind (interactable)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
     'minimap.js',         # drawMinimap
-    'lolla.js',           # Lolla special: tennis ball + cannon
+    'abilities/registry.js',    # Abilities registry (register/dispatch)
+    'abilities/ballCannon.js',  # ball-cannon ability (formerly lolla.js)
+    'level-manager.js',   # LevelManager.load (build world + themed ground)
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
     'toast.js',           # showToast
+    'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
+    'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)
     'main.js',            # main loop + start
     'fullscreen.js',      # fullscreen button
     'mobile-controls.js', # touch d-pad

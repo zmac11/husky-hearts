@@ -1,14 +1,8 @@
 // ====================== CHARACTER SELECTION ======================
 
-const BREEDS = [
-  { id:'dinno',    name:'Dinno',     desc:'The real husky boss',  emoji:'❤️' },
-  { id:'lolla',    name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟' },
-  { id:'husky',    name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕' },
-  { id:'shiba',    name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊' },
-  { id:'corgi',    name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾' },
-  { id:'poodle',   name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨' },
-  { id:'dalmatian',name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫' },
-];
+// Breed metadata now comes from the shared registry (data/breeds.js) so charselect
+// and gameplay share one source. Shape: {id,name,desc,emoji,stats,passive,abilityId}.
+const BREEDS = Breeds.list();
 
 const COLORS = [
   { id:'blue',    hex:'#6FA8C9', label:'Ice Blue'   },
@@ -352,8 +346,8 @@ function launchGame(){
 
   document.getElementById('startScreen').style.display='none';
   resetGame(cfg1, cfg2);
-  spawnLollaItems();
-  gameStarted=true;
+  Abilities.spawnAll();
+  Game.state=SCENES.PLAYING;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
@@ -361,8 +355,8 @@ function launchGame(){
 // Override resetGame to accept configs
 function resetGame(cfg1, cfg2){
   stopMusic();
-  collectibles=makeCollectibles(); friends=makeFriends(); cheeredCount=0;
-  lollaBall=null; lollaCannon=null; _lollaDropHeld=false;
+  LevelManager.reload();   // regenerate world + entities + themed ground; resets cheeredCount
+  Abilities.reset();
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
   p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);
@@ -374,11 +368,13 @@ function resetGame(cfg1, cfg2){
 // Wire main menu buttons → char select flow
 document.getElementById('btn1p').addEventListener('click',()=>{
   pendingMode='solo';
+  Game.state=SCENES.CHARSELECT;
   document.getElementById('startScreen').style.display='none';
   showCharSelect(1);
 });
 document.getElementById('btn2p').addEventListener('click',()=>{
   pendingMode='2p';
+  Game.state=SCENES.CHARSELECT;
   document.getElementById('startScreen').style.display='none';
   showCharSelect(1);
 });
@@ -386,5 +382,5 @@ document.getElementById('btnReplay').addEventListener('click',()=>{
   stopMusic();
   document.getElementById('winScreen').style.display='none';
   document.getElementById('startScreen').style.display='flex';
-  gameStarted=false;
+  Game.state=SCENES.MENU;
 });
