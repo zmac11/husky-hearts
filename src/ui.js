@@ -5,7 +5,8 @@
 // the main loop freezes world updates while still drawing the frozen frame behind it.
 
 const UI = {
-  panel: null,        // null | 'pause' | 'inventory' | 'dialog'
+  panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
+  invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   _dialog: null,      // { npc, player }
 
   $(id){ return document.getElementById(id); },
@@ -20,39 +21,50 @@ const UI = {
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
+    // Keep the open (non-blocking) inventory panel in sync as treats/items change.
+    if(this.invOpen) this.renderInventory();
   },
 
   // ---------- panel plumbing ----------
+  // Close a blocking panel (pause/dialog) and resume the world.
   closePanel(){
     this._show('pauseScreen', false);
-    this._show('inventoryScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
     if(Game.state!==SCENES.MENU && Game.state!==SCENES.WIN) Game.state=SCENES.PLAYING;
   },
 
-  // ESC: close any open panel, else pause when playing.
+  // ESC: close whatever is open (blocking panel first, then inventory), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
   },
 
   openPause(){
     if(Game.state!==SCENES.PLAYING) return;
+    this.closeInventory();            // never stack pause on top of the inventory overlay
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this._show('pauseScreen', true);
   },
 
   // ---------- inventory + stats ----------
+  // Inventory is a non-blocking overlay: it does NOT change Game.state, so the world
+  // keeps simulating while it's open, and it docks over part of the frame (see CSS).
   toggleInventory(){
-    if(Game.state===SCENES.INVENTORY){ this.closePanel(); return; }
+    if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openInventory();
   },
 
   openInventory(){
-    this.panel='inventory'; Game.state=SCENES.INVENTORY;
+    this.invOpen=true;
     this.renderInventory();
     this._show('inventoryScreen', true);
+  },
+
+  closeInventory(){
+    this.invOpen=false;
+    this._show('inventoryScreen', false);
   },
 
   renderInventory(){
@@ -78,6 +90,7 @@ const UI = {
 
   // ---------- dialog / shop ----------
   openDialog(npc, player){
+    this.closeInventory();            // dialog is blocking; don't stack it over inventory
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
     this.renderDialog(npc.greeting);
@@ -118,11 +131,21 @@ const UI = {
 
   // ---------- menu transitions ----------
   quitToMenu(){
+    this.closeInventory();
     this.closePanel();
     if(typeof stopMusic==='function') stopMusic();
     this._show('winScreen', false);
     this.$('startScreen').style.display='flex';
+    this.refreshContinueButton();     // a save may have been made this session
     Game.state=SCENES.MENU;
+  },
+
+  // Show the main-menu "Load Saved Game" button only when a save actually exists.
+  // Called at startup and whenever we return to the menu (a save can appear mid-session).
+  refreshContinueButton(){
+    const c=this.$('btnContinue'); if(!c) return;
+    const hasSave = (typeof Save!=='undefined') && Save.has();
+    c.style.display = hasSave ? 'inline-block' : 'none';
   },
 
   // Wire buttons + inventory key. Called once at startup.
@@ -135,9 +158,8 @@ const UI = {
     on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
     // Start-screen "Continue" appears only when a save exists.
     on('btnContinue', ()=>{ if(typeof Save!=='undefined') Save.load(); });
-    if(typeof Save!=='undefined' && Save.has()){
-      const c=this.$('btnContinue'); if(c) c.style.display='inline-block';
-    }
+    // Start-screen "Load Saved Game" appears only when a save exists.
+    this.refreshContinueButton();
   },
 };
 

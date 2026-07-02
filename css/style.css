@@ -188,10 +188,28 @@
   .game-overlay h2{ margin:0 0 4px; color:var(--cream); font-size:clamp(16px,4vw,22px); text-shadow:2px 2px 0 var(--brown); }
   .overlay-hint{ color:var(--cream); font-size:10px; opacity:0.8; margin-top:2px; }
 
+  /* Pause menu: keep a near-transparent backdrop so the (frozen) world stays visible
+     behind the menu. Buttons carry their own solid fill, so they stay legible. */
+  #pauseScreen{ background:rgba(74,63,53,0.18); }
+
+  /* Inventory: a non-blocking side panel docked over PART of the frame — the world
+     keeps playing and stays visible to the left. Not a full-screen overlay. */
+  #inventoryScreen{
+    position:absolute; top:8px; right:8px; bottom:8px; z-index:25;
+    width:min(280px,68%);
+    display:flex; flex-direction:column; align-items:stretch; gap:8px;
+    padding:12px; text-align:center; overflow-y:auto;
+    background:rgba(255,248,239,0.94);
+    border:3px solid var(--brown); border-radius:14px;
+    box-shadow:0 6px 18px rgba(74,63,53,0.35);
+  }
+  #inventoryScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
+  #inventoryScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }
+
   /* stats + inventory card */
   #invBody{
-    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
-    max-width:560px; max-height:60%; overflow-y:auto;
+    display:flex; flex-direction:column; flex-wrap:nowrap; gap:10px;
+    align-items:stretch; overflow-y:auto;
   }
   .inv-player{
     background:var(--cream); border:2px solid var(--brown); border-radius:12px;
