@@ -178,6 +178,52 @@
   .swatch-check{ color:#fff; font-size:16px; text-shadow:0 0 3px rgba(0,0,0,0.6); font-weight:bold; }
   .cs-actions{ display:flex; gap:10px; margin-top:4px; justify-content:center; }
 
+  /* ===== UI PANELS (pause / inventory / dialog) ===== */
+  .game-overlay{
+    position:absolute; inset:0; border-radius:10px; z-index:25;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; text-align:center; padding:18px;
+    background:rgba(74,63,53,0.55);
+  }
+  .game-overlay h2{ margin:0 0 4px; color:var(--cream); font-size:clamp(16px,4vw,22px); text-shadow:2px 2px 0 var(--brown); }
+  .overlay-hint{ color:var(--cream); font-size:10px; opacity:0.8; margin-top:2px; }
+
+  /* stats + inventory card */
+  #invBody{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    max-width:560px; max-height:60%; overflow-y:auto;
+  }
+  .inv-player{
+    background:var(--cream); border:2px solid var(--brown); border-radius:12px;
+    padding:8px 10px; min-width:190px; box-shadow:0 3px 0 var(--shadow); text-align:left;
+  }
+  .inv-player h3{ margin:0 0 4px; font-size:13px; color:var(--brown); display:flex; align-items:center; gap:6px; }
+  .inv-stats{ font-size:10px; color:var(--brown-soft); line-height:1.5; margin-bottom:6px; }
+  .inv-grid{ display:flex; flex-wrap:wrap; gap:5px; }
+  .inv-cell{
+    background:#fff8e8; border:2px solid var(--brown-soft); border-radius:8px;
+    padding:3px 6px; font-size:12px; color:var(--brown); display:flex; align-items:center; gap:3px;
+  }
+  .inv-cell .qty{ font-weight:bold; font-size:11px; }
+  .inv-empty{ font-size:10px; color:var(--brown-soft); font-style:italic; }
+
+  /* dialog */
+  #dialogBox{
+    background:var(--cream); border:3px solid var(--brown); border-radius:14px;
+    padding:14px 16px; max-width:360px; box-shadow:0 5px 0 var(--shadow); text-align:left;
+  }
+  #dialogName{ font-weight:bold; color:var(--brown); font-size:14px; margin-bottom:6px; }
+  #dialogText{ color:var(--brown-soft); font-size:12px; line-height:1.5; margin-bottom:10px; }
+  #dialogChoices{ display:flex; flex-direction:column; gap:6px; }
+  .dialog-choice{
+    font-family:inherit; font-weight:bold; font-size:12px; text-align:left;
+    padding:7px 12px; border-radius:10px; border:2px solid var(--brown);
+    background:var(--meadow); color:var(--brown); cursor:pointer;
+    box-shadow:0 3px 0 var(--shadow); touch-action:manipulation;
+  }
+  .dialog-choice:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
+  .dialog-choice.disabled{ background:#ddd; color:#999; border-color:#bbb; cursor:not-allowed; box-shadow:none; }
+
   /* ===== FULLSCREEN ===== */
   /* Canvas fills available space; resizeCanvas() handles the math */
   :fullscreen #gameFrame,

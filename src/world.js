@@ -1,5 +1,8 @@
 // ====================== WORLD ======================
-const WORLD_W=1920, WORLD_H=1280, VIEW_W=640, VIEW_H=416;
+// World dimensions are `let` so a level can resize the world on load (LevelManager);
+// the viewport is fixed. All references read these dynamically.
+let WORLD_W=1920, WORLD_H=1280;
+const VIEW_W=640, VIEW_H=416;
 const cam={x:0,y:0};
 function updateCamera(){
   let tx=p1.x,ty=p1.y;
@@ -8,13 +11,12 @@ function updateCamera(){
   cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,ty-VIEW_H/2));
 }
 
-let twoPlayer=false,gameStarted=false,cheeredCount=0;
+// Scene flow now lives in Game.state (see core/state.js); twoPlayer & cheeredCount
+// remain the canonical globals that Game delegates to.
+let twoPlayer=false,cheeredCount=0;
 const CHEER_TOTAL=5;
 
-// ---------- INPUT ----------
-const keys={};
-window.addEventListener('keydown',e=>{ keys[e.code]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code))e.preventDefault(); });
-window.addEventListener('keyup',e=>{ keys[e.code]=false; });
+// Raw key state (`keys`) and listeners moved to core/input.js.
 
 // ---------- HELPERS ----------
 function rand(a,b){ return a+Math.random()*(b-a); }
@@ -209,7 +211,8 @@ function buildWorld(){
   // Sort by y for painter's algorithm
   worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 }
-buildWorld();
+// The world is now built via LevelManager.load() (called from main.js at startup and
+// on each game start), not once at module load.
 
 // ---------- COLLECTIBLES ----------
 function makeCollectibles(){
@@ -229,7 +232,7 @@ function makeCollectibles(){
   }
   return items;
 }
-let collectibles=makeCollectibles();
+let collectibles=[]; // populated by LevelManager.load() → level.generate()
 
 function updateCollectibles(t){
   collectibles.forEach(item=>{
@@ -251,7 +254,7 @@ function makeFriends(){
     {name:'Old Tortoise',    x:960,  y:640,  need:4,given:0,cheered:false,kind:'tortoise', msg:"It's been so quiet around here lately."},
   ];
 }
-let friends=makeFriends();
+let friends=[]; // populated by LevelManager.load() → level.generate()
 
 // ---------- RIVER / POND helpers ----------
 function riverY(x){
@@ -318,8 +321,10 @@ function isInPond(px,py,wasSwimming){
 }
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
+  const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,speed:2.6,howling:false,howlTimer:0,breed,markings,swimming:false};
+    treats:0,inventory:{},speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
+    howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);
 let p2=makePlayer(2,'#E0855B',260,200);

@@ -6,12 +6,14 @@ function drawMinimap(){
   ctx.fillStyle='#1A3A1A'; roundRect(MX,MY,MW,MH,6,true,false);
   ctx.strokeStyle='#8ACA5A'; ctx.lineWidth=1.5; roundRect(MX,MY,MW,MH,6,false,true);
   ctx.globalAlpha=1;
+  const th=(typeof LevelManager!=='undefined'&&LevelManager.theme)||{};
+  const mmGrass=th.minimapGrass||'#4A9A3A', mmWater=th.minimapWater||'#4AACDC';
   // grass
-  ctx.fillStyle='#4A9A3A'; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
+  ctx.fillStyle=mmGrass; ctx.fillRect(MX+1,MY+1,MW-2,MH-2);
   // river
   if(river){
     const sx=MW/WORLD_W,sy=MH/WORLD_H,steps=60;
-    ctx.fillStyle='#4AACDC';
+    ctx.fillStyle=mmWater;
     ctx.beginPath();
     for(let i=0;i<=steps;i++){const x=i*(WORLD_W/steps);if(i===0)ctx.moveTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);else ctx.lineTo(MX+x*sx,MY+(riverY(x)-riverWidthAt(x)/2)*sy);}
     for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
@@ -19,7 +21,7 @@ function drawMinimap(){
   }
   // ponds
   worldObjects.filter(o=>o.kind==='pond').forEach(o=>{
-    ctx.fillStyle='#4AACDC';
+    ctx.fillStyle=mmWater;
     ctx.beginPath(); ctx.ellipse(MX+o.x*(MW/WORLD_W),MY+o.y*(MH/WORLD_H),(o.w/2)*(MW/WORLD_W),(o.h/2)*(MH/WORLD_H),0,0,Math.PI*2); ctx.fill();
   });
   const sx=MW/WORLD_W,sy=MH/WORLD_H;
@@ -27,6 +29,8 @@ function drawMinimap(){
   collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
+  // registry entities (enemies red, NPCs warm yellow)
+  entities.forEach(e=>{ ctx.fillStyle=e.kind==='enemy'?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); });
   // viewport
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
   ctx.strokeRect(MX+cam.x*sx,MY+cam.y*sy,VIEW_W*sx,VIEW_H*sy);

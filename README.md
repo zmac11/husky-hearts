@@ -68,32 +68,73 @@ On touch devices in solo mode an on-screen D-pad and Howl button are shown autom
 
 ```
 husky-hearts/
-├── index.html          ← entrypoint (loads dist/bundle.js)
-├── build.py            ← bundler
+├── index.html          ← entrypoint (loads dist/bundle.js) + UI panel markup
+├── build.py            ← bundler (LOAD_ORDER controls concat sequence)
 ├── css/
-│   └── style.css       ← all styles
+│   └── style.css       ← all styles (incl. pause/inventory/dialog panels)
 ├── src/                ← editable JS modules
 │   ├── init.js              canvas & ctx setup
+│   ├── core/
+│   │   ├── rng.js           seeded RNG (mulberry32) — reproducible generation
+│   │   ├── state.js         SCENES enum + Game/World state facades
+│   │   └── input.js         key state, per-player control maps, ESC/I hooks
+│   ├── data/
+│   │   ├── breeds.js        per-breed stats + passive + abilityId (single source)
+│   │   └── items.js         item definitions (inventory / shop wares)
+│   ├── inventory.js         per-player inventory add/remove/has
 │   ├── audio.js             Web Audio engine, music loop, SFX
-│   ├── world.js             world constants, colliders, world objects, players, friends
+│   ├── world.js             world size, colliders, world objects, players, makePlayer
+│   ├── levels/
+│   │   ├── index.js         Levels registry
+│   │   └── meadow.js        level 1 (size, theme, quest, generate)
+│   ├── level-manager.js     LevelManager.load — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()
-│   ├── world-draw.js        all tree/rock/pond/etc. renderers + drawWorld
+│   ├── world-draw.js        tree/rock/pond/etc. renderers + drawWorld (theme-aware)
 │   ├── collectibles.js      drawCollectible (with glow badge)
-│   ├── friends.js           drawFriend (NPC animals)
-│   ├── dog-sprite.js        drawDog dispatcher + 5 breed renderers + dalmatian spots
+│   ├── friends.js           drawFriend (rescue animals)
+│   ├── entities/
+│   │   ├── registry.js      Entities registry + level entity list + interaction
+│   │   ├── enemy.js         enemy kind (wander/chase)
+│   │   └── npc.js           NPC kind (interactable → dialog/shop)
+│   ├── abilities/
+│   │   ├── registry.js      Abilities registry (spawn/update/draw dispatch)
+│   │   └── ballCannon.js    Lolla's active ability (formerly lolla.js)
+│   ├── dog-sprite.js        drawDog dispatcher + breed renderers
 │   ├── sparkles.js          particle effects
-│   ├── minimap.js           top-right corner minimap
-│   ├── update.js            updatePlayer, tryCollect, tryDeliver, win check, group howl
+│   ├── minimap.js           top-right corner minimap (theme-aware)
+│   ├── update.js            updatePlayer, tryCollect, tryDeliver, tryInteract, checkWin
 │   ├── toast.js             on-screen message popups
-│   ├── main.js              main rAF loop
+│   ├── save.js              save/load a run to localStorage (world snapshot)
+│   ├── ui.js                pause / inventory / dialog panels + HUD (updateHUD)
+│   ├── main.js              main rAF loop (scene-gated) + startup LevelManager.load
 │   ├── fullscreen.js        native fullscreen + iOS pseudo-fullscreen fallback
 │   ├── mobile-controls.js   touch d-pad binding
 │   ├── start.js             default resetGame() (overridden by charselect)
 │   └── charselect.js        character selection UI, launchGame, button handlers
-└── dist/               ← build outputs (gitignored or committed, your choice)
+└── dist/               ← build outputs
     ├── bundle.js
     └── husky-hearts.html
 ```
+
+## Architecture & extending
+
+State is grouped into a few namespaces rather than loose globals: `Game` (scene +
+run state), `World`, `Input`, `RNG`. Flow is a scene machine (`SCENES.MENU`,
+`CHARSELECT`, `PLAYING`, `PAUSED`, `INVENTORY`, `DIALOG`, `WIN`) that the main loop
+dispatches on — the world only updates while `PLAYING`, and freezes (but keeps
+drawing) behind any open UI panel. Content is data-driven via registries, so the
+common extensions are additive:
+
+- **New dog / stats / passive** → add an entry to `src/data/breeds.js`.
+- **New active ability** → implement `{spawn, update, drawWorld, drawOnDog}` in
+  `src/abilities/`, register it, and point a breed's `abilityId` at it.
+- **New level** (different visuals/contents/quest) → add a file in `src/levels/`
+  declaring `size`, `theme`, `generate()`, and `quest`, then `Levels.register(...)`.
+- **New enemy / NPC / world actor** → register a kind in `src/entities/` (with
+  `update`/`draw`/`onInteract`) and `Entities.spawn()` it from a level's `generate()`.
+- **New item / shop ware** → add to `src/data/items.js`; use the `Inventory` API.
+
+Remember to add any new file to `LOAD_ORDER` in `build.py` (dependency order).
 
 ## Tech notes
 

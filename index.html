@@ -19,6 +19,7 @@
     <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats</div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
     <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats</div>
+    <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <button id="fsBtn">⛶ Fullscreen</button>
   </div>
 
@@ -33,6 +34,7 @@
         <p>Explore the big meadow, collect treats, and bring them to lonely animal friends. Use the minimap to find them!</p>
         <button class="modebtn" id="btn1p">🐾 Play Solo</button>
         <button class="modebtn secondary" id="btn2p">🐾🐾 Play Together (2 Players)</button>
+        <button class="modebtn secondary" id="btnContinue" style="display:none;">📂 Continue Saved Game</button>
         <button class="modebtn soundtrack" id="btnSoundtrack">🎵 Music: Cozy Meadow</button>
       </div>
 
@@ -40,6 +42,30 @@
         <h2>💛 Everyone is happy! 💛</h2>
         <p>You filled the meadow with friendship.<br>Good dog! 🌸</p>
         <button class="modebtn" id="btnReplay">Play Again 🐾</button>
+      </div>
+
+      <div id="pauseScreen" class="game-overlay" style="display:none;">
+        <h2>⏸ Paused</h2>
+        <button class="modebtn" id="btnResume">▶ Resume</button>
+        <button class="modebtn secondary" id="btnSave">💾 Save Game</button>
+        <button class="modebtn secondary" id="btnLoad">📂 Load Game</button>
+        <button class="modebtn secondary" id="btnQuit">🏠 Quit to Menu</button>
+        <div class="overlay-hint">Esc to resume</div>
+      </div>
+
+      <div id="inventoryScreen" class="game-overlay" style="display:none;">
+        <h2>🎒 Inventory & Stats</h2>
+        <div id="invBody"></div>
+        <button class="modebtn" id="btnInvClose">Close</button>
+        <div class="overlay-hint">I or Esc to close</div>
+      </div>
+
+      <div id="dialogScreen" class="game-overlay" style="display:none;">
+        <div id="dialogBox">
+          <div id="dialogName"></div>
+          <div id="dialogText"></div>
+          <div id="dialogChoices"></div>
+        </div>
       </div>
     </div>
 
@@ -64,7 +90,7 @@
     <div class="ctrl-card"><b>Player 1</b>WASD · SPACE to howl/deliver</div>
     <div class="ctrl-card" id="p2controls" style="display:none;"><b>Player 2</b>Arrow Keys · ENTER to howl/deliver</div>
   </div>
-  <footer>Tip: check the minimap (top-right) to find animals and treats!</footer>
+  <footer>Tip: check the minimap (top-right) to find animals and treats! · <b>Esc</b> pause · <b>I</b> inventory</footer>
 </div>
 
 <!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->

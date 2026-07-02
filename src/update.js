@@ -6,7 +6,8 @@ function updatePlayer(p,controls,t,dt){
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
-    const spd=p.swimming?p.speed*0.5:p.speed;
+    const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
+    const spd=p.swimming?p.speed*swimMul:p.speed;
     p.x+=dx*spd; p.y+=dy*spd;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
@@ -15,7 +16,7 @@ function updatePlayer(p,controls,t,dt){
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
-  updateLollaBall(p,controls,dt);
+  Abilities.update(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
@@ -24,7 +25,8 @@ function tryCollect(p){
   collectibles.forEach(item=>{
     if(item.taken)return;
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
-      item.taken=true;p.treats++;spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
+      item.taken=true;p.treats++;Inventory.add(p,item.type,1);
+      spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
     }
   });
 }
@@ -50,6 +52,14 @@ function tryDeliver(p,controls){
   });
 }
 
+// Interact with the nearest interactable entity (NPC) on an action-key press.
+// Edge-triggered per player so a held key fires once.
+function tryInteract(p,controls){
+  const pressed=!!keys[controls.action];
+  if(pressed && !p._actionPrev) Entities.interact(p);
+  p._actionPrev=pressed;
+}
+
 function checkGroupHowl(){
   if(!twoPlayer)return;
   if(Math.hypot(p1.x-p2.x,p1.y-p2.y)<55&&p1.howling&&p2.howling){
@@ -66,13 +76,12 @@ function updateSparkles(){
   sparkles.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=0.06;s.life--;});
 }
 
-function updateHUD(){
-  document.getElementById('p1count').textContent=p1.treats;
-  document.getElementById('p2count').textContent=p2.treats;
-  document.getElementById('cheerCount').textContent=cheeredCount;
-}
+// updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
 
 function checkWin(){
-  if(cheeredCount>=CHEER_TOTAL){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
+  // Completion is defined by the current level's quest (falls back to the cheer count).
+  const q=LevelManager.current&&LevelManager.current.quest;
+  const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
+  if(done){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
 }
 
