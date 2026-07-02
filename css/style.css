@@ -87,6 +87,11 @@
   }
   .modebtn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--shadow); }
   .modebtn.secondary{ background:var(--sunset); }
+  .modebtn.soundtrack{
+    margin-top:6px; font-size:clamp(11px,3vw,13px); padding:7px 16px;
+    background:var(--cream); box-shadow:0 3px 0 var(--shadow);
+  }
+  .modebtn.soundtrack:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
 
   /* ---- keyboard hints ---- */
   #controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }

@@ -384,3 +384,14 @@ document.getElementById('btnReplay').addEventListener('click',()=>{
   document.getElementById('startScreen').style.display='flex';
   Game.state=SCENES.MENU;
 });
+
+// Soundtrack picker — cycles through tracks and previews the choice
+const soundtrackBtn=document.getElementById('btnSoundtrack');
+if(soundtrackBtn){
+  const refreshSoundtrackBtn=()=>{ soundtrackBtn.textContent='🎵 Music: '+currentTrackName(); };
+  refreshSoundtrackBtn();
+  soundtrackBtn.addEventListener('click',()=>{
+    cycleSoundtrack();
+    refreshSoundtrackBtn();
+  });
+}
