@@ -30,7 +30,20 @@ Levels.register({
     Entities.spawn('npc', {
       x: WORLD_W*0.5, y: WORLD_H*0.30,
       name: 'Marla the Merchant',
-      greeting: "Welcome, pup! I'll have wares to trade soon.",
+      greeting: "Welcome, pup! Fresh biscuits to keep your tail wagging.",
+      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
+    });
+    // Fenwick the Tailor — sells wearables (head/face/neck/body/back) for testing the
+    // equip + on-dog-render feature. Warm-toned merchant near the centre-west.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.36, y: WORLD_H*0.42,
+      name: 'Fenwick the Tailor',
+      greeting: "Ah, a pup with style! Try something on — it'll look grand on you.",
+      look: 'tailor',
+      wares: [
+        {id:'tophat',  cost:8},  {id:'ballcap', cost:6}, {id:'shades', cost:7},
+        {id:'scarf',   cost:6},  {id:'raincoat',cost:9}, {id:'cape',   cost:10},
+      ],
     });
     Entities.spawn('enemy', { x: WORLD_W*0.32, y: WORLD_H*0.72, speed: 0.9 });
   },

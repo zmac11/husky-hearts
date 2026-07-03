@@ -72,8 +72,9 @@ Entities.register('enemy', {
 
 function _enemyTouch(e, p){
   spawnSparkles(p.x, p.y-8, '#E05555', 10);
-  if(p.treats>0){ p.treats--; if(typeof updateHUD==='function') updateHUD(); showToast('😾 A grumpy badger snatched a treat!',1600); }
-  else showToast('😾 A grumpy badger! Keep your distance!',1500);
+  // A nip costs the dog health (1 heart). Health.damage handles HUD + faint.
+  if(typeof Health!=='undefined') Health.damage(p, 2);
+  showToast('😾 The grumpy badger nipped you! (-1 ❤️)', 1500);
   // knock the dog back a little
   const ang=Math.atan2(p.y-e.y, p.x-e.x);
   p.x=clamp(p.x+Math.cos(ang)*14, 20, WORLD_W-20);

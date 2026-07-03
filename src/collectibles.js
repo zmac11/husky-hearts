@@ -21,6 +21,19 @@ function drawCollectible(item,t){
   roundRect(-13,-13,26,26,6,false,true);
   ctx.globalAlpha = 1;
 
+  // ---- dropped items (wearables/consumables/etc): no bespoke pixel art, so draw the
+  //      item's emoji icon + a stack count. Re-collectable like any other pickup. ----
+  if(item.dropped && item.icon && !['bone','heart','ball','flower','fish'].includes(item.type)){
+    ctx.font='16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(item.icon, 0, 1);
+    if(item.qty>1){
+      ctx.fillStyle='#FFF8E8'; ctx.font='bold 9px monospace';
+      ctx.fillText('×'+item.qty, 6, 9);
+    }
+    ctx.restore();
+    return;
+  }
+
   // ---- icon ----
   if(item.type==='bone'){
     // bright cream, thick, unmistakable cross-bone shape

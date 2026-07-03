@@ -16,9 +16,9 @@
   <div id="subtitle">a cozy little walk to make some friends smile</div>
 
   <div id="hud">
-    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats</div>
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats<span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
-    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats</div>
+    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats<span class="heartbar" id="p2hearts"></span></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <button id="fsBtn">⛶ Fullscreen</button>
   </div>
@@ -54,11 +54,25 @@
       </div>
 
       <div id="inventoryScreen" style="display:none;">
-        <h2>🎒 Inventory & Stats</h2>
+        <div id="invHeader">
+          <h2>🎒 Inventory</h2>
+          <div id="invTabs"></div>
+        </div>
         <div id="invBody"></div>
-        <button class="modebtn" id="btnInvClose">Close</button>
-        <div class="overlay-hint">Game keeps playing · I or Esc to close</div>
+        <div class="overlay-hint">World keeps playing · drag items to move/wear/drop · I / Esc to close</div>
       </div>
+
+      <div id="confirmPopup" class="game-overlay" style="display:none;">
+        <div id="confirmBox">
+          <div id="confirmText">Delete this item?</div>
+          <div id="confirmBtns">
+            <button class="modebtn" id="btnDelYes">🗑️ Delete</button>
+            <button class="modebtn secondary" id="btnDelNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="hotbar" style="display:none;"></div>
 
       <div id="dialogScreen" class="game-overlay" style="display:none;">
         <div id="dialogBox">

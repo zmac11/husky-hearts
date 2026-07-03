@@ -16,19 +16,41 @@ function updatePlayer(p,controls,t,dt){
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
+  if(typeof Health!=='undefined') Health.tick(p,dt);
   Abilities.update(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
 
 function tryCollect(p){
+  const now=performance.now();
   collectibles.forEach(item=>{
     if(item.taken)return;
+    if(item.pickupAt && now<item.pickupAt) return;          // just-dropped: brief no-pickup window
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
-      item.taken=true;p.treats++;Inventory.add(p,item.type,1);
+      const qty=item.qty||1;
+      if(Inventory.roomFor(p,item.type) < qty){             // full bag → leave it on the ground
+        if(!p._invFullAt || now-p._invFullAt>2200){ showToast('🎒 Inventory full — make room to pick this up!',1600); p._invFullAt=now; }
+        return;
+      }
+      item.taken=true;
+      if(!item.dropped) p.treats++;                          // re-collecting a dropped item doesn't re-award a treat
+      Inventory.add(p,item.type,qty);
       spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
     }
   });
+}
+
+// Drop an item stack onto the ground just in front of the dog (used by the inventory
+// drag-out gesture). Spawns a collectible the world can draw and the dog can re-collect.
+function dropItemOnGround(p, id, qty){
+  const def=Items.get(id); if(!def) return;
+  const ang={up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0}[p.dir];
+  const a=(typeof ang==='number')?ang:Math.PI/2;
+  const x=clamp(p.x+Math.cos(a)*26, 30, WORLD_W-30);
+  const y=clamp(p.y+Math.sin(a)*26+6, 30, WORLD_H-30);
+  collectibles.push({ x, y, type:id, qty:qty||1, taken:false, bob:rand(0,Math.PI*2),
+    dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
 function tryDeliver(p,controls){

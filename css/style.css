@@ -192,38 +192,134 @@
      behind the menu. Buttons carry their own solid fill, so they stay legible. */
   #pauseScreen{ background:rgba(74,63,53,0.18); }
 
+  /* ===== heart health bar (HUD) ===== */
+  .heartbar{ display:inline-flex; align-items:center; gap:1px; margin-left:6px; }
+  .hrt{ font-size:13px; line-height:1; }
+  .hrt.full{ color:#e2415c; }
+  .hrt.half{ color:#e2415c; display:inline-block; transform:scale(0.55); transform-origin:center; }
+  .hrt.empty{ color:#2a2018; opacity:0.6; font-size:9px; }
+
   /* Inventory: a non-blocking side panel docked over PART of the frame — the world
-     keeps playing and stays visible to the left. Not a full-screen overlay. */
+     keeps playing and stays visible to the RIGHT. Docked on the left (Terraria-ish). */
   #inventoryScreen{
-    position:absolute; top:8px; right:8px; bottom:8px; z-index:25;
-    width:min(280px,68%);
+    position:absolute; top:8px; left:8px; bottom:8px; z-index:25;
+    width:min(288px,72%);
     display:flex; flex-direction:column; align-items:stretch; gap:8px;
     padding:12px; text-align:center; overflow-y:auto;
-    background:rgba(255,248,239,0.94);
+    background:rgba(255,248,239,0.95);
     border:3px solid var(--brown); border-radius:14px;
     box-shadow:0 6px 18px rgba(74,63,53,0.35);
   }
+  #invHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   #inventoryScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
   #inventoryScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }
+  #invTabs{ display:flex; gap:4px; }
+  .inv-tab{
+    font-family:inherit; font-weight:bold; font-size:11px; cursor:pointer;
+    padding:3px 9px; border-radius:8px; border:2px solid var(--brown);
+    background:var(--cream); color:var(--brown);
+  }
+  .inv-tab.active{ background:var(--meadow); }
 
-  /* stats + inventory card */
-  #invBody{
-    display:flex; flex-direction:column; flex-wrap:nowrap; gap:10px;
-    align-items:stretch; overflow-y:auto;
-  }
-  .inv-player{
+  #invBody{ display:flex; flex-direction:column; gap:8px; align-items:stretch; }
+
+  /* paper-doll: dog in the centre, wearable slots on a 3×3 ring around it */
+  .inv-doll-grid{
+    display:grid; grid-template-columns:32px 1fr 32px; grid-auto-rows:auto;
+    gap:4px; justify-items:center; align-items:center;
     background:var(--cream); border:2px solid var(--brown); border-radius:12px;
-    padding:8px 10px; min-width:190px; box-shadow:0 3px 0 var(--shadow); text-align:left;
+    padding:6px; box-shadow:0 3px 0 var(--shadow);
   }
-  .inv-player h3{ margin:0 0 4px; font-size:13px; color:var(--brown); display:flex; align-items:center; gap:6px; }
-  .inv-stats{ font-size:10px; color:var(--brown-soft); line-height:1.5; margin-bottom:6px; }
-  .inv-grid{ display:flex; flex-wrap:wrap; gap:5px; }
-  .inv-cell{
-    background:#fff8e8; border:2px solid var(--brown-soft); border-radius:8px;
-    padding:3px 6px; font-size:12px; color:var(--brown); display:flex; align-items:center; gap:3px;
+  .inv-doll-grid canvas{ image-rendering:pixelated; background:#eaf6e4; border-radius:8px; max-width:100%; }
+  .doll-blank{ width:32px; height:32px; }
+  .doll-slot{
+    width:32px; height:32px; padding:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    border:2px dashed var(--brown-soft); border-radius:8px;
+    background:rgba(255,255,255,0.5); color:var(--brown-soft); font-size:17px;
   }
-  .inv-cell .qty{ font-weight:bold; font-size:11px; }
-  .inv-empty{ font-size:10px; color:var(--brown-soft); font-style:italic; }
+  .doll-slot.filled{ border-style:solid; border-color:var(--brown); background:#fff3d8; }
+  .doll-slot .slot-tag{ font-size:8px; font-weight:bold; letter-spacing:0.3px; }
+  .doll-slot:hover{ border-color:var(--brown); }
+
+  .inv-meta{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .inv-name{ font-size:12px; font-weight:bold; color:var(--brown); }
+  .inv-heartline{ display:inline-flex; align-items:center; gap:1px; }
+  .inv-substats{ font-size:10px; color:var(--brown-soft); }
+  .inv-substats b{ color:var(--brown); }
+
+  /* Terraria-style tile grid for loose items */
+  .inv-tilegrid{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:4px;
+    background:var(--cream); border:2px solid var(--brown); border-radius:12px;
+    padding:8px; box-shadow:0 3px 0 var(--shadow);
+  }
+  .inv-tile{
+    position:relative; aspect-ratio:1/1; padding:0; border-radius:7px;
+    border:2px solid var(--brown-soft); background:#fff8e8;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    user-select:none; -webkit-user-select:none;
+  }
+  .inv-tile.empty{ background:rgba(122,106,88,0.10); border-style:dashed; }
+  .inv-tile.hb{ background:#fdf3d8; border-color:var(--brown); }        /* numeric quick-slots (first row) */
+  .inv-tile.filled{ cursor:grab; }
+  .inv-tile.filled:active{ cursor:grabbing; }
+  .inv-tile.wearable{ border-color:#7E5AA6; box-shadow:inset 0 0 0 1px rgba(126,90,166,0.35); }
+  .inv-tile.consumable{ border-color:#3E9A5A; box-shadow:inset 0 0 0 1px rgba(62,154,90,0.35); }
+  .inv-tile.filled:hover{ border-color:var(--brown); transform:translateY(-1px); }
+  .inv-tile.dragging{ opacity:0.4; }
+  .inv-tile .tile-key{
+    position:absolute; left:2px; top:0; font-size:8px; font-weight:bold; color:var(--brown-soft);
+  }
+  .inv-tile .tile-qty{
+    position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
+    color:var(--brown); text-shadow:0 1px 0 #fff;
+  }
+
+  /* bin + drag hint row — sticky at the panel bottom so the bin is always a drop target */
+  .inv-binrow{
+    position:sticky; bottom:-12px; z-index:1;
+    display:flex; align-items:center; gap:8px; justify-content:space-between;
+    background:rgba(255,248,239,0.97); padding:6px 0 2px; margin-top:-2px;
+  }
+  .inv-hint{ font-size:9px; color:var(--brown-soft); text-align:left; line-height:1.3; }
+  .inv-bin{
+    flex-shrink:0; width:40px; height:40px; font-size:20px; cursor:pointer;
+    border:2px dashed var(--brown); border-radius:10px; background:rgba(226,92,92,0.10);
+  }
+  .inv-bin:hover{ background:rgba(226,92,92,0.28); }
+
+  /* delete-confirm popup (small modal over the frame) */
+  #confirmPopup{ background:rgba(74,63,53,0.5); z-index:30; }
+  #confirmBox{
+    background:var(--cream); border:3px solid var(--brown); border-radius:14px;
+    padding:16px 18px; max-width:300px; box-shadow:0 6px 0 var(--shadow); text-align:center;
+  }
+  #confirmText{ color:var(--brown); font-size:13px; margin-bottom:12px; line-height:1.4; }
+  #confirmBtns{ display:flex; gap:8px; justify-content:center; }
+  #confirmBtns .modebtn{ margin:0; }
+
+  /* ===== always-on hotbar (number-key slots) ===== */
+  #hotbar{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    z-index:20; display:flex; gap:5px; padding:5px 6px;
+    background:rgba(74,63,53,0.30); border-radius:12px; backdrop-filter:blur(2px);
+  }
+  .hb-slot{
+    position:relative; width:40px; height:40px; padding:0; border-radius:8px;
+    border:2px solid var(--brown); background:rgba(255,248,239,0.92);
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+  }
+  .hb-slot.filled{ cursor:pointer; }
+  .hb-slot.filled:hover{ border-color:var(--gold); }
+  .hb-key{
+    position:absolute; left:2px; top:0; font-size:8px; font-weight:bold;
+    color:var(--brown-soft);
+  }
+  .hb-qty{
+    position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
+    color:var(--brown); text-shadow:0 1px 0 #fff;
+  }
 
   /* dialog */
   #dialogBox{

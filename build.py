@@ -28,6 +28,8 @@ LOAD_ORDER = [
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
     'data/items.js',      # item definitions (inventory / shop)
     'inventory.js',       # per-player inventory add/remove/has
+    'health.js',          # per-player hp/maxHp + damage/heal (hearts)
+    'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
     'levels/index.js',    # Levels registry
