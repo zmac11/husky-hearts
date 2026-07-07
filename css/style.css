@@ -69,17 +69,28 @@
   }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(6px); }
 
-  /* ---- start / win / level-complete screens ---- */
-  #startScreen,#winScreen,#levelCompleteScreen{
+  /* ---- start / win screens ---- */
+  #startScreen,#winScreen{
     position:absolute; inset:0; border-radius:10px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:12px; text-align:center; padding:20px;
     background:rgba(255,233,214,0.97);
   }
   #winScreen{ display:none; }
-  #levelCompleteScreen{ z-index:26; background:rgba(228,238,247,0.97); }
-  #startScreen h2,#winScreen h2,#levelCompleteScreen h2{ margin:0; color:var(--brown); font-size:clamp(16px,4vw,22px); }
-  #startScreen p,#levelCompleteScreen p{ margin:0; color:var(--brown-soft); font-size:12px; max-width:300px; line-height:1.5; }
+  #startScreen h2,#winScreen h2{ margin:0; color:var(--brown); font-size:clamp(16px,4vw,22px); }
+  #startScreen p{ margin:0; color:var(--brown-soft); font-size:12px; max-width:300px; line-height:1.5; }
+
+  /* ---- world map (between-levels campaign progression) ---- */
+  #worldMapScreen{
+    position:absolute; inset:0; border-radius:10px; z-index:26;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; text-align:center; padding:8px; overflow:auto;
+    background:rgba(244,235,222,0.98);
+  }
+  #worldMapScreen h2{ margin:0; color:var(--brown); font-size:clamp(15px,3.6vw,20px); }
+  #worldMapCanvas{ max-width:100%; height:auto; border-radius:10px; border:2px solid var(--brown-soft); box-shadow:0 3px 0 var(--shadow); }
+  .wm-note{ color:var(--brown-soft); font-size:12px; max-width:340px; line-height:1.4; }
+  .wm-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }

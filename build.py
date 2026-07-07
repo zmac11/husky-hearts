@@ -27,6 +27,7 @@ LOAD_ORDER = [
     'core/input.js',      # keys, control maps, ESC hook
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
     'data/items.js',      # item definitions (inventory / shop)
+    'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
@@ -54,6 +55,7 @@ LOAD_ORDER = [
     'toast.js',           # showToast
     'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
     'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)
+    'world-map.js',       # between-levels campaign map (needs UI/Levels/LevelManager/Progress)
     'main.js',            # main loop + start
     'fullscreen.js',      # fullscreen button
     'mobile-controls.js', # touch d-pad

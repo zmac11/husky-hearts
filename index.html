@@ -44,10 +44,15 @@
         <button class="modebtn" id="btnReplay">Play Again 🐾</button>
       </div>
 
-      <div id="levelCompleteScreen" style="display:none;">
-        <h2 id="lcTitle">⭐ Level Complete! ⭐</h2>
-        <p id="lcText">On to the next adventure!</p>
-        <button class="modebtn" id="btnLevelContinue">Continue ⛰️</button>
+      <div id="worldMapScreen" style="display:none;">
+        <h2>🗺️ Your Journey</h2>
+        <canvas id="worldMapCanvas" width="600" height="250"></canvas>
+        <div id="wmNote" class="wm-note">Your journey continues!</div>
+        <div class="wm-actions">
+          <button class="modebtn" id="wmContinue">Continue →</button>
+          <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
+        </div>
+        <div class="overlay-hint">Tap a region to see what's ahead</div>
       </div>
 
       <div id="gameOverScreen" class="game-overlay" style="display:none;">

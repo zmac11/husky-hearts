@@ -9,7 +9,8 @@ A cozy 2D pixel-art game where you (and optionally a friend) explore a meadow as
 ## Features
 
 - 🎮 **Solo & 2-player co-op modes** — share a keyboard with a friend
-- 🏞️ **Two levels** — the gentle **Sunny Meadow**, then the tougher **Rocky Mountains** (snow-capped peaks, a glacial stream, and a prowling wolf pack). Clear a level's friends to climb to the next.
+- 🗺️ **Campaign world map** — clear a level and a "Your Journey" map shows your progress across the biomes (cleared ✓ / current / locked), then continues you to the next. The world is designed as **environments of 3 levels + a boss** each; tap a region to preview what's ahead.
+- 🏞️ **Two playable levels so far** — the gentle **Sunny Meadow**, then the tougher **Rocky Mountains** (snow-capped peaks, a glacial stream, and a prowling wolf pack). More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot and a sad sound plays) and stays down for the rest of the level; a co-op partner can carry on, and everyone is revived at the next level. When every dog is down it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**
 - 🐕 **5 dog breeds** — Husky, Shiba, Corgi, Poodle, Dalmatian, each with its own pixel-art silhouette
 - 🎨 **8 colour swatches** per player with live animated previews on the breed cards
@@ -63,7 +64,7 @@ On touch devices in solo mode an on-screen D-pad and Howl button are shown autom
 2. Pick a breed and a colour for each player
 3. Wander the meadow collecting bones, hearts, balls and flowers
 4. Walk up to a sad animal (cat, bunny, bird, hedgehog, tortoise in the meadow; fox, goat, owl, marmot, bear cub, raven in the mountains) and hold the action key — they'll take treats from you and once you fill their need they cheer up 💛
-5. Cheer up every animal to clear the level — the meadow leads up into the Rocky Mountains, where wolves make things harder. Watch your hearts: if a dog's run out it faints and leaves a grave behind (a co-op partner can finish the level; everyone comes back for the next one). If every dog is down, it's Game Over.
+5. Cheer up every animal to clear the level — a **world map** then shows your journey across the biomes, and you continue up into the Rocky Mountains, where wolves make things harder. Watch your hearts: if a dog's run out it faints and leaves a grave behind (a co-op partner can finish the level; everyone comes back for the next one). If every dog is down, it's Game Over.
 6. In 2-player mode, stand close together and have both players howl at once for a magical synchronized howl ✨
 
 ## Project layout
@@ -82,7 +83,8 @@ husky-hearts/
 │   │   └── input.js         key state, per-player control maps, ESC/I hooks
 │   ├── data/
 │   │   ├── breeds.js        per-breed stats + passive + abilityId (single source)
-│   │   └── items.js         item definitions (inventory / shop wares)
+│   │   ├── items.js         item definitions (inventory / shop wares)
+│   │   └── campaign.js      world-map environments (3 levels + boss each) + Progress
 │   ├── inventory.js         per-player inventory add/remove/has
 │   ├── audio.js             Web Audio engine, music loop, SFX
 │   ├── world.js             world size, colliders, world objects, players, makePlayer
@@ -110,6 +112,7 @@ husky-hearts/
 │   ├── toast.js             on-screen message popups
 │   ├── save.js              save/load a run to localStorage (world snapshot)
 │   ├── ui.js                pause / inventory / dialog panels + HUD (updateHUD)
+│   ├── world-map.js         between-levels campaign map (progress + Continue)
 │   ├── main.js              main rAF loop (scene-gated) + startup LevelManager.load
 │   ├── fullscreen.js        native fullscreen + iOS pseudo-fullscreen fallback
 │   ├── mobile-controls.js   touch d-pad binding

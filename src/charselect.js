@@ -358,6 +358,8 @@ function launchGame(){
 // to rebuild whatever level is current (used by Play Again after a game over).
 function resetGame(cfg1, cfg2, levelId){
   stopMusic();
+  // A brand-new game (levelId given = starting at level 1) wipes campaign progress.
+  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id) Progress.reset();
   if(levelId) LevelManager.load(levelId);   // regenerate a specific level
   else LevelManager.reload();               // rebuild the current level
   Abilities.reset();
@@ -369,7 +371,7 @@ function resetGame(cfg1, cfg2, levelId){
   sparkles=[]; updateHUD();
   document.getElementById('winScreen').style.display='none';
   document.getElementById('gameOverScreen').style.display='none';
-  document.getElementById('levelCompleteScreen').style.display='none';
+  if(typeof WorldMap!=='undefined') WorldMap.hide();
 }
 
 // Play Again after a game over: rebuild the level the run ended on (keeping the same

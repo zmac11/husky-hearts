@@ -27,6 +27,7 @@ const Save = {
       worldW: WORLD_W, worldH: WORLD_H,
       twoPlayer: Game.twoPlayer,
       cheeredCount: Game.cheeredCount,
+      progress: (typeof Progress!=='undefined') ? Progress.completed : {},
       players: Game.players.map(p=>this._serializePlayer(p)),
       cam: { x:cam.x, y:cam.y },
       world: { objects: worldObjects, colliders: colliders, river: river },
@@ -79,6 +80,7 @@ const Save = {
     if(data.players[1]) p2 = restore(data.players[1]);
 
     Game.cheeredCount = data.cheeredCount || 0;
+    if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
     cam.x = data.cam ? data.cam.x : 0; cam.y = data.cam ? data.cam.y : 0;
 
     // Rebuild themed ground for this level's size, and refresh ability world items.

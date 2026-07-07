@@ -54,7 +54,8 @@ const UI = {
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
     // Don't yank the world back to PLAYING from a terminal/interstitial scene.
-    const frozen = Game.state===SCENES.MENU || Game.state===SCENES.WIN || Game.state===SCENES.GAMEOVER;
+    const s=Game.state;
+    const frozen = s===SCENES.MENU || s===SCENES.WIN || s===SCENES.WORLDMAP || s===SCENES.GAMEOVER;
     if(!frozen) Game.state=SCENES.PLAYING;
   },
 
@@ -388,35 +389,14 @@ const UI = {
     this.renderHotbar();              // hide the hotbar
   },
 
-  // ---------- level complete (interstitial between levels) ----------
-  showLevelComplete(current, next){
-    const title=this.$('lcTitle'); if(title) title.textContent=`⭐ ${current.name} Complete! ⭐`;
-    const txt=this.$('lcText');
-    if(txt) txt.textContent=`You cheered up every friend here! A new trail leads to ${next.name}…`;
-    const btn=this.$('btnLevelContinue');
-    if(btn) btn.textContent=`Continue to ${next.name} ⛰️`;
-    this._nextLevelId=next.id;
-    this._show('levelCompleteScreen', true);
-  },
-
-  continueToNextLevel(){
-    const id=this._nextLevelId; this._nextLevelId=null;
-    this._show('levelCompleteScreen', false);
-    if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
-      LevelManager.goTo(id);
-      Game.state=SCENES.PLAYING;
-      if(typeof startMusic==='function') startMusic();
-    }
-  },
-
   // ---------- menu transitions ----------
   quitToMenu(){
     this.closeInventory();
     this.closePanel();
+    if(typeof WorldMap!=='undefined') WorldMap.hide();
     if(typeof stopMusic==='function') stopMusic();
     this._show('winScreen', false);
     this._show('gameOverScreen', false);
-    this._show('levelCompleteScreen', false);
     this.$('startScreen').style.display='flex';
     this.refreshContinueButton();     // a save may have been made this session
     Game.state=SCENES.MENU;
@@ -436,8 +416,7 @@ const UI = {
     const on=(id,fn)=>{ const el=this.$(id); if(el) el.addEventListener('click',fn); };
     on('btnResume', ()=>this.closePanel());
     on('btnQuit', ()=>this.quitToMenu());
-    // Level-complete → next level; game over → replay / menu.
-    on('btnLevelContinue', ()=>this.continueToNextLevel());
+    // Game over → replay / menu. (World-map buttons are wired inside WorldMap.)
     on('btnGameOverReplay', ()=>{ if(typeof replayRun==='function') replayRun(); });
     on('btnGameOverMenu', ()=>this.quitToMenu());
     on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });

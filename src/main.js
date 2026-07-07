@@ -9,7 +9,7 @@ function loop(now){
   // Keep drawing the frozen world behind any overlay that sits over live gameplay
   // (pause / inventory / dialog / game over / the brief win freeze).
   const s=Game.state;
-  const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN;
+  const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
   if(playing){
     const c1=Input.CONTROLS.p1, c2=Input.CONTROLS.p2;
     updateCollectibles(now);
