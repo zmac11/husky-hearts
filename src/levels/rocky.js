@@ -1,130 +1,138 @@
 // ====================== LEVEL 2: ROCKY MOUNTAINS ======================
-// The trail out of the Sunny Meadow climbs into cold, stony highlands. Snow-capped
-// peaks line the skyline, a glacial stream cuts across the map, and a pack of wolves
-// prowls the slopes — so this level bites back harder than the meadow. You reach it by
-// clearing level 1 (meadow.next → 'rocky'); it's the final level (next: null).
+// The trail out of the Sunny Meadow climbs into a lush Canadian-Rockies valley: a
+// forested green basin ringed by jagged snow-veined peaks, dotted with vivid turquoise
+// glacial lakes, fed by cascading waterfalls, with a river winding through and a pack of
+// wolves on the prowl. Reached by clearing level 1 (meadow.next → 'rocky'); final level.
 //
-// Like meadow.js this is a thin declaration: a bigger `size`, a cold `theme`, a
-// `generate()` that lays down mountain-flavoured world objects / animals / actors, and
-// a `quest`. New visuals (mountains, boulders, snowy pines, dead trees, crystals, snow,
-// campfires) live in world-draw.js; new animals in friends.js; the wolf in entities/.
+// Like meadow.js this is a thin declaration: a bigger `size`, an alpine `theme`, a
+// `generate()` that lays down the terrain / animals / actors, and a `quest`. Visuals
+// (mountains, lakes, waterfalls, evergreens, boulders, campfires) live in world-draw.js;
+// new animals in friends.js; the wolf in entities/.
 
-// ---- world generation (mountain terrain + a glacial stream) ----
+// ---- world generation (alpine valley: peaks, glacial lakes, waterfalls, a river) ----
 function buildRockyWorld(){
   worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H;
 
-  // Cold, winding stream across the lower-middle of the map (create first so placement
-  // can steer clear of it). Narrower and colder than the meadow river.
+  // Winding river threading the lower-middle of the valley (create first so placement
+  // can steer clear of it).
   river={
-    pos:WORLD_H*0.6,
+    pos:H*0.62,
     amplitude:42, wavelength:680,
     amplitude2:16, wavelength2:230, phase2:2.1,
     baseWidth:58, widthAmp:18, widthWavelength:500, widthPhase:1.1,
   };
   river.pebbles=makeRiverPebbles();
 
-  // Placement helper: random point that avoids the stream and existing items.
+  // ---- Glacial lakes (big turquoise water bodies). Placed before everything else so
+  //      other objects steer around them; swimmable (isInPond treats 'lake' like 'pond'). ----
+  const lakes=[
+    { x:W*0.50, y:H*0.37, w:390, h:250 },   // hero lake below the central peaks
+    { x:W*0.23, y:H*0.52, w:300, h:210 },   // west lake
+    { x:W*0.79, y:H*0.45, w:280, h:190 },   // east lake
+  ];
+  lakes.forEach((l,i)=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
+    seed:Math.random()*100, blobSeed:Math.floor(Math.random()*9999)}));
+  function inLake(x,y,m){ return lakes.some(l=>((x-l.x)/(l.w/2+m))**2+((y-l.y)/(l.h/2+m))**2<1); }
+
+  // Placement helper: random point avoiding the river, lakes, and existing items.
   function pt(ax,ay,bx,by,minD,list,margin){
-    for(let a=0;a<50;a++){ const p=rand2(ax,ay,bx,by,minD,list); if(!inRiver(p.x,p.y,margin)) return p; }
+    for(let a=0;a<60;a++){
+      const p=rand2(ax,ay,bx,by,minD,list);
+      if(!inRiver(p.x,p.y,margin) && !inLake(p.x,p.y,margin)) return p;
+    }
     return rand2(ax,ay,bx,by,minD,list);
   }
 
-  // stone-wall border
-  addCollider(0,0,WORLD_W,14);
-  addCollider(0,WORLD_H-14,WORLD_W,14);
-  addCollider(0,0,14,WORLD_H);
-  addCollider(WORLD_W-14,0,14,WORLD_H);
+  // log-fence border
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
 
   const taken=[];
 
-  // Backdrop peaks along the top edge (low y → painter's algorithm draws them behind
-  // everything). A small collider at each base keeps dogs from walking "into" a peak.
+  // ---- Mountain range along the skyline: a run of wide, overlapping peaks whose summits
+  //      sit fully inside the world (apex y >= ~8) so they read as a continuous range
+  //      rather than triangles cut off by the top edge. Low y → drawn behind everything. ----
   const M=6;
   for(let i=0;i<M;i++){
-    const mx=WORLD_W*(0.08 + (i/(M-1))*0.84) + rand(-36,36);
-    const my=rand(120,185);
-    const w=rand(230,360), h=rand(150,240);
-    worldObjects.push({kind:'mountain',x:mx,y:my,w,h,seed:Math.floor(Math.random()*9999)});
-    addCollider(mx-16,my-8,32,14);
+    const mx=W*(0.06 + (i/(M-1))*0.88) + rand(-24,24);
+    const baseY=rand(196,216);
+    const mh=rand(150,188);          // apex = baseY - mh stays a little below the top edge
+    const mw=rand(360,500);
+    worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(Math.random()*9999)});
+    addCollider(mx-18,baseY-6,36,14);
   }
 
-  // Boulders — the level's main obstacles.
-  for(let i=0;i<16;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,120,taken,50); taken.push(p);
+  // ---- Waterfalls tumbling into the lakes they sit above ----
+  worldObjects.push({kind:'waterfall', x:lakes[0].x, y:lakes[0].y-lakes[0].h/2+10, h:120});
+  worldObjects.push({kind:'waterfall', x:lakes[2].x+10, y:lakes[2].y-lakes[2].h/2+8, h:96});
+
+  // Boulders — the valley's main obstacles.
+  for(let i=0;i<15;i++){
+    const p=pt(60,240,W-60,H-60,120,taken,50); taken.push(p);
     const big=Math.random()<0.6;
     worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
     addCollider(p.x-(big?16:11), p.y-2, big?32:22, big?16:12);
   }
 
-  // Rock clusters (generic grey renderer fits the theme perfectly).
-  for(let i=0;i<8;i++){
-    const p=pt(80,240,WORLD_W-80,WORLD_H-80,120,taken,45); taken.push(p);
+  // Rock clusters.
+  for(let i=0;i<7;i++){
+    const p=pt(80,240,W-80,H-80,120,taken,45); taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
     addCollider(p.x-26,p.y-4,50,18);
   }
 
-  // Snow-dusted pines.
-  for(let i=0;i<18;i++){
-    const p=pt(50,240,WORLD_W-50,WORLD_H-50,90,taken,42); taken.push(p);
+  // Evergreen forest — lush green spruce/fir (a lot of them: it's a forested valley).
+  for(let i=0;i<26;i++){
+    const p=pt(50,240,W-50,H-50,80,taken,40); taken.push(p);
     worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
     addCollider(p.x-4,p.y+12,8,12);
   }
 
-  // Bare, weathered dead trees.
-  for(let i=0;i<9;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,110,taken,42); taken.push(p);
+  // A few weathered deadfall trees.
+  for(let i=0;i<5;i++){
+    const p=pt(60,240,W-60,H-60,110,taken,42); taken.push(p);
     worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
     addCollider(p.x-4,p.y+14,8,12);
   }
 
   // Loose rocks (mostly walkable; big ones block).
-  for(let i=0;i<20;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,60,taken,35); taken.push(p);
+  for(let i=0;i<18;i++){
+    const p=pt(60,240,W-60,H-60,60,taken,35); taken.push(p);
     const big=Math.random()<0.25;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
     if(big) addCollider(p.x-13,p.y-2,26,16);
   }
 
-  // Glowing crystal clusters (decorative, walkable).
-  for(let i=0;i<12;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,30); taken.push(p);
-    worldObjects.push({kind:'crystal',x:p.x,y:p.y,seed:Math.random()*100});
-  }
-
-  // Snow drifts on the ground (no collider).
-  for(let i=0;i<26;i++){
-    worldObjects.push({kind:'snowpatch',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),seed:Math.random()*100});
-  }
-
   // Hardy shrubs.
-  for(let i=0;i<12;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,40); taken.push(p);
+  for(let i=0;i<14;i++){
+    const p=pt(60,240,W-60,H-60,80,taken,40); taken.push(p);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
     addCollider(p.x-13,p.y+2,26,16);
   }
 
-  // Alpine flowers (cool palette) + dry grass tufts (no colliders).
-  const hues=['#BFD7FF','#D9C7FF','#FF9EC0','#FFE08A','#B6F0E0'];
-  for(let i=0;i<60;i++){
-    worldObjects.push({kind:'flower',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),
+  // Wildflowers + grass tufts across the green valley floor (no colliders).
+  const hues=['#FF9E6E','#FFD36A','#E58AC0','#B6E36A','#7FD4E0','#C79BFF'];
+  for(let i=0;i<70;i++){
+    worldObjects.push({kind:'flower',x:rand(30,W-30),y:rand(220,H-30),
       hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
   }
-  for(let i=0;i<16;i++){
-    worldObjects.push({kind:'tallgrass',x:rand(40,WORLD_W-40),y:rand(220,WORLD_H-40),
-      blades:Math.floor(rand(4,8)),seed:Math.random()*100});
+  for(let i=0;i<22;i++){
+    worldObjects.push({kind:'tallgrass',x:rand(40,W-40),y:rand(220,H-40),
+      blades:Math.floor(rand(4,9)),seed:Math.random()*100});
   }
 
-  // Cozy campfires — warm landmarks on the cold peaks.
-  worldObjects.push({kind:'campfire',x:WORLD_W*0.5, y:WORLD_H*0.30});
-  worldObjects.push({kind:'campfire',x:WORLD_W*0.19,y:WORLD_H*0.82});
+  // Cozy lakeside campfires — warm landmarks.
+  worldObjects.push({kind:'campfire',x:W*0.63, y:H*0.30});
+  worldObjects.push({kind:'campfire',x:W*0.15,y:H*0.82});
 
-  // A couple of stone trails.
-  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.12,y1:WORLD_H*0.36,x2:WORLD_W*0.88,y2:WORLD_H*0.42,seed:71});
-  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.5, y1:WORLD_H*0.22,x2:WORLD_W*0.5, y2:WORLD_H*0.9, seed:72});
+  // A couple of trails.
+  worldObjects.push({kind:'stonepath',x1:W*0.12,y1:H*0.38,x2:W*0.88,y2:H*0.44,seed:71});
+  worldObjects.push({kind:'stonepath',x1:W*0.66,y1:H*0.20,x2:W*0.66,y2:H*0.9, seed:72});
 
-  // Stone crossings over the stream (drawn in main.js so swimmers pass underneath).
+  // Stone crossings over the river (drawn in main.js so swimmers pass underneath).
   [0.28,0.6,0.85].forEach((fx,i)=>{
-    const bx=WORLD_W*fx;
+    const bx=W*fx;
     const span=riverWidthAt(bx)/2+16;
     worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:30+i,span});
   });
@@ -173,13 +181,12 @@ Levels.register({
   spawn: { x: 170, y: 250 },       // start on the lower-left plateau, below the peaks
   next: null,                      // final level
 
-  // Cold, stony palette (grass tones → gravel/scree; fence → stone wall).
+  // Lush alpine-valley palette (green basin, log-fence border, turquoise water on map).
   theme: {
-    grass:'#8C877C', grassDark:'#7A756A', grassLight:'#9C978C',
-    dirt:'rgba(120,104,84,0.20)',
-    fenceA:'#5E574E', fenceB:'#6E6658', rail:'#93887A',
-    minimapGrass:'#6E665A', minimapWater:'#5AA6C8',
-    snow:'#EAF2F6',
+    grass:'#86A867', grassDark:'#71934F', grassLight:'#9BBC79',
+    dirt:'rgba(122,100,64,0.18)',
+    fenceA:'#6B4A2E', fenceB:'#7C5636', rail:'#A9793F',
+    minimapGrass:'#5E8A46', minimapWater:'#3FC8C0',
   },
 
   generate(){
@@ -188,13 +195,13 @@ Levels.register({
     friends = makeRockyFriends();
 
     Entities.clear();
-    // Rusk the Ranger — a mountain guide/merchant near the summit campfire, stocking
-    // cold-weather gear and a hearty snack.
+    // Rusk the Ranger — a park-ranger guide/merchant by the lakeside camp, stocking
+    // outdoor gear and a hearty snack.
     Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.24,
+      x: WORLD_W*0.60, y: WORLD_H*0.22,
       name: 'Rusk the Ranger',
       look: 'ranger',
-      greeting: "Brr! Cold up here, pup. Gear up before the wolves catch your scent.",
+      greeting: "Welcome to the valley, pup! Gear up before the wolves catch your scent.",
       wares: [
         {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
         {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
@@ -207,6 +214,14 @@ Levels.register({
     Entities.spawn('wolf', { x: WORLD_W*0.30, y: WORLD_H*0.74, speed:1.1, chaseR:220 });
     // A grumpy badger still lurks too.
     Entities.spawn('enemy', { x: WORLD_W*0.78, y: WORLD_H*0.44, speed:1.0 });
+
+    // Friendly Canadian wildlife — peaceful, greet them for a positive reward. Loons
+    // ride on the lakes, the beaver keeps to a lakeshore, the moose roams the forest.
+    const lk = worldObjects.filter(o=>o.kind==='lake');
+    if(lk[0]) Entities.spawn('critter', { species:'loon',   x: lk[0].x-80, y: lk[0].y });
+    if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
+    if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
+    Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
   },
 
   quest: {

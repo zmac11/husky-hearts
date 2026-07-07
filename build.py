@@ -44,6 +44,7 @@ LOAD_ORDER = [
     'entities/enemy.js',    # enemy kind (wander/chase)
     'entities/wolf.js',     # wolf kind (faster/tougher — rocky mountains)
     'entities/grave.js',    # grave marker left where a dog faints
+    'entities/critter.js',  # friendly wildlife (moose/beaver/loon — positive interaction)
     'entities/npc.js',      # NPC kind (interactable)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
@@ -61,6 +62,7 @@ LOAD_ORDER = [
     'mobile-controls.js', # touch d-pad
     'start.js',           # default resetGame (overridden by charselect)
     'charselect.js',      # character selection screen + start handlers
+    'dev.js',             # dev-mode level jumper (needs resetGame/dogConfig/Campaign)
 ]
 
 def build_bundle():
