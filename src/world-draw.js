@@ -455,6 +455,146 @@ function drawRiver(t){
   ctx.globalAlpha=1;
 }
 
+// ====================== ROCKY-MOUNTAIN ASSETS ======================
+// Renderers for the second level's theme. Registered into the drawWorld() switch and
+// spawned by levels/rocky.js. Same pixel-art idiom (px/shade + a little canvas path work).
+
+function drawMountain(x,y,w,h,seed){
+  // A big snow-capped backdrop peak. `y` is the base; it rises to an apex at y-h.
+  const half=w/2;
+  const rock='#8A8580', rockDark='#6E6A64', rockLight='#A6A29B', snow='#EAF2F6', snowSh='#C7D6E0';
+  // cast shadow / base skirt
+  ctx.globalAlpha=0.18; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.9,10,0,0,Math.PI*2); ctx.fillStyle='#2A2620'; ctx.fill(); ctx.globalAlpha=1;
+  // main rock body (triangle)
+  ctx.beginPath(); ctx.moveTo(x-half,y); ctx.lineTo(x,y-h); ctx.lineTo(x+half,y); ctx.closePath();
+  ctx.fillStyle=rock; ctx.fill();
+  // shaded right face
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+half,y); ctx.lineTo(x+half*0.18,y); ctx.closePath();
+  ctx.fillStyle=rockDark; ctx.fill();
+  // lit left ridge
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x-half*0.34,y); ctx.lineTo(x-half*0.06,y); ctx.closePath();
+  ctx.fillStyle=rockLight; ctx.fill();
+  // snow cap (upper third), with a jagged lower edge
+  const capH=h*0.34, capY=y-h+capH, capHalf=half*(capH/h);
+  ctx.beginPath(); ctx.moveTo(x,y-h);
+  ctx.lineTo(x-capHalf,capY);
+  const r=mulberry32(Math.floor(seed||3));
+  for(let i=-3;i<=3;i++){ const fx=x+(i/3)*capHalf, fy=capY-r()*6; ctx.lineTo(fx,fy); }
+  ctx.lineTo(x+capHalf,capY); ctx.closePath();
+  ctx.fillStyle=snow; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+capHalf*0.5,capY-2); ctx.lineTo(x+capHalf,capY); ctx.closePath();
+  ctx.fillStyle=snowSh; ctx.fill();
+  // a couple of ridge cracks
+  ctx.strokeStyle='rgba(50,46,40,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x-half*0.3,y); ctx.lineTo(x-half*0.1,y-h*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+half*0.42,y); ctx.lineTo(x+half*0.12,y-h*0.55); ctx.stroke();
+}
+
+function drawBoulder(x,y,big){
+  // Chunky mountain boulder — bigger and cooler-grey than the meadow rocks.
+  if(big){
+    ctx.globalAlpha=0.22; px(x-18,y+9,36,7,'#22201C'); ctx.globalAlpha=1;
+    px(x-18,y+2,36,14,'#736F68');
+    px(x-15,y-6,30,12,'#847F77');
+    px(x-10,y-13,20,10,'#948F86');
+    px(x-4,y-16,10,6,'#A29C92');
+    px(x-11,y-8,7,4,'#B4AEA3');           // highlight
+    px(x+6,y-2,5,4,'#5E5A54');            // shade pocket
+    px(x-14,y+4,5,3,'#5A8A4A');           // moss
+    px(x+9,y+3,4,3,'#6A9A4A');
+    px(x-2,y-13,3,3,'#CFE6EC');           // snow dab on top
+  } else {
+    ctx.globalAlpha=0.18; px(x-11,y+7,22,5,'#22201C'); ctx.globalAlpha=1;
+    px(x-11,y,22,10,'#7C7770');
+    px(x-8,y-5,16,8,'#8C877E');
+    px(x-3,y-8,8,5,'#9A948A');
+    px(x-6,y-4,4,3,'#B0AAA0');
+    px(x-2,y-8,3,2,'#CFE6EC');
+  }
+}
+
+function drawSnowyPine(x,y,t){
+  const sway=Math.sin(t/1000+x*0.012)*0.7;
+  const cx=x+sway;
+  // trunk
+  px(x-3,y+2,6,20,'#4A3320'); px(x-1,y+4,3,14,'#5A4028');
+  // tiers (dark evergreen) with snow layered on each shoulder
+  [[0,-50,10,12,'#1B4A26'],[-2,-38,14,16,'#1F5A2E'],[-4,-22,18,18,'#245F32'],[-6,-6,22,16,'#286838']].forEach(([ox,oy,w,h,c])=>{
+    px(cx+ox,y+oy,w,h,c);
+    px(cx+ox,y+oy,w,3,'#EAF2F6');                 // snow shelf
+    px(cx+ox+1,y+oy+1,Math.max(2,w-6),1,'#FFFFFF');
+  });
+  px(cx-1,y-54,4,4,'#F4FAFF');                      // snowy tip
+}
+
+function drawDeadTree(x,y,t){
+  const sway=Math.sin(t/1300+x*0.01)*1.2;
+  const cx=x+sway;
+  // pale weathered trunk
+  px(x-4,y+2,8,26,'#6B5C4A'); px(x-2,y+4,3,20,'#7C6C58'); px(x+2,y+6,2,16,'#54473A');
+  px(x-8,y+24,5,5,'#5C4E3E'); px(x+4,y+24,5,5,'#5C4E3E'); // roots
+  // bare branches
+  ctx.strokeStyle='#6B5C4A'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  const branch=(bx,by,ex,ey)=>{ ctx.beginPath(); ctx.moveTo(cx+bx,y+by); ctx.lineTo(cx+ex,y+ey); ctx.stroke(); };
+  branch(0,-2,-12,-16); branch(-8,-11,-16,-22); branch(0,-6,10,-20); branch(6,-14,15,-24);
+  branch(0,-10,-2,-28); branch(-1,-22,-8,-32); branch(1,-22,7,-33);
+  ctx.lineWidth=1.5;
+  branch(-12,-16,-18,-20); branch(10,-20,16,-18); branch(-2,-28,-6,-36); branch(1,-28,5,-37);
+  // a little snow catching on the limbs
+  ctx.fillStyle='#E6EEF4'; px(cx-15,y-23,3,2,'#E6EEF4'); px(cx+13,y-25,3,2,'#E6EEF4'); px(cx-1,y-34,3,2,'#E6EEF4');
+}
+
+function drawCrystal(x,y,seed,t){
+  // A little cluster of glowing gemstones poking out of the rock.
+  const r=mulberry32(Math.floor((seed||1)*53));
+  const hue=r()<0.5?['#7EC8FF','#4A9AE0','#BFE6FF']:['#C79BFF','#8A5AD0','#E4CCFF'];
+  const pulse=0.5+Math.sin(t/380+seed)*0.5;
+  // glow
+  ctx.save(); ctx.globalAlpha=0.20+pulse*0.22;
+  ctx.beginPath(); ctx.arc(x,y-4,13,0,Math.PI*2); ctx.fillStyle=hue[0]; ctx.fill();
+  ctx.restore();
+  const shard=(ox,oy,w,h)=>{
+    ctx.beginPath(); ctx.moveTo(x+ox,y+oy); ctx.lineTo(x+ox-w/2,y+oy+h*0.5); ctx.lineTo(x+ox,y+oy+h); ctx.lineTo(x+ox+w/2,y+oy+h*0.5); ctx.closePath();
+    ctx.fillStyle=hue[1]; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+ox,y+oy); ctx.lineTo(x+ox,y+oy+h); ctx.lineTo(x+ox+w/2,y+oy+h*0.5); ctx.closePath();
+    ctx.fillStyle=hue[0]; ctx.fill();
+    px(x+ox-1,y+oy+2,1,Math.max(2,h-6),hue[2]);   // sparkle streak
+  };
+  shard(-5,-6,6,14); shard(4,-9,7,17); shard(0,-2,5,11);
+  ctx.globalAlpha=0.6+pulse*0.4; px(x+3,y-8,1,1,'#FFFFFF'); px(x-4,y-3,1,1,'#FFFFFF'); ctx.globalAlpha=1;
+}
+
+function drawSnowPatch(x,y,seed){
+  // Soft irregular snow drift on the ground (no collider).
+  const r=mulberry32(Math.floor((seed||1)*97));
+  ctx.fillStyle='rgba(238,244,248,0.9)';
+  ctx.beginPath();
+  const n=8;
+  for(let i=0;i<=n;i++){ const a=(i/n)*Math.PI*2, rad=(10+r()*8); const px0=x+Math.cos(a)*rad*1.5, py0=y+Math.sin(a)*rad*0.5; if(i===0)ctx.moveTo(px0,py0); else ctx.lineTo(px0,py0); }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.ellipse(x-3,y-2,8,3,0,0,Math.PI*2); ctx.fill();
+}
+
+function drawCampfire(x,y,t){
+  // Ring of stones + flickering flames + warm glow — a cozy landmark on the cold peaks.
+  const glow=0.4+Math.sin(t/160)*0.12+Math.sin(t/90)*0.06;
+  ctx.save(); ctx.globalAlpha=0.22*glow*2; ctx.beginPath(); ctx.arc(x,y-4,26,0,Math.PI*2);
+  const g=ctx.createRadialGradient(x,y-4,2,x,y-4,26); g.addColorStop(0,'#FFC65A'); g.addColorStop(1,'rgba(255,150,40,0)');
+  ctx.fillStyle=g; ctx.fill(); ctx.restore();
+  // stone ring
+  [[-12,4],[-6,7],[2,8],[9,5],[12,-1],[-13,-1]].forEach(([ox,oy],i)=>{ px(x+ox-2,y+oy-2,7,5,i%2?'#7C7770':'#8C877E'); px(x+ox-1,y+oy-2,3,2,'#A6A29B'); });
+  // logs
+  px(x-7,y+2,14,3,'#5A4028'); px(x-2,y-1,12,3,'#4A3320');
+  // flames (layered flicker)
+  const f=Math.sin(t/70)*2, f2=Math.sin(t/110+1)*2;
+  ctx.beginPath(); ctx.moveTo(x-6,y+2); ctx.quadraticCurveTo(x-4+f,y-10,x,y-16-f); ctx.quadraticCurveTo(x+5-f,y-9,x+6,y+2); ctx.closePath(); ctx.fillStyle='#FF7A2E'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x-4,y+2); ctx.quadraticCurveTo(x-2+f2,y-7,x,y-12-f2); ctx.quadraticCurveTo(x+3-f2,y-6,x+4,y+2); ctx.closePath(); ctx.fillStyle='#FFB43C'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x-2,y+1); ctx.quadraticCurveTo(x,y-4,x,y-8-f); ctx.quadraticCurveTo(x+2,y-4,x+2,y+1); ctx.closePath(); ctx.fillStyle='#FFE79A'; ctx.fill();
+  // sparks
+  px(x-1,Math.round(y-18-f*2),1,1,'#FFD36A'); px(x+3,Math.round(y-14+f2),1,1,'#FFE79A');
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
@@ -478,6 +618,14 @@ function drawWorld(t){
       case 'mushroomring':drawMushroomRing(obj.x,obj.y,obj.seed); break;
       case 'stonepath':   drawStonePath(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
+      // --- rocky-mountain kinds (levels/rocky.js) ---
+      case 'mountain':    drawMountain(obj.x,obj.y,obj.w,obj.h,obj.seed); break;
+      case 'boulder':     drawBoulder(obj.x,obj.y,obj.big); break;
+      case 'snowypine':   drawSnowyPine(obj.x,obj.y,t); break;
+      case 'deadtree':    drawDeadTree(obj.x,obj.y,t); break;
+      case 'crystal':     drawCrystal(obj.x,obj.y,obj.seed,t); break;
+      case 'snowpatch':   drawSnowPatch(obj.x,obj.y,obj.seed); break;
+      case 'campfire':    drawCampfire(obj.x,obj.y,t); break;
       // 'riverbridge' intentionally not drawn here — layered in main.js so swimmers can pass underneath
     }
   });

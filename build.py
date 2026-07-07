@@ -27,6 +27,7 @@ LOAD_ORDER = [
     'core/input.js',      # keys, control maps, ESC hook
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
     'data/items.js',      # item definitions (inventory / shop)
+    'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
@@ -34,12 +35,15 @@ LOAD_ORDER = [
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
     'levels/index.js',    # Levels registry
     'levels/meadow.js',   # level 1 definition (size, theme, quest, generate)
+    'levels/rocky.js',    # level 2 — Rocky Mountains (harder; meadow.next → 'rocky')
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
     'friends.js',         # drawFriend
     'entities/registry.js', # Entities registry + level entity list
     'entities/enemy.js',    # enemy kind (wander/chase)
+    'entities/wolf.js',     # wolf kind (faster/tougher — rocky mountains)
+    'entities/grave.js',    # grave marker left where a dog faints
     'entities/npc.js',      # NPC kind (interactable)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
@@ -51,6 +55,7 @@ LOAD_ORDER = [
     'toast.js',           # showToast
     'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
     'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)
+    'world-map.js',       # between-levels campaign map (needs UI/Levels/LevelManager/Progress)
     'main.js',            # main loop + start
     'fullscreen.js',      # fullscreen button
     'mobile-controls.js', # touch d-pad

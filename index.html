@@ -40,8 +40,26 @@
 
       <div id="winScreen">
         <h2>💛 Everyone is happy! 💛</h2>
-        <p>You filled the meadow with friendship.<br>Good dog! 🌸</p>
+        <p>You cheered up every friend across the meadow <em>and</em> the rocky mountains.<br>Good dog! 🌸⛰️</p>
         <button class="modebtn" id="btnReplay">Play Again 🐾</button>
+      </div>
+
+      <div id="worldMapScreen" style="display:none;">
+        <h2>🗺️ Your Journey</h2>
+        <canvas id="worldMapCanvas" width="600" height="250"></canvas>
+        <div id="wmNote" class="wm-note">Your journey continues!</div>
+        <div class="wm-actions">
+          <button class="modebtn" id="wmContinue">Continue →</button>
+          <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
+        </div>
+        <div class="overlay-hint">Tap a region to see what's ahead</div>
+      </div>
+
+      <div id="gameOverScreen" class="game-overlay" style="display:none;">
+        <h2>💔 Game Over</h2>
+        <p id="gameOverText">Your dog fainted...</p>
+        <button class="modebtn" id="btnGameOverReplay">🔄 Play Again</button>
+        <button class="modebtn secondary" id="btnGameOverMenu">🏠 Main Menu</button>
       </div>
 
       <div id="pauseScreen" class="game-overlay" style="display:none;">

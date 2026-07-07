@@ -345,24 +345,44 @@ function launchGame(){
   if(dots[1]) dots[1].style.background = cfg2.color.hex;
 
   document.getElementById('startScreen').style.display='none';
-  resetGame(cfg1, cfg2);
+  // A brand-new game always starts at the first level (the current level may be a
+  // later one if a previous run progressed before quitting).
+  resetGame(cfg1, cfg2, Levels.first().id);
   Abilities.spawnAll();
   Game.state=SCENES.PLAYING;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
 
-// Override resetGame to accept configs
-function resetGame(cfg1, cfg2){
+// Override resetGame to accept configs. `levelId` picks which level to build; omit it
+// to rebuild whatever level is current (used by Play Again after a game over).
+function resetGame(cfg1, cfg2, levelId){
   stopMusic();
-  LevelManager.reload();   // regenerate world + entities + themed ground; resets cheeredCount
+  // A brand-new game (levelId given = starting at level 1) wipes campaign progress.
+  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id) Progress.reset();
+  if(levelId) LevelManager.load(levelId);   // regenerate a specific level
+  else LevelManager.reload();               // rebuild the current level
   Abilities.reset();
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
-  p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);
-  p2=makePlayer(2, c2.color.hex, 260, 200, c2.breed);
+  const spawn = (LevelManager.current && LevelManager.current.spawn) || { x:200, y:200 };
+  p1=makePlayer(1, c1.color.hex, spawn.x, spawn.y, c1.breed);
+  p2=makePlayer(2, c2.color.hex, spawn.x+60, spawn.y, c2.breed);
   sparkles=[]; updateHUD();
   document.getElementById('winScreen').style.display='none';
+  document.getElementById('gameOverScreen').style.display='none';
+  if(typeof WorldMap!=='undefined') WorldMap.hide();
+}
+
+// Play Again after a game over: rebuild the level the run ended on (keeping the same
+// dogs) and drop straight back into play — no trip through the menu / char-select.
+function replayRun(){
+  if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
+  resetGame(dogConfig.p1, dogConfig.p2);   // no levelId → current level
+  Abilities.spawnAll();
+  Game.state=SCENES.PLAYING;
+  startMusic();
+  if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
 
 // Wire main menu buttons → char select flow

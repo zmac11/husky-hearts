@@ -31,6 +31,11 @@ const ITEMS_DATA = {
   scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf' },
   raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat' },
   cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape' },
+
+  // rocky-mountain wearables — sold by Rusk the Ranger on level 2
+  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie' },
+  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles' },
+  trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
 };
 
 const Items = {

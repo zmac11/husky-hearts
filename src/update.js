@@ -101,9 +101,17 @@ function updateSparkles(){
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
 
 function checkWin(){
+  // Already handled this completion (frozen behind the world map / victory overlay).
+  if(Game.state===SCENES.WORLDMAP || Game.state===SCENES.WIN) return;
   // Completion is defined by the current level's quest (falls back to the cheer count).
-  const q=LevelManager.current&&LevelManager.current.quest;
+  const lvl=LevelManager.current;
+  const q=lvl&&lvl.quest;
   const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
-  if(done){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
+  if(!done) return;
+  sfxWin();
+  // Freeze the world, then reveal the campaign world map so you can see your progress
+  // and continue to the next level (WorldMap handles "no more content yet" gracefully).
+  Game.state=SCENES.WORLDMAP;
+  setTimeout(()=>{ if(typeof WorldMap!=='undefined') WorldMap.showAfter(lvl.id); }, 700);
 }
 

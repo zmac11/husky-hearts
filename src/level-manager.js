@@ -33,4 +33,26 @@ const LevelManager = {
 
   // Convenience: (re)load whatever level is current, defaulting to the first.
   reload(){ return this.load(_currentLevel ? _currentLevel.id : (Levels.first() && Levels.first().id)); },
+
+  // Advance an in-progress run to another level: build it, then move the existing dogs
+  // to the new spawn and heal them to full. Inventory + treats carry over as a reward
+  // for finishing the previous level; quest progress (cheeredCount) resets in load().
+  goTo(id){
+    const lvl=this.load(id);
+    if(!lvl) return null;
+    const spawn=lvl.spawn || { x:200, y:200 };
+    const players=Game.twoPlayer ? [p1,p2] : [p1];
+    players.forEach((p,i)=>{
+      if(!p) return;
+      p.x=spawn.x+i*60; p.y=spawn.y;
+      p.hp=p.maxHp; p.hurtTimer=0; p.swimming=false;
+      p.dead=false;                 // fallen dogs are revived for the new level
+    });
+    if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
+    if(typeof sparkles!=='undefined') sparkles=[];
+    if(typeof updateCamera==='function') updateCamera();
+    if(typeof updateHUD==='function') updateHUD();
+    if(typeof showToast==='function') showToast(`⛰️ ${lvl.name}`, 2200);
+    return lvl;
+  },
 };
