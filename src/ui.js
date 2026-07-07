@@ -19,6 +19,7 @@ const UI = {
     set('p1count', p1 ? p1.treats : 0);
     set('p2count', (typeof p2!=='undefined' && p2) ? p2.treats : 0);
     set('cheerCount', Game.cheeredCount);
+    set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
@@ -36,7 +37,7 @@ const UI = {
   _heartMarkup(p){
     if(!p || !p.maxHp) return '';
     const n=Health.heartsFor(p.maxHp);
-    let out='';
+    let out = p.dead ? '<span class="hrt dead">🪦</span>' : '';
     for(let i=0;i<n;i++){
       const inHeart=Math.max(0, Math.min(Health.HEART_HP, p.hp - i*Health.HEART_HP));
       if(inHeart>=2)      out+='<span class="hrt full">❤</span>';
@@ -52,7 +53,9 @@ const UI = {
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
-    if(Game.state!==SCENES.MENU && Game.state!==SCENES.WIN) Game.state=SCENES.PLAYING;
+    // Don't yank the world back to PLAYING from a terminal/interstitial scene.
+    const frozen = Game.state===SCENES.MENU || Game.state===SCENES.WIN || Game.state===SCENES.GAMEOVER;
+    if(!frozen) Game.state=SCENES.PLAYING;
   },
 
   // ESC: close whatever is open (blocking panel first, then inventory), else pause.
@@ -201,7 +204,8 @@ const UI = {
   // toys play, wearables equip; anything else isn't usable.
   useHotbar(n){
     if(Game.state!==SCENES.PLAYING) return;
-    const p=p1, cell=Inventory.at(p, n-1); if(!cell) return;
+    const p=p1; if(!p || p.dead) return;               // a fainted dog can't use items
+    const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
@@ -233,6 +237,7 @@ const UI = {
       if(!def) return;
       if(def.type==='wearable'){ if(Wearables.equipFromSlot(p, idx, def.slot)) this.updateHUD(); }
       else if(def.type==='consumable'){
+        if(p.dead){ showToast('That dog has fainted.',1400); return; }
         if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
         const healed=Health.heal(p, def.heal||2); Inventory.removeAt(p, idx, 1);
         if(typeof sfxCollect==='function') sfxCollect();
@@ -365,12 +370,53 @@ const UI = {
     choices.appendChild(bye);
   },
 
+  // ---------- game over ----------
+  // A dog fainted (hp hit 0). Freeze the run and offer Play Again / Main Menu.
+  // Called from Health.onDown. The frozen death frame stays visible behind the
+  // translucent overlay (GAMEOVER is in the main loop's showWorld set).
+  gameOver(p){
+    if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
+    this.closeInventory();
+    this._show('pauseScreen', false);
+    this._show('dialogScreen', false);
+    this.panel=null; this._dialog=null;
+    Game.state=SCENES.GAMEOVER;
+    if(typeof stopMusic==='function') stopMusic();   // the sad faint sound already played
+    const who = (Game.twoPlayer && p) ? `P${p.id}'s dog` : 'Your dog';
+    const t=this.$('gameOverText'); if(t) t.textContent=`${who} fainted... but every good dog gets another chance.`;
+    this._show('gameOverScreen', true);
+    this.renderHotbar();              // hide the hotbar
+  },
+
+  // ---------- level complete (interstitial between levels) ----------
+  showLevelComplete(current, next){
+    const title=this.$('lcTitle'); if(title) title.textContent=`⭐ ${current.name} Complete! ⭐`;
+    const txt=this.$('lcText');
+    if(txt) txt.textContent=`You cheered up every friend here! A new trail leads to ${next.name}…`;
+    const btn=this.$('btnLevelContinue');
+    if(btn) btn.textContent=`Continue to ${next.name} ⛰️`;
+    this._nextLevelId=next.id;
+    this._show('levelCompleteScreen', true);
+  },
+
+  continueToNextLevel(){
+    const id=this._nextLevelId; this._nextLevelId=null;
+    this._show('levelCompleteScreen', false);
+    if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
+      LevelManager.goTo(id);
+      Game.state=SCENES.PLAYING;
+      if(typeof startMusic==='function') startMusic();
+    }
+  },
+
   // ---------- menu transitions ----------
   quitToMenu(){
     this.closeInventory();
     this.closePanel();
     if(typeof stopMusic==='function') stopMusic();
     this._show('winScreen', false);
+    this._show('gameOverScreen', false);
+    this._show('levelCompleteScreen', false);
     this.$('startScreen').style.display='flex';
     this.refreshContinueButton();     // a save may have been made this session
     Game.state=SCENES.MENU;
@@ -390,6 +436,10 @@ const UI = {
     const on=(id,fn)=>{ const el=this.$(id); if(el) el.addEventListener('click',fn); };
     on('btnResume', ()=>this.closePanel());
     on('btnQuit', ()=>this.quitToMenu());
+    // Level-complete → next level; game over → replay / menu.
+    on('btnLevelContinue', ()=>this.continueToNextLevel());
+    on('btnGameOverReplay', ()=>{ if(typeof replayRun==='function') replayRun(); });
+    on('btnGameOverMenu', ()=>this.quitToMenu());
     on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
     on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
     // Start-screen "Continue" appears only when a save exists.

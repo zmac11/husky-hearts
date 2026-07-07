@@ -40,8 +40,21 @@
 
       <div id="winScreen">
         <h2>💛 Everyone is happy! 💛</h2>
-        <p>You filled the meadow with friendship.<br>Good dog! 🌸</p>
+        <p>You cheered up every friend across the meadow <em>and</em> the rocky mountains.<br>Good dog! 🌸⛰️</p>
         <button class="modebtn" id="btnReplay">Play Again 🐾</button>
+      </div>
+
+      <div id="levelCompleteScreen" style="display:none;">
+        <h2 id="lcTitle">⭐ Level Complete! ⭐</h2>
+        <p id="lcText">On to the next adventure!</p>
+        <button class="modebtn" id="btnLevelContinue">Continue ⛰️</button>
+      </div>
+
+      <div id="gameOverScreen" class="game-overlay" style="display:none;">
+        <h2>💔 Game Over</h2>
+        <p id="gameOverText">Your dog fainted...</p>
+        <button class="modebtn" id="btnGameOverReplay">🔄 Play Again</button>
+        <button class="modebtn secondary" id="btnGameOverMenu">🏠 Main Menu</button>
       </div>
 
       <div id="pauseScreen" class="game-overlay" style="display:none;">

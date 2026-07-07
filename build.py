@@ -34,12 +34,15 @@ LOAD_ORDER = [
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
     'levels/index.js',    # Levels registry
     'levels/meadow.js',   # level 1 definition (size, theme, quest, generate)
+    'levels/rocky.js',    # level 2 — Rocky Mountains (harder; meadow.next → 'rocky')
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
     'friends.js',         # drawFriend
     'entities/registry.js', # Entities registry + level entity list
     'entities/enemy.js',    # enemy kind (wander/chase)
+    'entities/wolf.js',     # wolf kind (faster/tougher — rocky mountains)
+    'entities/grave.js',    # grave marker left where a dog faints
     'entities/npc.js',      # NPC kind (interactable)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles

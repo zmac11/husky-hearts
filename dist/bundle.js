@@ -62,7 +62,8 @@ const SCENES = Object.freeze({
   PAUSED:    'paused',     // ESC menu (Phase 5)
   DIALOG:    'dialog',     // talking to an NPC (Phase 3/5)
   INVENTORY: 'inventory',  // inventory panel open (Phase 5)
-  WIN:       'win',        // victory screen
+  WIN:       'win',        // victory / level-complete screen (world frozen)
+  GAMEOVER:  'gameover',   // all dogs fainted — run over
 });
 
 const Game = {
@@ -207,6 +208,11 @@ const ITEMS_DATA = {
   scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf' },
   raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat' },
   cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape' },
+
+  // rocky-mountain wearables — sold by Rusk the Ranger on level 2
+  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie' },
+  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles' },
+  trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
 };
 
 const Items = {
@@ -329,7 +335,7 @@ const Health = {
   heartsFor(maxHp){ return Math.ceil((maxHp||0) / this.HEART_HP); },
 
   damage(p, n){
-    if(!p || p.hp<=0) return;
+    if(!p || p.dead || p.hp<=0) return;
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
     if(typeof updateHUD==='function') updateHUD();
@@ -337,22 +343,37 @@ const Health = {
   },
 
   heal(p, n){
-    if(!p) return 0;
+    if(!p || p.dead) return 0;         // a fainted dog can't be healed back to life
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + n);
     if(typeof updateHUD==='function') updateHUD();
     return p.hp - before;              // amount actually restored
   },
 
-  isDown(p){ return p && p.hp<=0; },
+  isDown(p){ return p && (p.dead || p.hp<=0); },
 
-  // Fainting: for now, revive in place at half health so a solo run can continue.
-  // (A proper down/respawn flow can hang off this later.)
+  // Fainting: the dog goes down and STAYS down for the rest of the level — a grave marks
+  // the spot and a sad sound plays. In co-op the surviving dog plays on; fallen dogs are
+  // revived when the next level loads (LevelManager.goTo). Only once EVERY active dog is
+  // down does the run end on the Game Over screen (Play Again / Main Menu).
   onDown(p){
-    if(typeof showToast==='function') showToast(`💫 P${p.id} fainted... and bounces back!`, 2000);
-    p.hp = Math.max(2, Math.round(p.maxHp/2));
-    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FF8FA3', 16);
+    if(!p || p.dead) return;             // already fainted — don't grave twice
+    p.dead = true;
+    p.moving = false; p.howling = false; p.swimming = false;
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#8899AA', 22);
+    if(typeof Entities!=='undefined' && Entities.def && Entities.def('grave')){
+      Entities.spawn('grave', { x:p.x, y:p.y, forPlayer:p.id });
+    }
+    if(typeof sfxDeath==='function') sfxDeath();
+    if(typeof showToast==='function'){
+      const who = (Game.twoPlayer) ? `P${p.id}'s dog` : 'Your dog';
+      showToast(`🪦 ${who} fainted...`, 1800);
+    }
     if(typeof updateHUD==='function') updateHUD();
+
+    // Everyone down? Then it's game over.
+    const anyAlive = Game.players.some(pp => pp && !pp.dead);
+    if(!anyAlive && typeof UI!=='undefined' && UI.gameOver){ UI.gameOver(p); }
   },
 
   // Decay the per-frame hurt flash.
@@ -520,6 +541,25 @@ const Wearables = {
       _wpx(g, a.x-1, y+10, 5, 3, '#8C2434');
       _wpx(g, a.x+6, y+10, 3, 3, '#8C2434');
     },
+    beanie(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-7, y-1, 14, 4, '#8A3B3B');   // knit band
+      _wpx(g, x-6, y-5, 12, 5, '#B24A4A');   // dome
+      _wpx(g, x-6, y-5, 12, 2, '#C86060');   // highlight
+      _wpx(g, x-2, y-8, 4, 4, '#E8E0D0');    // pom-pom
+    },
+    snowgoggles(g,a){
+      if(a.dir==='up') return;               // eyes hidden facing away
+      const y=a.faceY;
+      const lens='#3AA0C8', frame='#2A2E36', strap='#C0463C';
+      if(a.dir==='right'){ _wpx(g, a.x+3, y-1, 7, 4, frame); _wpx(g, a.x+4, y, 5, 2, lens); }
+      else if(a.dir==='left'){ _wpx(g, a.x-10, y-1, 7, 4, frame); _wpx(g, a.x-9, y, 5, 2, lens); }
+      else {
+        _wpx(g, a.x-7, y-1, 14, 4, frame);
+        _wpx(g, a.x-6, y, 5, 2, lens); _wpx(g, a.x+1, y, 5, 2, lens);
+      }
+      _wpx(g, a.x-8, y, 2, 2, strap); _wpx(g, a.x+6, y, 2, 2, strap); // strap peeking out
+    },
   },
 };
 
@@ -650,6 +690,19 @@ function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='susp
 function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,ac.destination,t+i*0.1,0.18)); }
 function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,ac.destination,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,ac.destination,t+0.5,0.4); }
 function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.6); }
+// Sad "aww" when a dog faints — a downward trombone-ish slide with a low bell tail.
+// Does NOT stop the music (a co-op partner may still be playing).
+function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(noteHz(N.E4),t);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.C3),t+0.7);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.26,t+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.8);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.85);
+  osc(ac,'sine',noteHz(N.C3),0.16,ac.destination,t+0.1,0.7);
+}
 function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,ac.destination,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,ac.destination,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,ac.destination,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,ac.destination,t+2.5,1.5)); }
 
 // ===== src/world.js =====
@@ -660,8 +713,14 @@ let WORLD_W=1920, WORLD_H=1280;
 const VIEW_W=640, VIEW_H=416;
 const cam={x:0,y:0};
 function updateCamera(){
-  let tx=p1.x,ty=p1.y;
-  if(twoPlayer){tx=(p1.x+p2.x)/2;ty=(p1.y+p2.y)/2;}
+  // Follow the living dogs so the view doesn't sit on a grave while a co-op partner is
+  // still exploring. If everyone is down, keep the framing on p1 (the death frame).
+  const active=twoPlayer?[p1,p2]:[p1];
+  const alive=active.filter(p=>!p.dead);
+  const focus=alive.length?alive:active;
+  let tx,ty;
+  if(focus.length>1){ tx=(focus[0].x+focus[1].x)/2; ty=(focus[0].y+focus[1].y)/2; }
+  else { tx=focus[0].x; ty=focus[0].y; }
   cam.x=Math.max(0,Math.min(WORLD_W-VIEW_W,tx-VIEW_W/2));
   cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,ty-VIEW_H/2));
 }
@@ -979,7 +1038,7 @@ function makePlayer(id,color,x,y,breed='husky',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,
+    treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
     howling:false,howlTimer:0,breed,markings,swimming:false};
 }
@@ -1023,6 +1082,8 @@ Levels.register({
   name: 'Sunny Meadow',
   seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
   size: { w: 1920, h: 1280 },
+  spawn: { x: 200, y: 200 },   // where the dogs start on this level
+  next: 'rocky',               // clearing the meadow leads up into the mountains
 
   // Visual palette — moved out of world-draw.js so different levels look different.
   theme: {
@@ -1066,8 +1127,228 @@ Levels.register({
   quest: {
     id: 'cheer-all',
     label: 'Cheer up every lonely friend',
-    describe(){ return `Cheered ${Game.cheeredCount}/${CHEER_TOTAL} friends`; },
-    isComplete(){ return Game.cheeredCount >= CHEER_TOTAL; },
+    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
+  },
+});
+
+// ===== src/levels/rocky.js =====
+// ====================== LEVEL 2: ROCKY MOUNTAINS ======================
+// The trail out of the Sunny Meadow climbs into cold, stony highlands. Snow-capped
+// peaks line the skyline, a glacial stream cuts across the map, and a pack of wolves
+// prowls the slopes — so this level bites back harder than the meadow. You reach it by
+// clearing level 1 (meadow.next → 'rocky'); it's the final level (next: null).
+//
+// Like meadow.js this is a thin declaration: a bigger `size`, a cold `theme`, a
+// `generate()` that lays down mountain-flavoured world objects / animals / actors, and
+// a `quest`. New visuals (mountains, boulders, snowy pines, dead trees, crystals, snow,
+// campfires) live in world-draw.js; new animals in friends.js; the wolf in entities/.
+
+// ---- world generation (mountain terrain + a glacial stream) ----
+function buildRockyWorld(){
+  worldObjects.length=0; colliders.length=0;
+
+  // Cold, winding stream across the lower-middle of the map (create first so placement
+  // can steer clear of it). Narrower and colder than the meadow river.
+  river={
+    pos:WORLD_H*0.6,
+    amplitude:42, wavelength:680,
+    amplitude2:16, wavelength2:230, phase2:2.1,
+    baseWidth:58, widthAmp:18, widthWavelength:500, widthPhase:1.1,
+  };
+  river.pebbles=makeRiverPebbles();
+
+  // Placement helper: random point that avoids the stream and existing items.
+  function pt(ax,ay,bx,by,minD,list,margin){
+    for(let a=0;a<50;a++){ const p=rand2(ax,ay,bx,by,minD,list); if(!inRiver(p.x,p.y,margin)) return p; }
+    return rand2(ax,ay,bx,by,minD,list);
+  }
+
+  // stone-wall border
+  addCollider(0,0,WORLD_W,14);
+  addCollider(0,WORLD_H-14,WORLD_W,14);
+  addCollider(0,0,14,WORLD_H);
+  addCollider(WORLD_W-14,0,14,WORLD_H);
+
+  const taken=[];
+
+  // Backdrop peaks along the top edge (low y → painter's algorithm draws them behind
+  // everything). A small collider at each base keeps dogs from walking "into" a peak.
+  const M=6;
+  for(let i=0;i<M;i++){
+    const mx=WORLD_W*(0.08 + (i/(M-1))*0.84) + rand(-36,36);
+    const my=rand(120,185);
+    const w=rand(230,360), h=rand(150,240);
+    worldObjects.push({kind:'mountain',x:mx,y:my,w,h,seed:Math.floor(Math.random()*9999)});
+    addCollider(mx-16,my-8,32,14);
+  }
+
+  // Boulders — the level's main obstacles.
+  for(let i=0;i<16;i++){
+    const p=pt(60,240,WORLD_W-60,WORLD_H-60,120,taken,50); taken.push(p);
+    const big=Math.random()<0.6;
+    worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
+    addCollider(p.x-(big?16:11), p.y-2, big?32:22, big?16:12);
+  }
+
+  // Rock clusters (generic grey renderer fits the theme perfectly).
+  for(let i=0;i<8;i++){
+    const p=pt(80,240,WORLD_W-80,WORLD_H-80,120,taken,45); taken.push(p);
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
+    addCollider(p.x-26,p.y-4,50,18);
+  }
+
+  // Snow-dusted pines.
+  for(let i=0;i<18;i++){
+    const p=pt(50,240,WORLD_W-50,WORLD_H-50,90,taken,42); taken.push(p);
+    worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
+    addCollider(p.x-4,p.y+12,8,12);
+  }
+
+  // Bare, weathered dead trees.
+  for(let i=0;i<9;i++){
+    const p=pt(60,240,WORLD_W-60,WORLD_H-60,110,taken,42); taken.push(p);
+    worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
+    addCollider(p.x-4,p.y+14,8,12);
+  }
+
+  // Loose rocks (mostly walkable; big ones block).
+  for(let i=0;i<20;i++){
+    const p=pt(60,240,WORLD_W-60,WORLD_H-60,60,taken,35); taken.push(p);
+    const big=Math.random()<0.25;
+    worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
+    if(big) addCollider(p.x-13,p.y-2,26,16);
+  }
+
+  // Glowing crystal clusters (decorative, walkable).
+  for(let i=0;i<12;i++){
+    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,30); taken.push(p);
+    worldObjects.push({kind:'crystal',x:p.x,y:p.y,seed:Math.random()*100});
+  }
+
+  // Snow drifts on the ground (no collider).
+  for(let i=0;i<26;i++){
+    worldObjects.push({kind:'snowpatch',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),seed:Math.random()*100});
+  }
+
+  // Hardy shrubs.
+  for(let i=0;i<12;i++){
+    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,40); taken.push(p);
+    worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
+    addCollider(p.x-13,p.y+2,26,16);
+  }
+
+  // Alpine flowers (cool palette) + dry grass tufts (no colliders).
+  const hues=['#BFD7FF','#D9C7FF','#FF9EC0','#FFE08A','#B6F0E0'];
+  for(let i=0;i<60;i++){
+    worldObjects.push({kind:'flower',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),
+      hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
+  }
+  for(let i=0;i<16;i++){
+    worldObjects.push({kind:'tallgrass',x:rand(40,WORLD_W-40),y:rand(220,WORLD_H-40),
+      blades:Math.floor(rand(4,8)),seed:Math.random()*100});
+  }
+
+  // Cozy campfires — warm landmarks on the cold peaks.
+  worldObjects.push({kind:'campfire',x:WORLD_W*0.5, y:WORLD_H*0.30});
+  worldObjects.push({kind:'campfire',x:WORLD_W*0.19,y:WORLD_H*0.82});
+
+  // A couple of stone trails.
+  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.12,y1:WORLD_H*0.36,x2:WORLD_W*0.88,y2:WORLD_H*0.42,seed:71});
+  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.5, y1:WORLD_H*0.22,x2:WORLD_W*0.5, y2:WORLD_H*0.9, seed:72});
+
+  // Stone crossings over the stream (drawn in main.js so swimmers pass underneath).
+  [0.28,0.6,0.85].forEach((fx,i)=>{
+    const bx=WORLD_W*fx;
+    const span=riverWidthAt(bx)/2+16;
+    worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:30+i,span});
+  });
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+// Treats are scarcer per-square-metre than the meadow (bigger map, same-ish count), so
+// you have to roam to gather enough — part of what makes this level harder.
+function makeRockyCollectibles(){
+  const types=['bone','heart','ball','flower'];
+  const items=[];
+  for(let i=0;i<30;i++){
+    items.push({ x:rand(80,WORLD_W-80), y:rand(240,WORLD_H-80),
+      type:types[i%types.length], taken:false, bob:rand(0,Math.PI*2) });
+  }
+  // fish darting in the stream
+  for(let i=0;i<6;i++){
+    const baseX=rand(160,WORLD_W-160);
+    items.push({ type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(Math.random()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      x:baseX, y:riverY(baseX) });
+  }
+  return items;
+}
+
+// Six lonely mountain animals (one more than the meadow), each needing more treats, and
+// several stranded across the stream so you have to use the crossings.
+function makeRockyFriends(){
+  const W=WORLD_W, H=WORLD_H;
+  return [
+    {name:'Rusty the Fox',    x:W*0.17, y:H*0.28, need:4,given:0,cheered:false,kind:'fox',     msg:"The cold nights are so lonely up here..."},
+    {name:'Old Billy Goat',   x:W*0.84, y:H*0.26, need:4,given:0,cheered:false,kind:'goat',    msg:"My herd wandered off over the ridge."},
+    {name:'Hoot the Owl',     x:W*0.52, y:H*0.16, need:4,given:0,cheered:false,kind:'owl',      msg:"Whoo will keep me company tonight?"},
+    {name:'Pip the Marmot',   x:W*0.15, y:H*0.82, need:5,given:0,cheered:false,kind:'marmot',   msg:"I burrowed too far from my friends..."},
+    {name:'Bramble the Cub',  x:W*0.85, y:H*0.80, need:5,given:0,cheered:false,kind:'bearcub',  msg:"I can't find my way back to the den."},
+    {name:'Ridge the Raven',  x:W*0.52, y:H*0.78, need:4,given:0,cheered:false,kind:'bird',     msg:"The peaks are quiet and grey today."},
+  ];
+}
+
+Levels.register({
+  id: 'rocky',
+  name: 'Rocky Mountains',
+  seed: 24680,
+  size: { w: 2400, h: 1600 },      // a bigger world = more ground to cover
+  spawn: { x: 170, y: 250 },       // start on the lower-left plateau, below the peaks
+  next: null,                      // final level
+
+  // Cold, stony palette (grass tones → gravel/scree; fence → stone wall).
+  theme: {
+    grass:'#8C877C', grassDark:'#7A756A', grassLight:'#9C978C',
+    dirt:'rgba(120,104,84,0.20)',
+    fenceA:'#5E574E', fenceB:'#6E6658', rail:'#93887A',
+    minimapGrass:'#6E665A', minimapWater:'#5AA6C8',
+    snow:'#EAF2F6',
+  },
+
+  generate(){
+    buildRockyWorld();
+    collectibles = makeRockyCollectibles();
+    friends = makeRockyFriends();
+
+    Entities.clear();
+    // Rusk the Ranger — a mountain guide/merchant near the summit campfire, stocking
+    // cold-weather gear and a hearty snack.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.5, y: WORLD_H*0.24,
+      name: 'Rusk the Ranger',
+      look: 'ranger',
+      greeting: "Brr! Cold up here, pup. Gear up before the wolves catch your scent.",
+      wares: [
+        {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
+        {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
+        {id:'cape',     cost:10},
+      ],
+    });
+    // A prowling wolf pack — the teeth of the level.
+    Entities.spawn('wolf', { x: WORLD_W*0.40, y: WORLD_H*0.52, speed:1.15 });
+    Entities.spawn('wolf', { x: WORLD_W*0.68, y: WORLD_H*0.66, speed:1.2  });
+    Entities.spawn('wolf', { x: WORLD_W*0.30, y: WORLD_H*0.74, speed:1.1, chaseR:220 });
+    // A grumpy badger still lurks too.
+    Entities.spawn('enemy', { x: WORLD_W*0.78, y: WORLD_H*0.44, speed:1.0 });
+  },
+
+  quest: {
+    id: 'cheer-all-rocky',
+    label: 'Cheer up every mountain friend',
+    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
   },
 });
 
@@ -1546,6 +1827,146 @@ function drawRiver(t){
   ctx.globalAlpha=1;
 }
 
+// ====================== ROCKY-MOUNTAIN ASSETS ======================
+// Renderers for the second level's theme. Registered into the drawWorld() switch and
+// spawned by levels/rocky.js. Same pixel-art idiom (px/shade + a little canvas path work).
+
+function drawMountain(x,y,w,h,seed){
+  // A big snow-capped backdrop peak. `y` is the base; it rises to an apex at y-h.
+  const half=w/2;
+  const rock='#8A8580', rockDark='#6E6A64', rockLight='#A6A29B', snow='#EAF2F6', snowSh='#C7D6E0';
+  // cast shadow / base skirt
+  ctx.globalAlpha=0.18; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.9,10,0,0,Math.PI*2); ctx.fillStyle='#2A2620'; ctx.fill(); ctx.globalAlpha=1;
+  // main rock body (triangle)
+  ctx.beginPath(); ctx.moveTo(x-half,y); ctx.lineTo(x,y-h); ctx.lineTo(x+half,y); ctx.closePath();
+  ctx.fillStyle=rock; ctx.fill();
+  // shaded right face
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+half,y); ctx.lineTo(x+half*0.18,y); ctx.closePath();
+  ctx.fillStyle=rockDark; ctx.fill();
+  // lit left ridge
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x-half*0.34,y); ctx.lineTo(x-half*0.06,y); ctx.closePath();
+  ctx.fillStyle=rockLight; ctx.fill();
+  // snow cap (upper third), with a jagged lower edge
+  const capH=h*0.34, capY=y-h+capH, capHalf=half*(capH/h);
+  ctx.beginPath(); ctx.moveTo(x,y-h);
+  ctx.lineTo(x-capHalf,capY);
+  const r=mulberry32(Math.floor(seed||3));
+  for(let i=-3;i<=3;i++){ const fx=x+(i/3)*capHalf, fy=capY-r()*6; ctx.lineTo(fx,fy); }
+  ctx.lineTo(x+capHalf,capY); ctx.closePath();
+  ctx.fillStyle=snow; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+capHalf*0.5,capY-2); ctx.lineTo(x+capHalf,capY); ctx.closePath();
+  ctx.fillStyle=snowSh; ctx.fill();
+  // a couple of ridge cracks
+  ctx.strokeStyle='rgba(50,46,40,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x-half*0.3,y); ctx.lineTo(x-half*0.1,y-h*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x+half*0.42,y); ctx.lineTo(x+half*0.12,y-h*0.55); ctx.stroke();
+}
+
+function drawBoulder(x,y,big){
+  // Chunky mountain boulder — bigger and cooler-grey than the meadow rocks.
+  if(big){
+    ctx.globalAlpha=0.22; px(x-18,y+9,36,7,'#22201C'); ctx.globalAlpha=1;
+    px(x-18,y+2,36,14,'#736F68');
+    px(x-15,y-6,30,12,'#847F77');
+    px(x-10,y-13,20,10,'#948F86');
+    px(x-4,y-16,10,6,'#A29C92');
+    px(x-11,y-8,7,4,'#B4AEA3');           // highlight
+    px(x+6,y-2,5,4,'#5E5A54');            // shade pocket
+    px(x-14,y+4,5,3,'#5A8A4A');           // moss
+    px(x+9,y+3,4,3,'#6A9A4A');
+    px(x-2,y-13,3,3,'#CFE6EC');           // snow dab on top
+  } else {
+    ctx.globalAlpha=0.18; px(x-11,y+7,22,5,'#22201C'); ctx.globalAlpha=1;
+    px(x-11,y,22,10,'#7C7770');
+    px(x-8,y-5,16,8,'#8C877E');
+    px(x-3,y-8,8,5,'#9A948A');
+    px(x-6,y-4,4,3,'#B0AAA0');
+    px(x-2,y-8,3,2,'#CFE6EC');
+  }
+}
+
+function drawSnowyPine(x,y,t){
+  const sway=Math.sin(t/1000+x*0.012)*0.7;
+  const cx=x+sway;
+  // trunk
+  px(x-3,y+2,6,20,'#4A3320'); px(x-1,y+4,3,14,'#5A4028');
+  // tiers (dark evergreen) with snow layered on each shoulder
+  [[0,-50,10,12,'#1B4A26'],[-2,-38,14,16,'#1F5A2E'],[-4,-22,18,18,'#245F32'],[-6,-6,22,16,'#286838']].forEach(([ox,oy,w,h,c])=>{
+    px(cx+ox,y+oy,w,h,c);
+    px(cx+ox,y+oy,w,3,'#EAF2F6');                 // snow shelf
+    px(cx+ox+1,y+oy+1,Math.max(2,w-6),1,'#FFFFFF');
+  });
+  px(cx-1,y-54,4,4,'#F4FAFF');                      // snowy tip
+}
+
+function drawDeadTree(x,y,t){
+  const sway=Math.sin(t/1300+x*0.01)*1.2;
+  const cx=x+sway;
+  // pale weathered trunk
+  px(x-4,y+2,8,26,'#6B5C4A'); px(x-2,y+4,3,20,'#7C6C58'); px(x+2,y+6,2,16,'#54473A');
+  px(x-8,y+24,5,5,'#5C4E3E'); px(x+4,y+24,5,5,'#5C4E3E'); // roots
+  // bare branches
+  ctx.strokeStyle='#6B5C4A'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  const branch=(bx,by,ex,ey)=>{ ctx.beginPath(); ctx.moveTo(cx+bx,y+by); ctx.lineTo(cx+ex,y+ey); ctx.stroke(); };
+  branch(0,-2,-12,-16); branch(-8,-11,-16,-22); branch(0,-6,10,-20); branch(6,-14,15,-24);
+  branch(0,-10,-2,-28); branch(-1,-22,-8,-32); branch(1,-22,7,-33);
+  ctx.lineWidth=1.5;
+  branch(-12,-16,-18,-20); branch(10,-20,16,-18); branch(-2,-28,-6,-36); branch(1,-28,5,-37);
+  // a little snow catching on the limbs
+  ctx.fillStyle='#E6EEF4'; px(cx-15,y-23,3,2,'#E6EEF4'); px(cx+13,y-25,3,2,'#E6EEF4'); px(cx-1,y-34,3,2,'#E6EEF4');
+}
+
+function drawCrystal(x,y,seed,t){
+  // A little cluster of glowing gemstones poking out of the rock.
+  const r=mulberry32(Math.floor((seed||1)*53));
+  const hue=r()<0.5?['#7EC8FF','#4A9AE0','#BFE6FF']:['#C79BFF','#8A5AD0','#E4CCFF'];
+  const pulse=0.5+Math.sin(t/380+seed)*0.5;
+  // glow
+  ctx.save(); ctx.globalAlpha=0.20+pulse*0.22;
+  ctx.beginPath(); ctx.arc(x,y-4,13,0,Math.PI*2); ctx.fillStyle=hue[0]; ctx.fill();
+  ctx.restore();
+  const shard=(ox,oy,w,h)=>{
+    ctx.beginPath(); ctx.moveTo(x+ox,y+oy); ctx.lineTo(x+ox-w/2,y+oy+h*0.5); ctx.lineTo(x+ox,y+oy+h); ctx.lineTo(x+ox+w/2,y+oy+h*0.5); ctx.closePath();
+    ctx.fillStyle=hue[1]; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+ox,y+oy); ctx.lineTo(x+ox,y+oy+h); ctx.lineTo(x+ox+w/2,y+oy+h*0.5); ctx.closePath();
+    ctx.fillStyle=hue[0]; ctx.fill();
+    px(x+ox-1,y+oy+2,1,Math.max(2,h-6),hue[2]);   // sparkle streak
+  };
+  shard(-5,-6,6,14); shard(4,-9,7,17); shard(0,-2,5,11);
+  ctx.globalAlpha=0.6+pulse*0.4; px(x+3,y-8,1,1,'#FFFFFF'); px(x-4,y-3,1,1,'#FFFFFF'); ctx.globalAlpha=1;
+}
+
+function drawSnowPatch(x,y,seed){
+  // Soft irregular snow drift on the ground (no collider).
+  const r=mulberry32(Math.floor((seed||1)*97));
+  ctx.fillStyle='rgba(238,244,248,0.9)';
+  ctx.beginPath();
+  const n=8;
+  for(let i=0;i<=n;i++){ const a=(i/n)*Math.PI*2, rad=(10+r()*8); const px0=x+Math.cos(a)*rad*1.5, py0=y+Math.sin(a)*rad*0.5; if(i===0)ctx.moveTo(px0,py0); else ctx.lineTo(px0,py0); }
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.ellipse(x-3,y-2,8,3,0,0,Math.PI*2); ctx.fill();
+}
+
+function drawCampfire(x,y,t){
+  // Ring of stones + flickering flames + warm glow — a cozy landmark on the cold peaks.
+  const glow=0.4+Math.sin(t/160)*0.12+Math.sin(t/90)*0.06;
+  ctx.save(); ctx.globalAlpha=0.22*glow*2; ctx.beginPath(); ctx.arc(x,y-4,26,0,Math.PI*2);
+  const g=ctx.createRadialGradient(x,y-4,2,x,y-4,26); g.addColorStop(0,'#FFC65A'); g.addColorStop(1,'rgba(255,150,40,0)');
+  ctx.fillStyle=g; ctx.fill(); ctx.restore();
+  // stone ring
+  [[-12,4],[-6,7],[2,8],[9,5],[12,-1],[-13,-1]].forEach(([ox,oy],i)=>{ px(x+ox-2,y+oy-2,7,5,i%2?'#7C7770':'#8C877E'); px(x+ox-1,y+oy-2,3,2,'#A6A29B'); });
+  // logs
+  px(x-7,y+2,14,3,'#5A4028'); px(x-2,y-1,12,3,'#4A3320');
+  // flames (layered flicker)
+  const f=Math.sin(t/70)*2, f2=Math.sin(t/110+1)*2;
+  ctx.beginPath(); ctx.moveTo(x-6,y+2); ctx.quadraticCurveTo(x-4+f,y-10,x,y-16-f); ctx.quadraticCurveTo(x+5-f,y-9,x+6,y+2); ctx.closePath(); ctx.fillStyle='#FF7A2E'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x-4,y+2); ctx.quadraticCurveTo(x-2+f2,y-7,x,y-12-f2); ctx.quadraticCurveTo(x+3-f2,y-6,x+4,y+2); ctx.closePath(); ctx.fillStyle='#FFB43C'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x-2,y+1); ctx.quadraticCurveTo(x,y-4,x,y-8-f); ctx.quadraticCurveTo(x+2,y-4,x+2,y+1); ctx.closePath(); ctx.fillStyle='#FFE79A'; ctx.fill();
+  // sparks
+  px(x-1,Math.round(y-18-f*2),1,1,'#FFD36A'); px(x+3,Math.round(y-14+f2),1,1,'#FFE79A');
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
@@ -1569,6 +1990,14 @@ function drawWorld(t){
       case 'mushroomring':drawMushroomRing(obj.x,obj.y,obj.seed); break;
       case 'stonepath':   drawStonePath(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
+      // --- rocky-mountain kinds (levels/rocky.js) ---
+      case 'mountain':    drawMountain(obj.x,obj.y,obj.w,obj.h,obj.seed); break;
+      case 'boulder':     drawBoulder(obj.x,obj.y,obj.big); break;
+      case 'snowypine':   drawSnowyPine(obj.x,obj.y,t); break;
+      case 'deadtree':    drawDeadTree(obj.x,obj.y,t); break;
+      case 'crystal':     drawCrystal(obj.x,obj.y,obj.seed,t); break;
+      case 'snowpatch':   drawSnowPatch(obj.x,obj.y,obj.seed); break;
+      case 'campfire':    drawCampfire(obj.x,obj.y,t); break;
       // 'riverbridge' intentionally not drawn here — layered in main.js so swimmers can pass underneath
     }
   });
@@ -1768,6 +2197,104 @@ function drawFriend(f,t){
     [[x-14,y+10],[x-6,y+12],[x+2,y+12],[x+8,y+10]].forEach(([lx,ly])=>px(lx,ly,6,8,cc?'#8AC878':'#7A8A68'));
     // tail
     px(x-18,y+2,6,6,cc?'#8AC878':'#7A9A68');
+  } else if(f.kind==='fox'){
+    // ---- Mountain Fox ---- (sad = washed grey-orange; cheered = vivid orange)
+    const FC=cc?'#E8792E':'#B08668', FD=cc?'#C85E1E':'#8E6A50', FW='#F6EEE0';
+    // tail (bushy, white tip) swishing
+    const tw=Math.sin(t/220+f.x)*4;
+    px(x+8,y-2+tw*0.4,8,16,FD); px(x+10,y+8+tw,6,7,FW);
+    // body
+    px(x-10,y-2,20,15,FC); px(x-6,y+4,12,9,FW);
+    // legs
+    px(x-7,y+11,4,6,FD); px(x+3,y+11,4,6,FD);
+    // head
+    px(x-9,y-16,18,15,FC);
+    px(x-6,y-8,12,7,FW);           // white muzzle/cheeks
+    // ears (tall, dark tips)
+    px(x-9,y-24,6,10,FC); px(x-8,y-26,4,5,FD);
+    px(x+3,y-24,6,10,FC); px(x+4,y-26,4,5,FD);
+    // eyes + nose
+    px(x-5,y-12,3,3,'#2A2A2A'); px(x+3,y-12,3,3,'#2A2A2A');
+    px(x-4,y-12,1,1,'#fff'); px(x+4,y-12,1,1,'#fff');
+    px(x-1,y-6,3,3,'#2A2A2A');
+  } else if(f.kind==='goat'){
+    // ---- Mountain Goat ---- (shaggy cream coat, curved horns, beard)
+    const GC=cc?'#FBF6EC':'#D8D2C4', GD=cc?'#E4DCCB':'#B8B2A4', GH='#7C6A50';
+    // body (shaggy)
+    px(x-11,y-2,22,15,GC); px(x-11,y+2,22,4,GD); px(x-11,y+8,22,3,GD); // fur bands
+    px(x-8,y+11,4,7,GC); px(x+4,y+11,4,7,GC);
+    px(x-8,y+16,4,2,GH); px(x+4,y+16,4,2,GH); // hooves
+    // head
+    px(x-7,y-15,15,14,GC);
+    px(x-4,y-6,9,5,GD);            // muzzle
+    // horns (curve back)
+    px(x-6,y-21,3,7,GH); px(x-7,y-23,3,4,GH); px(x-9,y-24,3,3,GH);
+    px(x+4,y-21,3,7,GH); px(x+5,y-23,3,4,GH); px(x+7,y-24,3,3,GH);
+    // ears
+    px(x-9,y-14,3,5,GD); px(x+7,y-14,3,5,GD);
+    // beard
+    px(x-2,y-1,4,6,GC); px(x-1,y+4,2,4,GD);
+    // eyes + nose
+    px(x-4,y-11,3,3,'#2A2A2A'); px(x+3,y-11,3,3,'#2A2A2A');
+    px(x-3,y-11,1,1,'#fff'); px(x+4,y-11,1,1,'#fff');
+    px(x-1,y-5,3,2,'#5A4A3A');
+  } else if(f.kind==='owl'){
+    // ---- Snow Owl ---- (round, big eyes, ear tufts)
+    const OC=cc?'#EDEDF4':'#9AA0AE', OD=cc?'#CFD2E0':'#7C828E', OF='#F6F1E4';
+    // body
+    px(x-11,y-12,22,26,OC);
+    px(x-8,y-6,16,16,OF);           // pale chest
+    // wings
+    px(x-13,y-8,5,18,OD); px(x+8,y-8,5,18,OD);
+    // wing feather ticks
+    px(x-12,y-4,3,2,OC); px(x-12,y+2,3,2,OC); px(x+9,y-4,3,2,OC); px(x+9,y+2,3,2,OC);
+    // ear tufts
+    px(x-9,y-18,4,7,OD); px(x+5,y-18,4,7,OD);
+    // facial disc + huge eyes
+    px(x-8,y-11,7,7,'#FFF6E0'); px(x+1,y-11,7,7,'#FFF6E0');
+    const blink=(Math.sin(t/900+f.x)>0.96)?1:0;
+    px(x-6,y-9,4,4,cc?'#FFC53C':'#4A4E5A'); px(x+3,y-9,4,4,cc?'#FFC53C':'#4A4E5A');
+    if(!blink){ px(x-5,y-8,2,2,'#1A1A1A'); px(x+4,y-8,2,2,'#1A1A1A'); }
+    // beak + feet
+    px(x-1,y-5,3,4,'#E8A23C'); px(x+1,y-4,1,3,'#C8842A');
+    px(x-5,y+12,4,3,'#E8A23C'); px(x+2,y+12,4,3,'#E8A23C');
+  } else if(f.kind==='marmot'){
+    // ---- Marmot ---- (chubby alpine ground-dweller)
+    const MC=cc?'#C89050':'#9A8A78', MD=cc?'#A6733A':'#7C6E5E', MW='#EAD8BE';
+    // body (round, upright)
+    px(x-10,y-6,20,20,MC);
+    px(x-6,y+2,12,11,MW);          // belly
+    // little arms
+    px(x-8,y+2,4,7,MD); px(x+4,y+2,4,7,MD);
+    // feet
+    px(x-6,y+13,5,4,MD); px(x+1,y+13,5,4,MD);
+    // head
+    px(x-8,y-16,16,12,MC);
+    px(x-4,y-8,9,5,MW);            // muzzle
+    // small round ears
+    px(x-8,y-18,4,4,MD); px(x+4,y-18,4,4,MD);
+    // eyes, nose, buck teeth
+    px(x-4,y-12,3,3,'#2A2A2A'); px(x+2,y-12,3,3,'#2A2A2A');
+    px(x-3,y-12,1,1,'#fff'); px(x+3,y-12,1,1,'#fff');
+    px(x-1,y-6,3,2,'#4A3A2A'); px(x-1,y-4,3,2,'#FFFFFF');
+  } else if(f.kind==='bearcub'){
+    // ---- Bear Cub ---- (round, cuddly, big ears)
+    const BC=cc?'#8A5A34':'#6E5E50', BD=cc?'#6E4526':'#544A40', BM='#D8B48C';
+    // body
+    px(x-11,y-4,22,18,BC);
+    px(x-6,y+3,12,9,BM);           // tummy
+    // legs
+    px(x-9,y+12,6,6,BD); px(x+3,y+12,6,6,BD);
+    // head
+    px(x-9,y-16,18,14,BC);
+    // big round ears
+    px(x-10,y-20,7,7,BC); px(x-8,y-18,3,3,BM);
+    px(x+3,y-20,7,7,BC); px(x+5,y-18,3,3,BM);
+    // snout
+    px(x-4,y-8,9,6,BM); px(x-1,y-6,3,3,'#2A2A2A');
+    // eyes
+    px(x-5,y-12,3,3,'#2A2A2A'); px(x+3,y-12,3,3,'#2A2A2A');
+    px(x-4,y-12,1,1,'#fff'); px(x+4,y-12,1,1,'#fff');
   }
 
   ctx.restore();
@@ -1856,7 +2383,7 @@ const Entities = {
 
 function _nearestPlayer(e){
   let best=null, bestD=Infinity;
-  for(const p of Game.players){ const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
+  for(const p of Game.players){ if(p.dead) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
   return best;
 }
 
@@ -1934,6 +2461,131 @@ function _enemyTouch(e, p){
   if(typeof sfxHowl==='function') sfxHowl();
 }
 
+// ===== src/entities/wolf.js =====
+// ====================== ENTITY: WOLF (rocky-mountain predator) ======================
+// A tougher cousin of the meadow badger: faster, spots you from farther away, lunges
+// in bursts, and bites harder. Rocky Mountains spawns a small pack of these, which is
+// most of why the second level bites back. Same wander→chase shape as `enemy`, tuned up.
+
+function _wolfNearestPlayer(e){
+  let best=null, bestD=Infinity;
+  for(const p of Game.players){ if(p.hp<=0) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
+  return best;
+}
+
+Entities.register('wolf', {
+  radius: 32,
+
+  init(e){
+    e.speed   = e.speed   || 1.15;   // brisk — outpaces a corgi, presses a husky
+    e.chaseR  = e.chaseR  || 190;    // keen senses: long detection range
+    e.dmg     = e.dmg     || 3;      // bites for more than a heart
+    e.dir     = 1;
+    e.wanderT = 0;
+    e.wanderAng = 0;
+    e.cool    = 0;                   // bite cooldown (ms)
+    e.lunge   = 0;                   // brief speed burst timer (ms)
+    e.lungeCd = 0;                   // between-lunge cooldown (ms)
+    e.bob     = 0;
+  },
+
+  update(e, t, dt){
+    const target=_wolfNearestPlayer(e);
+    const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
+
+    if(target && dist<e.chaseR){
+      // periodic lunge: a short burst of extra speed to close the gap
+      if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
+      const burst=e.lunge>0 ? 1.9 : 1.45;
+      const ang=Math.atan2(target.y-e.y, target.x-e.x);
+      e.x+=Math.cos(ang)*e.speed*burst;
+      e.y+=Math.sin(ang)*e.speed*burst;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
+    } else {
+      // loping wander
+      e.wanderT-=dt;
+      if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.8;
+      e.y+=Math.sin(e.wanderAng)*e.speed*0.8;
+      e.dir=Math.cos(e.wanderAng)>=0?1:-1;
+    }
+
+    e.x=clamp(e.x, 20, WORLD_W-20);
+    e.y=clamp(e.y, 26, WORLD_H-20);
+    if(e.cool>0)    e.cool=Math.max(0, e.cool-dt);
+    if(e.lunge>0)   e.lunge=Math.max(0, e.lunge-dt);
+    if(e.lungeCd>0) e.lungeCd=Math.max(0, e.lungeCd-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/280)*1);
+    const D=e.dir; // 1 right, -1 left
+    const body='#6A6E78', belly='#9AA0AA', dark='#44484F', fang='#F4F4F0';
+    // shadow
+    ctx.globalAlpha=0.24; ctx.beginPath(); ctx.ellipse(x,y+11,15,4,0,0,Math.PI*2); ctx.fillStyle='#181C22'; ctx.fill(); ctx.globalAlpha=1;
+    // bushy tail (trails behind the facing direction)
+    px(x-D*13-2,y-6,7,6,dark); px(x-D*15-2,y-8,5,5,body);
+    // body — leaner and longer than the badger
+    px(x-12,y-5,24,13,body);
+    px(x-9,y+1,18,6,belly);
+    // legs
+    px(x-9,y+7,4,6,dark); px(x-2,y+7,4,6,dark); px(x+6,y+7,4,6,dark);
+    // head
+    px(x+D*7-7,y-11,14,12,body);
+    // pricked ears
+    px(x+D*7-6,y-15,4,5,dark); px(x+D*7+2,y-15,4,5,dark);
+    // snarling muzzle + fang
+    px(x+D*10-3,y-4,7,5,belly);
+    px(x+D*12-1,y-1,2,2,fang);
+    // glowing eyes + angry brow
+    px(x+D*7-4,y-7,2,2,'#FFC400'); px(x+D*7+2,y-7,2,2,'#FFC400');
+    px(x+D*7-5,y-8,10,1,'#22252B');
+  },
+});
+
+function _wolfBite(e, p){
+  spawnSparkles(p.x, p.y-8, '#D64545', 12);
+  if(typeof Health!=='undefined') Health.damage(p, e.dmg||3);
+  showToast('🐺 A mountain wolf lunged at you!', 1400);
+  // strong knockback
+  const ang=Math.atan2(p.y-e.y, p.x-e.x);
+  p.x=clamp(p.x+Math.cos(ang)*18, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*18, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
+
+// ===== src/entities/grave.js =====
+// ====================== ENTITY: GRAVE ======================
+// A little headstone left where a dog fainted. Purely a marker: no update, no
+// interaction — it just draws (y-sorted with the living actors in the main loop) and
+// rides along in save/load like any other entity. Health.onDown spawns one at the
+// death spot; LevelManager clears them when the next level generates.
+
+Entities.register('grave', {
+  radius: 0,
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    // ground shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+7,12,4,0,0,Math.PI*2); ctx.fillStyle='#141414'; ctx.fill(); ctx.globalAlpha=1;
+    // earth mound
+    px(x-11,y+3,22,6,'#6B5A3E'); px(x-11,y+3,22,2,'#7C6A4A');
+    // headstone slab (rounded top)
+    px(x-7,y-13,14,17,'#9A9A92');
+    px(x-5,y-16,10,4,'#9A9A92');
+    px(x-3,y-18,6,3,'#9A9A92');
+    px(x-7,y-13,14,2,'#B6B6AC');           // top-lit edge
+    px(x+5,y-13,2,17,'#7E7E76');           // right shade
+    // engraved cross
+    px(x-1,y-11,2,9,'#6E6E66'); px(x-4,y-8,8,2,'#6E6E66');
+    // a single flower laid at the base
+    px(x-9,y+5,2,3,'#5A8A4A');
+    px(x-10,y+3,2,2,'#FF9EC0'); px(x-8,y+3,2,2,'#FF9EC0'); px(x-9,y+4,2,2,'#FFE066');
+  },
+});
+
 // ===== src/entities/npc.js =====
 // ====================== ENTITY: NPC (interactable critter) ======================
 // A stationary character you can walk up to and interact with (action key). Phase 3
@@ -1955,12 +2607,14 @@ Entities.register('npc', {
     const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/500)*1.5);
     // shadow
     ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+14,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
-    // Per-look palette: default merchant (warm brown + green scarf) vs. the tailor
-    // (plum coat + purple beret, so the two NPCs read as different shops).
+    // Per-look palette so each NPC reads as a distinct shop: default merchant
+    // (warm brown + green scarf), the tailor (plum coat + purple beret), and the
+    // rocky-mountain ranger (slate-blue parka + red scarf + fur hat).
     const tailor = e.look==='tailor';
-    const bodyC = tailor ? '#7E5AA6' : '#B07A44';
-    const earC  = tailor ? '#654888' : '#9A6636';
-    const scarfC= tailor ? '#E0A93C' : '#3E9A5A';
+    const ranger = e.look==='ranger';
+    const bodyC = tailor ? '#7E5AA6' : ranger ? '#4E6E86' : '#B07A44';
+    const earC  = tailor ? '#654888' : ranger ? '#3A5468' : '#9A6636';
+    const scarfC= tailor ? '#E0A93C' : ranger ? '#C0463C' : '#3E9A5A';
     px(x-10,y-2,20,16,bodyC);
     px(x-6,y+4,12,9,'#E8C48A');    // apron/belly
     px(x-9,y-16,18,15,bodyC);      // head
@@ -1976,6 +2630,15 @@ Entities.register('npc', {
       px(x+7,y-24,2,3,'#F0D890');     // beret nub
       px(x-13,y+2,4,6,'#E8C48A');     // arm holding a spool of thread
       px(x-15,y+3,4,4,'#E0A93C'); px(x-14,y+4,2,2,'#B07A44');
+    }
+    if(ranger){
+      px(x-9,y-24,18,5,'#6B4A2E');    // fur trapper hat band
+      px(x-8,y-27,16,4,'#8A5E38');
+      px(x-10,y-23,3,4,'#B8895A'); px(x+7,y-23,3,4,'#B8895A'); // ear flaps
+      px(x-2,y-27,4,2,'#C0463C');     // hat pom
+      px(x-13,y+1,4,7,bodyC);         // arm holding a lantern
+      px(x-16,y+3,5,6,'#3A3A44'); px(x-15,y+4,3,4,'#FFD36A'); // lantern glow
+      px(x-6,y+6,12,2,'#3A5468');     // parka belt
     }
 
     // floating "!" prompt bubble
@@ -2456,8 +3119,12 @@ function drawMinimap(){
   collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
-  // registry entities (enemies red, NPCs warm yellow)
-  entities.forEach(e=>{ ctx.fillStyle=e.kind==='enemy'?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); });
+  // registry entities (hostiles red, graves grey, NPCs warm yellow)
+  const hostile={enemy:1,wolf:1};
+  entities.forEach(e=>{
+    if(e.kind==='grave'){ ctx.fillStyle='#9A9A92'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-2,3,4); return; }
+    ctx.fillStyle=hostile[e.kind]?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4);
+  });
   // viewport
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
   ctx.strokeRect(MX+cam.x*sx,MY+cam.y*sy,VIEW_W*sx,VIEW_H*sy);
@@ -2781,6 +3448,28 @@ const LevelManager = {
 
   // Convenience: (re)load whatever level is current, defaulting to the first.
   reload(){ return this.load(_currentLevel ? _currentLevel.id : (Levels.first() && Levels.first().id)); },
+
+  // Advance an in-progress run to another level: build it, then move the existing dogs
+  // to the new spawn and heal them to full. Inventory + treats carry over as a reward
+  // for finishing the previous level; quest progress (cheeredCount) resets in load().
+  goTo(id){
+    const lvl=this.load(id);
+    if(!lvl) return null;
+    const spawn=lvl.spawn || { x:200, y:200 };
+    const players=Game.twoPlayer ? [p1,p2] : [p1];
+    players.forEach((p,i)=>{
+      if(!p) return;
+      p.x=spawn.x+i*60; p.y=spawn.y;
+      p.hp=p.maxHp; p.hurtTimer=0; p.swimming=false;
+      p.dead=false;                 // fallen dogs are revived for the new level
+    });
+    if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
+    if(typeof sparkles!=='undefined') sparkles=[];
+    if(typeof updateCamera==='function') updateCamera();
+    if(typeof updateHUD==='function') updateHUD();
+    if(typeof showToast==='function') showToast(`⛰️ ${lvl.name}`, 2200);
+    return lvl;
+  },
 };
 
 // ===== src/update.js =====
@@ -2887,10 +3576,23 @@ function updateSparkles(){
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
 
 function checkWin(){
+  // Already handled this completion (WIN state = victory or level-complete interstitial).
+  if(Game.state===SCENES.WIN) return;
   // Completion is defined by the current level's quest (falls back to the cheer count).
-  const q=LevelManager.current&&LevelManager.current.quest;
+  const lvl=LevelManager.current;
+  const q=lvl&&lvl.quest;
   const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
-  if(done){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
+  if(!done) return;
+  sfxWin();
+  Game.state=SCENES.WIN;                     // freeze the world behind the overlay
+  const nextId=lvl&&lvl.next;
+  if(nextId && Levels.get(nextId) && typeof UI!=='undefined' && UI.showLevelComplete){
+    // More levels ahead → show the "level complete" interstitial with a Continue button.
+    setTimeout(()=>UI.showLevelComplete(lvl, Levels.get(nextId)), 700);
+  } else {
+    // Final level cleared → the victory screen.
+    setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);
+  }
 }
 
 
@@ -2921,7 +3623,7 @@ const Save = {
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
-             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp };
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead };
   },
 
   save(){
@@ -2979,6 +3681,7 @@ const Save = {
       pl.equipment = sp.equipment || {};
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
+      pl.dead = !!sp.dead;
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);
@@ -3028,6 +3731,7 @@ const UI = {
     set('p1count', p1 ? p1.treats : 0);
     set('p2count', (typeof p2!=='undefined' && p2) ? p2.treats : 0);
     set('cheerCount', Game.cheeredCount);
+    set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
@@ -3045,7 +3749,7 @@ const UI = {
   _heartMarkup(p){
     if(!p || !p.maxHp) return '';
     const n=Health.heartsFor(p.maxHp);
-    let out='';
+    let out = p.dead ? '<span class="hrt dead">🪦</span>' : '';
     for(let i=0;i<n;i++){
       const inHeart=Math.max(0, Math.min(Health.HEART_HP, p.hp - i*Health.HEART_HP));
       if(inHeart>=2)      out+='<span class="hrt full">❤</span>';
@@ -3061,7 +3765,9 @@ const UI = {
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
-    if(Game.state!==SCENES.MENU && Game.state!==SCENES.WIN) Game.state=SCENES.PLAYING;
+    // Don't yank the world back to PLAYING from a terminal/interstitial scene.
+    const frozen = Game.state===SCENES.MENU || Game.state===SCENES.WIN || Game.state===SCENES.GAMEOVER;
+    if(!frozen) Game.state=SCENES.PLAYING;
   },
 
   // ESC: close whatever is open (blocking panel first, then inventory), else pause.
@@ -3210,7 +3916,8 @@ const UI = {
   // toys play, wearables equip; anything else isn't usable.
   useHotbar(n){
     if(Game.state!==SCENES.PLAYING) return;
-    const p=p1, cell=Inventory.at(p, n-1); if(!cell) return;
+    const p=p1; if(!p || p.dead) return;               // a fainted dog can't use items
+    const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
@@ -3242,6 +3949,7 @@ const UI = {
       if(!def) return;
       if(def.type==='wearable'){ if(Wearables.equipFromSlot(p, idx, def.slot)) this.updateHUD(); }
       else if(def.type==='consumable'){
+        if(p.dead){ showToast('That dog has fainted.',1400); return; }
         if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
         const healed=Health.heal(p, def.heal||2); Inventory.removeAt(p, idx, 1);
         if(typeof sfxCollect==='function') sfxCollect();
@@ -3374,12 +4082,53 @@ const UI = {
     choices.appendChild(bye);
   },
 
+  // ---------- game over ----------
+  // A dog fainted (hp hit 0). Freeze the run and offer Play Again / Main Menu.
+  // Called from Health.onDown. The frozen death frame stays visible behind the
+  // translucent overlay (GAMEOVER is in the main loop's showWorld set).
+  gameOver(p){
+    if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
+    this.closeInventory();
+    this._show('pauseScreen', false);
+    this._show('dialogScreen', false);
+    this.panel=null; this._dialog=null;
+    Game.state=SCENES.GAMEOVER;
+    if(typeof stopMusic==='function') stopMusic();   // the sad faint sound already played
+    const who = (Game.twoPlayer && p) ? `P${p.id}'s dog` : 'Your dog';
+    const t=this.$('gameOverText'); if(t) t.textContent=`${who} fainted... but every good dog gets another chance.`;
+    this._show('gameOverScreen', true);
+    this.renderHotbar();              // hide the hotbar
+  },
+
+  // ---------- level complete (interstitial between levels) ----------
+  showLevelComplete(current, next){
+    const title=this.$('lcTitle'); if(title) title.textContent=`⭐ ${current.name} Complete! ⭐`;
+    const txt=this.$('lcText');
+    if(txt) txt.textContent=`You cheered up every friend here! A new trail leads to ${next.name}…`;
+    const btn=this.$('btnLevelContinue');
+    if(btn) btn.textContent=`Continue to ${next.name} ⛰️`;
+    this._nextLevelId=next.id;
+    this._show('levelCompleteScreen', true);
+  },
+
+  continueToNextLevel(){
+    const id=this._nextLevelId; this._nextLevelId=null;
+    this._show('levelCompleteScreen', false);
+    if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
+      LevelManager.goTo(id);
+      Game.state=SCENES.PLAYING;
+      if(typeof startMusic==='function') startMusic();
+    }
+  },
+
   // ---------- menu transitions ----------
   quitToMenu(){
     this.closeInventory();
     this.closePanel();
     if(typeof stopMusic==='function') stopMusic();
     this._show('winScreen', false);
+    this._show('gameOverScreen', false);
+    this._show('levelCompleteScreen', false);
     this.$('startScreen').style.display='flex';
     this.refreshContinueButton();     // a save may have been made this session
     Game.state=SCENES.MENU;
@@ -3399,6 +4148,10 @@ const UI = {
     const on=(id,fn)=>{ const el=this.$(id); if(el) el.addEventListener('click',fn); };
     on('btnResume', ()=>this.closePanel());
     on('btnQuit', ()=>this.quitToMenu());
+    // Level-complete → next level; game over → replay / menu.
+    on('btnLevelContinue', ()=>this.continueToNextLevel());
+    on('btnGameOverReplay', ()=>{ if(typeof replayRun==='function') replayRun(); });
+    on('btnGameOverMenu', ()=>this.quitToMenu());
     on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
     on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
     // Start-screen "Continue" appears only when a save exists.
@@ -3443,13 +4196,18 @@ function loop(now){
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
   const playing=Game.state===SCENES.PLAYING;
-  const showWorld=playing||Game.state===SCENES.PAUSED||Game.state===SCENES.INVENTORY||Game.state===SCENES.DIALOG;
+  // Keep drawing the frozen world behind any overlay that sits over live gameplay
+  // (pause / inventory / dialog / game over / the brief win freeze).
+  const s=Game.state;
+  const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN;
   if(playing){
     const c1=Input.CONTROLS.p1, c2=Input.CONTROLS.p2;
     updateCollectibles(now);
     Entities.updateAll(now,dt);
-    updatePlayer(p1,c1,now,dt);tryCollect(p1);tryDeliver(p1,c1);tryInteract(p1,c1);
-    if(twoPlayer){updatePlayer(p2,c2,now,dt);tryCollect(p2);tryDeliver(p2,c2);tryInteract(p2,c2);checkGroupHowl();}
+    // A fainted dog is frozen (a grave marks the spot) until the level ends.
+    if(!p1.dead){updatePlayer(p1,c1,now,dt);tryCollect(p1);tryDeliver(p1,c1);tryInteract(p1,c1);}
+    if(twoPlayer&&!p2.dead){updatePlayer(p2,c2,now,dt);tryCollect(p2);tryDeliver(p2,c2);tryInteract(p2,c2);}
+    if(twoPlayer&&!p1.dead&&!p2.dead)checkGroupHowl();
     updateSparkles();updateCamera();
   }
   if(showWorld){
@@ -3463,8 +4221,9 @@ function loop(now){
     Abilities.drawWorld(now);
     collectibles.forEach(item=>drawCollectible(item,now));
     friends.forEach(f=>drawFriend(f,now));
-    // Dogs + registry entities (enemies/NPCs) share one painter's-algorithm pass by y.
-    const actors=activePlayers.map(p=>({y:p.y, d:()=>drawDog(p,now)}));
+    // Dogs + registry entities (enemies/NPCs/graves) share one painter's-algorithm pass
+    // by y. Fainted dogs aren't drawn — their grave (a spawned entity) stands in for them.
+    const actors=activePlayers.filter(p=>!p.dead).map(p=>({y:p.y, d:()=>drawDog(p,now)}));
     entities.forEach(e=>{ const def=Entities.def(e.kind); if(def&&def.draw) actors.push({y:e.y, d:()=>def.draw(e,now)}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
@@ -3911,24 +4670,42 @@ function launchGame(){
   if(dots[1]) dots[1].style.background = cfg2.color.hex;
 
   document.getElementById('startScreen').style.display='none';
-  resetGame(cfg1, cfg2);
+  // A brand-new game always starts at the first level (the current level may be a
+  // later one if a previous run progressed before quitting).
+  resetGame(cfg1, cfg2, Levels.first().id);
   Abilities.spawnAll();
   Game.state=SCENES.PLAYING;
   startMusic();
   if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
 
-// Override resetGame to accept configs
-function resetGame(cfg1, cfg2){
+// Override resetGame to accept configs. `levelId` picks which level to build; omit it
+// to rebuild whatever level is current (used by Play Again after a game over).
+function resetGame(cfg1, cfg2, levelId){
   stopMusic();
-  LevelManager.reload();   // regenerate world + entities + themed ground; resets cheeredCount
+  if(levelId) LevelManager.load(levelId);   // regenerate a specific level
+  else LevelManager.reload();               // rebuild the current level
   Abilities.reset();
   const c1 = cfg1 || dogConfig.p1;
   const c2 = cfg2 || dogConfig.p2;
-  p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);
-  p2=makePlayer(2, c2.color.hex, 260, 200, c2.breed);
+  const spawn = (LevelManager.current && LevelManager.current.spawn) || { x:200, y:200 };
+  p1=makePlayer(1, c1.color.hex, spawn.x, spawn.y, c1.breed);
+  p2=makePlayer(2, c2.color.hex, spawn.x+60, spawn.y, c2.breed);
   sparkles=[]; updateHUD();
   document.getElementById('winScreen').style.display='none';
+  document.getElementById('gameOverScreen').style.display='none';
+  document.getElementById('levelCompleteScreen').style.display='none';
+}
+
+// Play Again after a game over: rebuild the level the run ended on (keeping the same
+// dogs) and drop straight back into play — no trip through the menu / char-select.
+function replayRun(){
+  if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
+  resetGame(dogConfig.p1, dogConfig.p2);   // no levelId → current level
+  Abilities.spawnAll();
+  Game.state=SCENES.PLAYING;
+  startMusic();
+  if(!twoPlayer && isTouchDevice()) showMobileControls(true);
 }
 
 // Wire main menu buttons → char select flow

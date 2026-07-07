@@ -158,5 +158,24 @@ const Wearables = {
       _wpx(g, a.x-1, y+10, 5, 3, '#8C2434');
       _wpx(g, a.x+6, y+10, 3, 3, '#8C2434');
     },
+    beanie(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-7, y-1, 14, 4, '#8A3B3B');   // knit band
+      _wpx(g, x-6, y-5, 12, 5, '#B24A4A');   // dome
+      _wpx(g, x-6, y-5, 12, 2, '#C86060');   // highlight
+      _wpx(g, x-2, y-8, 4, 4, '#E8E0D0');    // pom-pom
+    },
+    snowgoggles(g,a){
+      if(a.dir==='up') return;               // eyes hidden facing away
+      const y=a.faceY;
+      const lens='#3AA0C8', frame='#2A2E36', strap='#C0463C';
+      if(a.dir==='right'){ _wpx(g, a.x+3, y-1, 7, 4, frame); _wpx(g, a.x+4, y, 5, 2, lens); }
+      else if(a.dir==='left'){ _wpx(g, a.x-10, y-1, 7, 4, frame); _wpx(g, a.x-9, y, 5, 2, lens); }
+      else {
+        _wpx(g, a.x-7, y-1, 14, 4, frame);
+        _wpx(g, a.x-6, y, 5, 2, lens); _wpx(g, a.x+1, y, 5, 2, lens);
+      }
+      _wpx(g, a.x-8, y, 2, 2, strap); _wpx(g, a.x+6, y, 2, 2, strap); // strap peeking out
+    },
   },
 };

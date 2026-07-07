@@ -15,7 +15,7 @@ const Health = {
   heartsFor(maxHp){ return Math.ceil((maxHp||0) / this.HEART_HP); },
 
   damage(p, n){
-    if(!p || p.hp<=0) return;
+    if(!p || p.dead || p.hp<=0) return;
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
     if(typeof updateHUD==='function') updateHUD();
@@ -23,22 +23,37 @@ const Health = {
   },
 
   heal(p, n){
-    if(!p) return 0;
+    if(!p || p.dead) return 0;         // a fainted dog can't be healed back to life
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + n);
     if(typeof updateHUD==='function') updateHUD();
     return p.hp - before;              // amount actually restored
   },
 
-  isDown(p){ return p && p.hp<=0; },
+  isDown(p){ return p && (p.dead || p.hp<=0); },
 
-  // Fainting: for now, revive in place at half health so a solo run can continue.
-  // (A proper down/respawn flow can hang off this later.)
+  // Fainting: the dog goes down and STAYS down for the rest of the level — a grave marks
+  // the spot and a sad sound plays. In co-op the surviving dog plays on; fallen dogs are
+  // revived when the next level loads (LevelManager.goTo). Only once EVERY active dog is
+  // down does the run end on the Game Over screen (Play Again / Main Menu).
   onDown(p){
-    if(typeof showToast==='function') showToast(`💫 P${p.id} fainted... and bounces back!`, 2000);
-    p.hp = Math.max(2, Math.round(p.maxHp/2));
-    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FF8FA3', 16);
+    if(!p || p.dead) return;             // already fainted — don't grave twice
+    p.dead = true;
+    p.moving = false; p.howling = false; p.swimming = false;
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#8899AA', 22);
+    if(typeof Entities!=='undefined' && Entities.def && Entities.def('grave')){
+      Entities.spawn('grave', { x:p.x, y:p.y, forPlayer:p.id });
+    }
+    if(typeof sfxDeath==='function') sfxDeath();
+    if(typeof showToast==='function'){
+      const who = (Game.twoPlayer) ? `P${p.id}'s dog` : 'Your dog';
+      showToast(`🪦 ${who} fainted...`, 1800);
+    }
     if(typeof updateHUD==='function') updateHUD();
+
+    // Everyone down? Then it's game over.
+    const anyAlive = Game.players.some(pp => pp && !pp.dead);
+    if(!anyAlive && typeof UI!=='undefined' && UI.gameOver){ UI.gameOver(p); }
   },
 
   // Decay the per-frame hurt flash.

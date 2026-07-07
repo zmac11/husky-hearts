@@ -17,7 +17,8 @@ const SCENES = Object.freeze({
   PAUSED:    'paused',     // ESC menu (Phase 5)
   DIALOG:    'dialog',     // talking to an NPC (Phase 3/5)
   INVENTORY: 'inventory',  // inventory panel open (Phase 5)
-  WIN:       'win',        // victory screen
+  WIN:       'win',        // victory / level-complete screen (world frozen)
+  GAMEOVER:  'gameover',   // all dogs fainted — run over
 });
 
 const Game = {

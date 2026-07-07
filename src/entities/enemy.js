@@ -4,7 +4,7 @@
 
 function _nearestPlayer(e){
   let best=null, bestD=Infinity;
-  for(const p of Game.players){ const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
+  for(const p of Game.players){ if(p.dead) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bestD){ bestD=d; best=p; } }
   return best;
 }
 

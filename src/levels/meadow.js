@@ -9,6 +9,8 @@ Levels.register({
   name: 'Sunny Meadow',
   seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
   size: { w: 1920, h: 1280 },
+  spawn: { x: 200, y: 200 },   // where the dogs start on this level
+  next: 'rocky',               // clearing the meadow leads up into the mountains
 
   // Visual palette — moved out of world-draw.js so different levels look different.
   theme: {
@@ -52,7 +54,7 @@ Levels.register({
   quest: {
     id: 'cheer-all',
     label: 'Cheer up every lonely friend',
-    describe(){ return `Cheered ${Game.cheeredCount}/${CHEER_TOTAL} friends`; },
-    isComplete(){ return Game.cheeredCount >= CHEER_TOTAL; },
+    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
   },
 });

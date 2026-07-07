@@ -14,7 +14,7 @@ const Save = {
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
-             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp };
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead };
   },
 
   save(){
@@ -72,6 +72,7 @@ const Save = {
       pl.equipment = sp.equipment || {};
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
+      pl.dead = !!sp.dead;
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);

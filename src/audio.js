@@ -124,4 +124,17 @@ function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='susp
 function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,ac.destination,t+i*0.1,0.18)); }
 function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,ac.destination,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,ac.destination,t+0.5,0.4); }
 function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.6); }
+// Sad "aww" when a dog faints — a downward trombone-ish slide with a low bell tail.
+// Does NOT stop the music (a co-op partner may still be playing).
+function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(noteHz(N.E4),t);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.C3),t+0.7);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(0.26,t+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.8);
+  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.85);
+  osc(ac,'sine',noteHz(N.C3),0.16,ac.destination,t+0.1,0.7);
+}
 function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,ac.destination,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,ac.destination,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,ac.destination,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,ac.destination,t+2.5,1.5)); }

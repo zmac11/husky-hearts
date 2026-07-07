@@ -101,9 +101,22 @@ function updateSparkles(){
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
 
 function checkWin(){
+  // Already handled this completion (WIN state = victory or level-complete interstitial).
+  if(Game.state===SCENES.WIN) return;
   // Completion is defined by the current level's quest (falls back to the cheer count).
-  const q=LevelManager.current&&LevelManager.current.quest;
+  const lvl=LevelManager.current;
+  const q=lvl&&lvl.quest;
   const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
-  if(done){sfxWin();setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);}
+  if(!done) return;
+  sfxWin();
+  Game.state=SCENES.WIN;                     // freeze the world behind the overlay
+  const nextId=lvl&&lvl.next;
+  if(nextId && Levels.get(nextId) && typeof UI!=='undefined' && UI.showLevelComplete){
+    // More levels ahead → show the "level complete" interstitial with a Continue button.
+    setTimeout(()=>UI.showLevelComplete(lvl, Levels.get(nextId)), 700);
+  } else {
+    // Final level cleared → the victory screen.
+    setTimeout(()=>{document.getElementById('winScreen').style.display='flex';},700);
+  }
 }
 

@@ -89,6 +89,104 @@ function drawFriend(f,t){
     [[x-14,y+10],[x-6,y+12],[x+2,y+12],[x+8,y+10]].forEach(([lx,ly])=>px(lx,ly,6,8,cc?'#8AC878':'#7A8A68'));
     // tail
     px(x-18,y+2,6,6,cc?'#8AC878':'#7A9A68');
+  } else if(f.kind==='fox'){
+    // ---- Mountain Fox ---- (sad = washed grey-orange; cheered = vivid orange)
+    const FC=cc?'#E8792E':'#B08668', FD=cc?'#C85E1E':'#8E6A50', FW='#F6EEE0';
+    // tail (bushy, white tip) swishing
+    const tw=Math.sin(t/220+f.x)*4;
+    px(x+8,y-2+tw*0.4,8,16,FD); px(x+10,y+8+tw,6,7,FW);
+    // body
+    px(x-10,y-2,20,15,FC); px(x-6,y+4,12,9,FW);
+    // legs
+    px(x-7,y+11,4,6,FD); px(x+3,y+11,4,6,FD);
+    // head
+    px(x-9,y-16,18,15,FC);
+    px(x-6,y-8,12,7,FW);           // white muzzle/cheeks
+    // ears (tall, dark tips)
+    px(x-9,y-24,6,10,FC); px(x-8,y-26,4,5,FD);
+    px(x+3,y-24,6,10,FC); px(x+4,y-26,4,5,FD);
+    // eyes + nose
+    px(x-5,y-12,3,3,'#2A2A2A'); px(x+3,y-12,3,3,'#2A2A2A');
+    px(x-4,y-12,1,1,'#fff'); px(x+4,y-12,1,1,'#fff');
+    px(x-1,y-6,3,3,'#2A2A2A');
+  } else if(f.kind==='goat'){
+    // ---- Mountain Goat ---- (shaggy cream coat, curved horns, beard)
+    const GC=cc?'#FBF6EC':'#D8D2C4', GD=cc?'#E4DCCB':'#B8B2A4', GH='#7C6A50';
+    // body (shaggy)
+    px(x-11,y-2,22,15,GC); px(x-11,y+2,22,4,GD); px(x-11,y+8,22,3,GD); // fur bands
+    px(x-8,y+11,4,7,GC); px(x+4,y+11,4,7,GC);
+    px(x-8,y+16,4,2,GH); px(x+4,y+16,4,2,GH); // hooves
+    // head
+    px(x-7,y-15,15,14,GC);
+    px(x-4,y-6,9,5,GD);            // muzzle
+    // horns (curve back)
+    px(x-6,y-21,3,7,GH); px(x-7,y-23,3,4,GH); px(x-9,y-24,3,3,GH);
+    px(x+4,y-21,3,7,GH); px(x+5,y-23,3,4,GH); px(x+7,y-24,3,3,GH);
+    // ears
+    px(x-9,y-14,3,5,GD); px(x+7,y-14,3,5,GD);
+    // beard
+    px(x-2,y-1,4,6,GC); px(x-1,y+4,2,4,GD);
+    // eyes + nose
+    px(x-4,y-11,3,3,'#2A2A2A'); px(x+3,y-11,3,3,'#2A2A2A');
+    px(x-3,y-11,1,1,'#fff'); px(x+4,y-11,1,1,'#fff');
+    px(x-1,y-5,3,2,'#5A4A3A');
+  } else if(f.kind==='owl'){
+    // ---- Snow Owl ---- (round, big eyes, ear tufts)
+    const OC=cc?'#EDEDF4':'#9AA0AE', OD=cc?'#CFD2E0':'#7C828E', OF='#F6F1E4';
+    // body
+    px(x-11,y-12,22,26,OC);
+    px(x-8,y-6,16,16,OF);           // pale chest
+    // wings
+    px(x-13,y-8,5,18,OD); px(x+8,y-8,5,18,OD);
+    // wing feather ticks
+    px(x-12,y-4,3,2,OC); px(x-12,y+2,3,2,OC); px(x+9,y-4,3,2,OC); px(x+9,y+2,3,2,OC);
+    // ear tufts
+    px(x-9,y-18,4,7,OD); px(x+5,y-18,4,7,OD);
+    // facial disc + huge eyes
+    px(x-8,y-11,7,7,'#FFF6E0'); px(x+1,y-11,7,7,'#FFF6E0');
+    const blink=(Math.sin(t/900+f.x)>0.96)?1:0;
+    px(x-6,y-9,4,4,cc?'#FFC53C':'#4A4E5A'); px(x+3,y-9,4,4,cc?'#FFC53C':'#4A4E5A');
+    if(!blink){ px(x-5,y-8,2,2,'#1A1A1A'); px(x+4,y-8,2,2,'#1A1A1A'); }
+    // beak + feet
+    px(x-1,y-5,3,4,'#E8A23C'); px(x+1,y-4,1,3,'#C8842A');
+    px(x-5,y+12,4,3,'#E8A23C'); px(x+2,y+12,4,3,'#E8A23C');
+  } else if(f.kind==='marmot'){
+    // ---- Marmot ---- (chubby alpine ground-dweller)
+    const MC=cc?'#C89050':'#9A8A78', MD=cc?'#A6733A':'#7C6E5E', MW='#EAD8BE';
+    // body (round, upright)
+    px(x-10,y-6,20,20,MC);
+    px(x-6,y+2,12,11,MW);          // belly
+    // little arms
+    px(x-8,y+2,4,7,MD); px(x+4,y+2,4,7,MD);
+    // feet
+    px(x-6,y+13,5,4,MD); px(x+1,y+13,5,4,MD);
+    // head
+    px(x-8,y-16,16,12,MC);
+    px(x-4,y-8,9,5,MW);            // muzzle
+    // small round ears
+    px(x-8,y-18,4,4,MD); px(x+4,y-18,4,4,MD);
+    // eyes, nose, buck teeth
+    px(x-4,y-12,3,3,'#2A2A2A'); px(x+2,y-12,3,3,'#2A2A2A');
+    px(x-3,y-12,1,1,'#fff'); px(x+3,y-12,1,1,'#fff');
+    px(x-1,y-6,3,2,'#4A3A2A'); px(x-1,y-4,3,2,'#FFFFFF');
+  } else if(f.kind==='bearcub'){
+    // ---- Bear Cub ---- (round, cuddly, big ears)
+    const BC=cc?'#8A5A34':'#6E5E50', BD=cc?'#6E4526':'#544A40', BM='#D8B48C';
+    // body
+    px(x-11,y-4,22,18,BC);
+    px(x-6,y+3,12,9,BM);           // tummy
+    // legs
+    px(x-9,y+12,6,6,BD); px(x+3,y+12,6,6,BD);
+    // head
+    px(x-9,y-16,18,14,BC);
+    // big round ears
+    px(x-10,y-20,7,7,BC); px(x-8,y-18,3,3,BM);
+    px(x+3,y-20,7,7,BC); px(x+5,y-18,3,3,BM);
+    // snout
+    px(x-4,y-8,9,6,BM); px(x-1,y-6,3,3,'#2A2A2A');
+    // eyes
+    px(x-5,y-12,3,3,'#2A2A2A'); px(x+3,y-12,3,3,'#2A2A2A');
+    px(x-4,y-12,1,1,'#fff'); px(x+4,y-12,1,1,'#fff');
   }
 
   ctx.restore();
