@@ -12,7 +12,9 @@ const Save = {
 
   _serializePlayer(p){
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
-             treats:p.treats, inventory:Object.assign({}, p.inventory) };
+             treats:p.treats,
+             inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp };
   },
 
   save(){
@@ -65,7 +67,11 @@ const Save = {
     twoPlayer = !!data.twoPlayer;
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
-      pl.dir = sp.dir; pl.treats = sp.treats; pl.inventory = sp.inventory || {};
+      pl.dir = sp.dir; pl.treats = sp.treats;
+      pl.inventory = sp.inventory || Inventory.create(); Inventory.cells(pl); // normalize length
+      pl.equipment = sp.equipment || {};
+      if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
+      if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);

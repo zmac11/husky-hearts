@@ -322,8 +322,10 @@ function isInPond(px,py,wasSwimming){
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
+  const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,inventory:{},speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
+    treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,
+    speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
     howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);

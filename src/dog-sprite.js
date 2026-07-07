@@ -25,6 +25,10 @@ function drawDog(p,t){
     ctx.clip();
   }
 
+  // Worn back-layer items (capes) sit behind the breed sprite.
+  const _wa = (typeof Wearables!=='undefined' && p.equipment) ? Wearables.anchor(x, by, p.dir, p.equipment, t) : null;
+  if(_wa) Wearables.drawBack(ctx, _wa);
+
   if(breed==='dinno') _drawDinno(x,by,t,C,D,L,W,K,p);
   else if(breed==='lolla') _drawLolla(x,by,t,C,D,L,W,K,p);
   else if(breed==='corgi') _drawCorgi(x,by,t,C,D,L,W,K,p);
@@ -33,8 +37,18 @@ function drawDog(p,t){
   else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
   else _drawHusky(x,by,t,C,D,L,W,K,p);
 
+  // Worn front-layer items (hat, scarf, coat, shades) sit on top of the breed sprite.
+  if(_wa) Wearables.drawFront(ctx, _wa);
+
   // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
   Abilities.drawOnDog(p,x,by);
+
+  // Brief red flash when the dog takes damage (Health.damage sets hurtTimer).
+  if(p.hurtTimer>0){
+    ctx.globalAlpha=Math.min(0.5, p.hurtTimer/520);
+    px(x-13,by-26,26,42,'#FF3B3B');
+    ctx.globalAlpha=1;
+  }
 
   if(p.swimming){
     ctx.restore(); // remove clip

@@ -203,38 +203,134 @@
      behind the menu. Buttons carry their own solid fill, so they stay legible. */
   #pauseScreen{ background:rgba(74,63,53,0.18); }
 
+  /* ===== heart health bar (HUD) ===== */
+  .heartbar{ display:inline-flex; align-items:center; gap:1px; margin-left:6px; }
+  .hrt{ font-size:13px; line-height:1; }
+  .hrt.full{ color:#e2415c; }
+  .hrt.half{ color:#e2415c; display:inline-block; transform:scale(0.55); transform-origin:center; }
+  .hrt.empty{ color:#2a2018; opacity:0.6; font-size:9px; }
+
   /* Inventory: a non-blocking side panel docked over PART of the frame — the world
-     keeps playing and stays visible to the left. Not a full-screen overlay. */
+     keeps playing and stays visible to the RIGHT. Docked on the left (Terraria-ish). */
   #inventoryScreen{
-    position:absolute; top:8px; right:8px; bottom:8px; z-index:25;
-    width:min(280px,68%);
+    position:absolute; top:8px; left:8px; bottom:8px; z-index:25;
+    width:min(288px,72%);
     display:flex; flex-direction:column; align-items:stretch; gap:8px;
     padding:12px; text-align:center; overflow-y:auto;
-    background:rgba(255,248,239,0.94);
+    background:rgba(255,248,239,0.95);
     border:3px solid var(--brown); border-radius:14px;
     box-shadow:0 6px 18px rgba(74,63,53,0.35);
   }
+  #invHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   #inventoryScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
   #inventoryScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }
+  #invTabs{ display:flex; gap:4px; }
+  .inv-tab{
+    font-family:inherit; font-weight:bold; font-size:11px; cursor:pointer;
+    padding:3px 9px; border-radius:8px; border:2px solid var(--brown);
+    background:var(--cream); color:var(--brown);
+  }
+  .inv-tab.active{ background:var(--meadow); }
 
-  /* stats + inventory card */
-  #invBody{
-    display:flex; flex-direction:column; flex-wrap:nowrap; gap:10px;
-    align-items:stretch; overflow-y:auto;
-  }
-  .inv-player{
+  #invBody{ display:flex; flex-direction:column; gap:8px; align-items:stretch; }
+
+  /* paper-doll: dog in the centre, wearable slots on a 3×3 ring around it */
+  .inv-doll-grid{
+    display:grid; grid-template-columns:32px 1fr 32px; grid-auto-rows:auto;
+    gap:4px; justify-items:center; align-items:center;
     background:var(--cream); border:2px solid var(--brown); border-radius:12px;
-    padding:8px 10px; min-width:190px; box-shadow:0 3px 0 var(--shadow); text-align:left;
+    padding:6px; box-shadow:0 3px 0 var(--shadow);
   }
-  .inv-player h3{ margin:0 0 4px; font-size:13px; color:var(--brown); display:flex; align-items:center; gap:6px; }
-  .inv-stats{ font-size:10px; color:var(--brown-soft); line-height:1.5; margin-bottom:6px; }
-  .inv-grid{ display:flex; flex-wrap:wrap; gap:5px; }
-  .inv-cell{
-    background:#fff8e8; border:2px solid var(--brown-soft); border-radius:8px;
-    padding:3px 6px; font-size:12px; color:var(--brown); display:flex; align-items:center; gap:3px;
+  .inv-doll-grid canvas{ image-rendering:pixelated; background:#eaf6e4; border-radius:8px; max-width:100%; }
+  .doll-blank{ width:32px; height:32px; }
+  .doll-slot{
+    width:32px; height:32px; padding:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    border:2px dashed var(--brown-soft); border-radius:8px;
+    background:rgba(255,255,255,0.5); color:var(--brown-soft); font-size:17px;
   }
-  .inv-cell .qty{ font-weight:bold; font-size:11px; }
-  .inv-empty{ font-size:10px; color:var(--brown-soft); font-style:italic; }
+  .doll-slot.filled{ border-style:solid; border-color:var(--brown); background:#fff3d8; }
+  .doll-slot .slot-tag{ font-size:8px; font-weight:bold; letter-spacing:0.3px; }
+  .doll-slot:hover{ border-color:var(--brown); }
+
+  .inv-meta{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .inv-name{ font-size:12px; font-weight:bold; color:var(--brown); }
+  .inv-heartline{ display:inline-flex; align-items:center; gap:1px; }
+  .inv-substats{ font-size:10px; color:var(--brown-soft); }
+  .inv-substats b{ color:var(--brown); }
+
+  /* Terraria-style tile grid for loose items */
+  .inv-tilegrid{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:4px;
+    background:var(--cream); border:2px solid var(--brown); border-radius:12px;
+    padding:8px; box-shadow:0 3px 0 var(--shadow);
+  }
+  .inv-tile{
+    position:relative; aspect-ratio:1/1; padding:0; border-radius:7px;
+    border:2px solid var(--brown-soft); background:#fff8e8;
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+    user-select:none; -webkit-user-select:none;
+  }
+  .inv-tile.empty{ background:rgba(122,106,88,0.10); border-style:dashed; }
+  .inv-tile.hb{ background:#fdf3d8; border-color:var(--brown); }        /* numeric quick-slots (first row) */
+  .inv-tile.filled{ cursor:grab; }
+  .inv-tile.filled:active{ cursor:grabbing; }
+  .inv-tile.wearable{ border-color:#7E5AA6; box-shadow:inset 0 0 0 1px rgba(126,90,166,0.35); }
+  .inv-tile.consumable{ border-color:#3E9A5A; box-shadow:inset 0 0 0 1px rgba(62,154,90,0.35); }
+  .inv-tile.filled:hover{ border-color:var(--brown); transform:translateY(-1px); }
+  .inv-tile.dragging{ opacity:0.4; }
+  .inv-tile .tile-key{
+    position:absolute; left:2px; top:0; font-size:8px; font-weight:bold; color:var(--brown-soft);
+  }
+  .inv-tile .tile-qty{
+    position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
+    color:var(--brown); text-shadow:0 1px 0 #fff;
+  }
+
+  /* bin + drag hint row — sticky at the panel bottom so the bin is always a drop target */
+  .inv-binrow{
+    position:sticky; bottom:-12px; z-index:1;
+    display:flex; align-items:center; gap:8px; justify-content:space-between;
+    background:rgba(255,248,239,0.97); padding:6px 0 2px; margin-top:-2px;
+  }
+  .inv-hint{ font-size:9px; color:var(--brown-soft); text-align:left; line-height:1.3; }
+  .inv-bin{
+    flex-shrink:0; width:40px; height:40px; font-size:20px; cursor:pointer;
+    border:2px dashed var(--brown); border-radius:10px; background:rgba(226,92,92,0.10);
+  }
+  .inv-bin:hover{ background:rgba(226,92,92,0.28); }
+
+  /* delete-confirm popup (small modal over the frame) */
+  #confirmPopup{ background:rgba(74,63,53,0.5); z-index:30; }
+  #confirmBox{
+    background:var(--cream); border:3px solid var(--brown); border-radius:14px;
+    padding:16px 18px; max-width:300px; box-shadow:0 6px 0 var(--shadow); text-align:center;
+  }
+  #confirmText{ color:var(--brown); font-size:13px; margin-bottom:12px; line-height:1.4; }
+  #confirmBtns{ display:flex; gap:8px; justify-content:center; }
+  #confirmBtns .modebtn{ margin:0; }
+
+  /* ===== always-on hotbar (number-key slots) ===== */
+  #hotbar{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    z-index:20; display:flex; gap:5px; padding:5px 6px;
+    background:rgba(74,63,53,0.30); border-radius:12px; backdrop-filter:blur(2px);
+  }
+  .hb-slot{
+    position:relative; width:40px; height:40px; padding:0; border-radius:8px;
+    border:2px solid var(--brown); background:rgba(255,248,239,0.92);
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+  }
+  .hb-slot.filled{ cursor:pointer; }
+  .hb-slot.filled:hover{ border-color:var(--gold); }
+  .hb-key{
+    position:absolute; left:2px; top:0; font-size:8px; font-weight:bold;
+    color:var(--brown-soft);
+  }
+  .hb-qty{
+    position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
+    color:var(--brown); text-shadow:0 1px 0 #fff;
+  }
 
   /* dialog */
   #dialogBox{
@@ -272,9 +368,9 @@
   <div id="subtitle">a cozy little walk to make some friends smile</div>
 
   <div id="hud">
-    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats</div>
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats<span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
-    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats</div>
+    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats<span class="heartbar" id="p2hearts"></span></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <button id="fsBtn">⛶ Fullscreen</button>
   </div>
@@ -310,11 +406,25 @@
       </div>
 
       <div id="inventoryScreen" style="display:none;">
-        <h2>🎒 Inventory & Stats</h2>
+        <div id="invHeader">
+          <h2>🎒 Inventory</h2>
+          <div id="invTabs"></div>
+        </div>
         <div id="invBody"></div>
-        <button class="modebtn" id="btnInvClose">Close</button>
-        <div class="overlay-hint">Game keeps playing · I or Esc to close</div>
+        <div class="overlay-hint">World keeps playing · drag items to move/wear/drop · I / Esc to close</div>
       </div>
+
+      <div id="confirmPopup" class="game-overlay" style="display:none;">
+        <div id="confirmBox">
+          <div id="confirmText">Delete this item?</div>
+          <div id="confirmBtns">
+            <button class="modebtn" id="btnDelYes">🗑️ Delete</button>
+            <button class="modebtn secondary" id="btnDelNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="hotbar" style="display:none;"></div>
 
       <div id="dialogScreen" class="game-overlay" style="display:none;">
         <div id="dialogBox">
@@ -459,6 +569,9 @@ window.addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+  // Number keys 1-9 → use the matching P1 hotbar slot (consumables/toys).
+  const m = /^Digit([1-9])$/.exec(e.code);
+  if(m){ if(typeof UI!=='undefined' && UI.useHotbar) UI.useHotbar(+m[1]); }
 });
 window.addEventListener('keyup', e=>{ keys[e.code] = false; });
 
@@ -490,23 +603,26 @@ const Input = {
 // stats:
 //   speed — base walking speed (px/frame). Was hardcoded 2.6 for everyone.
 //   swim  — multiplier applied to speed while swimming (was hardcoded 0.5).
+// hp — starting (and max) health total. 1 heart icon = 2 hp, so these are all even:
+//   e.g. 20 hp → 10 hearts. Each breed has a different total (small dogs are frailer,
+//   the alpha is tankier). makePlayer() seeds player.hp/maxHp from this.
 // passive — human-readable description of the stat-based perk (shown in UI later).
 // abilityId — key into the Abilities registry for an active ability (null = none yet).
 
 const BREEDS_DATA = {
-  dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️',
+  dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️', hp:24,
                stats:{ speed:2.8, swim:0.55 }, passive:'Alpha — a step faster than the pack', abilityId:null },
-  lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟',
+  lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟', hp:20,
                stats:{ speed:2.6, swim:0.5  }, passive:'Playful — loves a good game of fetch', abilityId:'ballCannon' },
-  husky:     { name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕',
+  husky:     { name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕', hp:20,
                stats:{ speed:2.7, swim:0.5  }, passive:'Tireless runner',                       abilityId:null },
-  shiba:     { name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊',
+  shiba:     { name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊', hp:18,
                stats:{ speed:2.6, swim:0.5  }, passive:'Sure-footed',                           abilityId:null },
-  corgi:     { name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾',
+  corgi:     { name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾', hp:16,
                stats:{ speed:2.3, swim:0.45 }, passive:'Short legs — steady but slower',        abilityId:null },
-  poodle:    { name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨',
+  poodle:    { name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨', hp:18,
                stats:{ speed:2.6, swim:0.75 }, passive:'Natural swimmer — glides through water', abilityId:null },
-  dalmatian: { name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫',
+  dalmatian: { name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫', hp:22,
                stats:{ speed:2.9, swim:0.5  }, passive:'Spirited sprinter',                     abilityId:null },
 };
 
@@ -523,9 +639,17 @@ const Breeds = {
 // ===== src/data/items.js =====
 // ====================== ITEMS (data) ======================
 // Definitions for everything that can live in a player's inventory: collectibles,
-// and (future) shop wares / quest items. `type` groups items; `value` is a coin/trade
-// worth for the shop seam. The collectible ids here match the collectible `type`
-// strings produced by makeCollectibles() (world.js), so a pickup maps straight in.
+// consumables, and wearables. `type` groups items; `value` is a coin/trade worth for
+// the shop seam. The collectible ids here match the collectible `type` strings produced
+// by makeCollectibles() (world.js), so a pickup maps straight in.
+//
+// type flavours the item and drives UI/behaviour:
+//   'treat'/'toy'/'food'   — plain collectibles (delivery currency lives in p.treats)
+//   'consumable'           — usable from the hotbar (number keys). `heal` (hp) restores
+//                            health when used; consumed on use.
+//   'wearable'             — equippable cosmetic. `slot` is which paper-doll slot it fills
+//                            (head/face/neck/body/back); `render` keys into Wearables'
+//                            draw table so it shows on the dog.
 
 const ITEMS_DATA = {
   // collectibles found in the world
@@ -535,9 +659,17 @@ const ITEMS_DATA = {
   flower: { name:'Flower', icon:'🌸', type:'treat', value:1 },
   fish:   { name:'Fish',   icon:'🐟', type:'food',  value:2 },
 
-  // sample shop / quest items (wired into the shop UI in a later step)
-  ribbon: { name:'Ribbon', icon:'🎀', type:'cosmetic', value:5 },
-  biscuit:{ name:'Biscuit',icon:'🍪', type:'consumable', value:3 },
+  // consumables — usable from the hotbar
+  biscuit:{ name:'Biscuit', icon:'🍪', type:'consumable', value:3, heal:4 },  // heals 2 hearts
+  ribbon: { name:'Ribbon',  icon:'🎀', type:'wearable',   value:5, slot:'head', render:'ribbon' },
+
+  // wearables — sold by Fenwick the Tailor; shown on the dog when equipped
+  tophat:  { name:'Top Hat',    icon:'🎩', type:'wearable', value:8,  slot:'head', render:'tophat' },
+  ballcap: { name:'Ball Cap',   icon:'🧢', type:'wearable', value:6,  slot:'head', render:'ballcap' },
+  shades:  { name:'Cool Shades',icon:'🕶️', type:'wearable', value:7,  slot:'face', render:'shades' },
+  scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf' },
+  raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat' },
+  cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape' },
 };
 
 const Items = {
@@ -548,38 +680,309 @@ const Items = {
 
 // ===== src/inventory.js =====
 // ====================== INVENTORY ======================
-// A per-player bag of items, stored as { itemId: qty } on player.inventory.
-// This is the seam for pickups, quest items, and buying/selling from NPCs.
-// `treats` stays as the delivery currency; inventory is the general item store.
+// A per-player bag stored as a FIXED, positional array of slots on p.inventory. Each
+// slot is null or { id, qty }. Positions are stable, which is what lets the UI drag,
+// reorder, and pin items to specific cells. The first HOTBAR slots are the numeric
+// quick-slots (keys 1..N) and are mirrored by the always-on hotbar.
+//
+// Capacity is fixed (CAP), so a full bag refuses new pickups. `treats` (world.js) stays
+// the delivery currency; the inventory is the general item store. The classic
+// add/remove/count/has API is preserved so shop, wearables, and pickup code keep working;
+// slot-aware ops (at/removeAt/moveSlot) back the drag-and-drop layer.
 
 const Inventory = {
-  create(){ return {}; },
+  CAP: 24,          // total slots (6 columns × 4 rows)
+  HOTBAR: 6,        // first row = numeric quick-slots
+  MAX_STACK: 99,
 
-  add(p, id, n=1){
-    const inv = p.inventory || (p.inventory = {});
-    inv[id] = (inv[id] || 0) + n;
-    return inv[id];
+  create(){ return new Array(this.CAP).fill(null); },
+
+  // Guarantee p.inventory is a CAP-length slot array (also migrates legacy {id:qty} maps
+  // and older-length arrays from saves), and return it.
+  cells(p){
+    let inv = p.inventory;
+    if(!Array.isArray(inv)){
+      const arr = this.create();
+      if(inv && typeof inv === 'object'){ // migrate legacy { id: qty }
+        let i=0; for(const id in inv){ if(i>=arr.length) break; arr[i++] = { id, qty: inv[id] }; }
+      }
+      inv = p.inventory = arr;
+    } else if(inv.length !== this.CAP){
+      while(inv.length < this.CAP) inv.push(null);
+      inv.length = this.CAP;
+    }
+    return inv;
   },
 
+  at(p, idx){ return this.cells(p)[idx] || null; },
+  emptyIndex(p){ return this.cells(p).findIndex(c => !c); },
+  isFull(p){ return this.emptyIndex(p) < 0; },
+
+  // How many more of `id` will fit (partial stacks of that id + empty slots).
+  roomFor(p, id){
+    let room = 0;
+    for(const c of this.cells(p)){
+      if(!c) room += this.MAX_STACK;
+      else if(c.id === id) room += (this.MAX_STACK - c.qty);
+    }
+    return room;
+  },
+
+  // Add n of id: top up matching stacks first, then fill empty slots. Returns the
+  // amount actually added (may be < n if the bag fills up).
+  add(p, id, n=1){
+    const cells = this.cells(p); let left = n;
+    for(const c of cells){ if(left<=0) break; if(c && c.id===id && c.qty<this.MAX_STACK){ const a=Math.min(this.MAX_STACK-c.qty,left); c.qty+=a; left-=a; } }
+    for(let i=0;i<cells.length && left>0;i++){ if(!cells[i]){ const a=Math.min(this.MAX_STACK,left); cells[i]={id,qty:a}; left-=a; } }
+    return n - left;
+  },
+
+  count(p, id){ return this.cells(p).reduce((s,c)=> s + (c && c.id===id ? c.qty : 0), 0); },
+  has(p, id, n=1){ return this.count(p, id) >= n; },
+
+  // Remove n of id, taking from the back so front/hotbar stacks are preserved.
   remove(p, id, n=1){
-    const inv = p.inventory;
-    if(!inv || !inv[id]) return false;
-    inv[id] = Math.max(0, inv[id] - n);
-    if(inv[id] === 0) delete inv[id];
+    const cells = this.cells(p); let left = n;
+    for(let i=cells.length-1;i>=0 && left>0;i--){ const c=cells[i]; if(c && c.id===id){ const t=Math.min(c.qty,left); c.qty-=t; left-=t; if(c.qty<=0) cells[i]=null; } }
+    return left < n;   // true if anything was removed
+  },
+
+  // Remove up to n from a specific slot; returns { id, qty } taken (or null).
+  removeAt(p, idx, n=1){
+    const cells=this.cells(p), c=cells[idx];
+    if(!c) return null;
+    const t=Math.min(c.qty, n), id=c.id;
+    c.qty-=t; if(c.qty<=0) cells[idx]=null;
+    return { id, qty:t };
+  },
+  setAt(p, idx, cell){ this.cells(p)[idx] = cell; },
+
+  // Move / swap / merge slot `from` → `to` (drag reorder).
+  moveSlot(p, from, to){
+    if(from===to) return;
+    const cells=this.cells(p), a=cells[from], b=cells[to];
+    if(!a) return;
+    if(b && a.id===b.id){ const mv=Math.min(this.MAX_STACK-b.qty, a.qty); b.qty+=mv; a.qty-=mv; if(a.qty<=0) cells[from]=null; }
+    else { cells[to]=a; cells[from]=b; }
+  },
+
+  // Non-empty slots as [{idx,id,qty,def}] (compat helper for aggregate callers).
+  list(p){
+    const out=[]; this.cells(p).forEach((c,idx)=>{ if(c) out.push({ idx, id:c.id, qty:c.qty, def:Items.get(c.id) }); });
+    return out;
+  },
+  total(p){ return this.cells(p).reduce((s,c)=> s + (c?c.qty:0), 0); },
+};
+
+// ===== src/health.js =====
+// ====================== HEALTH ======================
+// Per-player hit points. `p.hp` / `p.maxHp` are seeded from the breed (data/breeds.js)
+// in makePlayer(). The convention across the game is 1 heart icon = 2 hp, so the HUD
+// heart bar (UI.renderHearts) derives its heart count from maxHp/2 and each heart's
+// state (full / shrunk / empty-black-dot) from the remaining hp in that pair.
+//
+// This is the seam for anything that hurts or heals a dog: enemies call Health.damage,
+// consumables (biscuit) call Health.heal. `hurtTimer` drives a brief red flash on the
+// sprite so a hit reads clearly.
+
+const Health = {
+  HEART_HP: 2,   // hp represented by one full heart icon
+
+  // Whole + partial heart count for a max hp total (used to lay out the bar).
+  heartsFor(maxHp){ return Math.ceil((maxHp||0) / this.HEART_HP); },
+
+  damage(p, n){
+    if(!p || p.hp<=0) return;
+    p.hp = Math.max(0, p.hp - n);
+    p.hurtTimer = 260;                 // ms of red flash
+    if(typeof updateHUD==='function') updateHUD();
+    if(p.hp<=0) this.onDown(p);
+  },
+
+  heal(p, n){
+    if(!p) return 0;
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + n);
+    if(typeof updateHUD==='function') updateHUD();
+    return p.hp - before;              // amount actually restored
+  },
+
+  isDown(p){ return p && p.hp<=0; },
+
+  // Fainting: for now, revive in place at half health so a solo run can continue.
+  // (A proper down/respawn flow can hang off this later.)
+  onDown(p){
+    if(typeof showToast==='function') showToast(`💫 P${p.id} fainted... and bounces back!`, 2000);
+    p.hp = Math.max(2, Math.round(p.maxHp/2));
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FF8FA3', 16);
+    if(typeof updateHUD==='function') updateHUD();
+  },
+
+  // Decay the per-frame hurt flash.
+  tick(p, dt){ if(p && p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt); },
+};
+
+// ===== src/wearables.js =====
+// ====================== WEARABLES ======================
+// Equippable cosmetics. Each wearable item (data/items.js, type:'wearable') has a
+// `slot` (head/face/neck/body/back) and a `render` key into this module's draw table.
+// A player wears at most one item per slot, stored in `p.equipment = { slot: itemId }`.
+//
+// Equipping moves an item bag → slot (any item already in that slot returns to the bag);
+// unequipping moves it back. The render half draws the worn items ON the dog: drawBack()
+// runs behind the breed sprite (capes), drawFront() runs on top (hats, scarves, coats).
+// Both take a plain graphics context + an `anchor` describing where the dog's head/body
+// sit, so the SAME code paints the live world dog (dog-sprite.js) and the inventory
+// paper-doll preview (ui.js).
+
+// Local pixel helper (mirrors the global px(), but on an explicit context so it works
+// for the off-screen paper-doll canvas too).
+function _wpx(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
+
+const Wearables = {
+  SLOTS: ['head','face','neck','body','back'],
+  SLOT_LABEL: { head:'Head', face:'Face', neck:'Neck', body:'Body', back:'Back' },
+
+  slotOf(id){ const d=Items.get(id); return d && d.slot; },
+  isWearable(id){ const d=Items.get(id); return !!(d && d.type==='wearable'); },
+  equipped(p, slot){ return (p.equipment && p.equipment[slot]) || null; },
+
+  // Equip a bag item into its slot; whatever was in that slot returns to the bag.
+  equip(p, id){
+    const slot=this.slotOf(id);
+    if(!slot || !Inventory.has(p, id)) return false;
+    const eq = p.equipment || (p.equipment = {});
+    const prev = eq[slot];
+    Inventory.remove(p, id, 1);
+    if(prev) Inventory.add(p, prev, 1);
+    eq[slot]=id;
     return true;
   },
 
-  count(p, id){ return (p.inventory && p.inventory[id]) || 0; },
-  has(p, id, n=1){ return this.count(p, id) >= n; },
-
-  // [{id, qty, def}] for UI rendering.
-  list(p){
-    const inv = p.inventory || {};
-    return Object.keys(inv).map(id => ({ id, qty: inv[id], def: Items.get(id) }));
+  unequip(p, slot){
+    const eq=p.equipment; if(!eq || !eq[slot]) return false;
+    if(Inventory.roomFor(p, eq[slot]) < 1) return false;   // nowhere to put it — bag full
+    Inventory.add(p, eq[slot], 1);
+    delete eq[slot];
+    return true;
   },
-  total(p){
-    const inv = p.inventory || {};
-    return Object.keys(inv).reduce((sum, id) => sum + inv[id], 0);
+
+  // ---- slot-aware variants for drag & drop ----
+  // Equip the item in bag slot `idx` into wearable slot `wslot`; the previously-worn
+  // item drops back into the freed bag slot (or the bag). Returns true on success.
+  equipFromSlot(p, idx, wslot){
+    const cell=Inventory.at(p, idx); if(!cell) return false;
+    const def=Items.get(cell.id);
+    if(!def || def.type!=='wearable' || def.slot!==wslot) return false;
+    const eq = p.equipment || (p.equipment={});
+    const prev = eq[wslot];
+    Inventory.removeAt(p, idx, 1);
+    eq[wslot]=cell.id;
+    if(prev){
+      if(!Inventory.at(p, idx)) Inventory.setAt(p, idx, { id:prev, qty:1 });
+      else Inventory.add(p, prev, 1);
+    }
+    return true;
+  },
+
+  // Unequip wearable slot `wslot` into bag slot `idx`. If that bag slot holds a matching
+  // wearable it swaps; otherwise falls back to any free bag space.
+  unequipToSlot(p, wslot, idx){
+    const eq=p.equipment; const id=eq && eq[wslot]; if(!id) return false;
+    const target=Inventory.at(p, idx);
+    if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; return true; }
+    if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; return true; }
+    const tdef=Items.get(target.id);
+    if(tdef && tdef.type==='wearable' && tdef.slot===wslot){   // swap the two wearables
+      Inventory.removeAt(p, idx, 1);
+      Inventory.setAt(p, idx, { id, qty:1 });
+      eq[wslot]=target.id;
+      return true;
+    }
+    return this.unequip(p, wslot);                            // occupied → send to bag
+  },
+
+  // ---- rendering ----
+  // Build the anchor used by both the world dog and the paper-doll. `x` is the dog's
+  // horizontal centre; `foot` is its baseline (`by` in drawDog). Head/face/neck/body
+  // offsets are tuned to the shared breed silhouette.
+  anchor(x, foot, dir, equipment, t){
+    return { x, headY:foot-18, faceY:foot-11, neckY:foot-2, bodyY:foot+1, dir, t, equipment };
+  },
+
+  drawBack(g, a){
+    const eq=a.equipment; if(!eq) return;
+    if(eq.back) this._paint(g, eq.back, a);   // capes sit behind the dog
+  },
+  drawFront(g, a){
+    const eq=a.equipment; if(!eq) return;
+    ['body','neck','head','face'].forEach(slot=>{ if(eq[slot]) this._paint(g, eq[slot], a); });
+  },
+  _paint(g, id, a){
+    const def=Items.get(id); if(!def) return;
+    const fn=this._render[def.render];
+    if(fn) fn(g, a, id);
+  },
+
+  // dir → horizontal nudge for head-mounted items
+  _hdx(dir){ return dir==='right'?3 : dir==='left'?-3 : 0; },
+
+  _render:{
+    tophat(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-9, y+3, 18, 2, '#15130F');   // brim
+      _wpx(g, x-6, y-6, 12, 9, '#26231C');   // crown
+      _wpx(g, x-6, y-6, 12, 2, '#34302A');   // top highlight
+      _wpx(g, x-6, y+1, 12, 2, '#8B2033');   // red band
+    },
+    ballcap(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-6, y-2, 12, 6, '#C0392B');   // dome
+      _wpx(g, x-6, y-4, 12, 3, '#D9503E');   // crown top
+      _wpx(g, x-2, y-5, 5, 2, '#D9503E');
+      // brim points the way the dog faces
+      if(a.dir==='right')      _wpx(g, x+5, y+3, 8, 2, '#9E2A1E');
+      else if(a.dir==='left')  _wpx(g, x-13, y+3, 8, 2, '#9E2A1E');
+      else                     _wpx(g, x-4, y+4, 8, 2, '#9E2A1E');
+    },
+    ribbon(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY+2;
+      _wpx(g, x-5, y, 3, 4, '#FF6FA5');      // left loop
+      _wpx(g, x+2, y, 3, 4, '#FF6FA5');      // right loop
+      _wpx(g, x-1, y, 2, 4, '#E24C86');      // knot
+      _wpx(g, x-6, y-1, 2, 2, '#FF97C0'); _wpx(g, x+4, y-1, 2, 2, '#FF97C0');
+    },
+    shades(g,a){
+      if(a.dir==='up') return;               // eyes hidden facing away
+      const y=a.faceY;
+      if(a.dir==='right'){ _wpx(g, a.x+3, y, 6, 3, '#111'); _wpx(g, a.x+8, y+1, 1, 1, '#111'); }
+      else if(a.dir==='left'){ _wpx(g, a.x-9, y, 6, 3, '#111'); _wpx(g, a.x-9, y+1, 1, 1, '#111'); }
+      else { _wpx(g, a.x-6, y, 5, 3, '#111'); _wpx(g, a.x+1, y, 5, 3, '#111'); _wpx(g, a.x-1, y+1, 2, 1, '#111'); }
+    },
+    scarf(g,a){
+      const y=a.neckY;
+      _wpx(g, a.x-8, y, 16, 4, '#2E7D5B');   // wrap
+      _wpx(g, a.x-8, y+1, 16, 1, '#F0E6C8'); // knit stripe
+      const dx = a.dir==='left'? -9 : 5;     // dangling tail
+      _wpx(g, a.x+dx, y+2, 3, 7, '#2E7D5B');
+      _wpx(g, a.x+dx, y+5, 3, 1, '#F0E6C8');
+    },
+    raincoat(g,a){
+      const y=a.bodyY;
+      _wpx(g, a.x-10, y, 20, 11, '#F2C94C'); // coat body
+      _wpx(g, a.x-10, y, 20, 2, '#E0B23C');  // collar shade
+      _wpx(g, a.x-1, y+2, 2, 2, '#8A6D1A');  // buttons
+      _wpx(g, a.x-1, y+6, 2, 2, '#8A6D1A');
+      _wpx(g, a.x-10, y+9, 20, 2, '#D9A82E');// hem
+    },
+    cape(g,a){
+      const y=a.bodyY;
+      _wpx(g, a.x-9, y-2, 18, 12, '#B03040'); // cloth
+      _wpx(g, a.x-9, y-2, 18, 3, '#D04A5A');  // shoulder collar
+      _wpx(g, a.x-9, y+10, 5, 3, '#8C2434');  // ragged hem
+      _wpx(g, a.x-1, y+10, 5, 3, '#8C2434');
+      _wpx(g, a.x+6, y+10, 3, 3, '#8C2434');
+    },
   },
 };
 
@@ -1037,8 +1440,10 @@ function isInPond(px,py,wasSwimming){
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
+  const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,inventory:{},speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
+    treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,
+    speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
     howling:false,howlTimer:0,breed,markings,swimming:false};
 }
 let p1=makePlayer(1,'#6FA8C9',200,200);
@@ -1102,7 +1507,20 @@ Levels.register({
     Entities.spawn('npc', {
       x: WORLD_W*0.5, y: WORLD_H*0.30,
       name: 'Marla the Merchant',
-      greeting: "Welcome, pup! I'll have wares to trade soon.",
+      greeting: "Welcome, pup! Fresh biscuits to keep your tail wagging.",
+      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
+    });
+    // Fenwick the Tailor — sells wearables (head/face/neck/body/back) for testing the
+    // equip + on-dog-render feature. Warm-toned merchant near the centre-west.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.36, y: WORLD_H*0.42,
+      name: 'Fenwick the Tailor',
+      greeting: "Ah, a pup with style! Try something on — it'll look grand on you.",
+      look: 'tailor',
+      wares: [
+        {id:'tophat',  cost:8},  {id:'ballcap', cost:6}, {id:'shades', cost:7},
+        {id:'scarf',   cost:6},  {id:'raincoat',cost:9}, {id:'cape',   cost:10},
+      ],
     });
     Entities.spawn('enemy', { x: WORLD_W*0.32, y: WORLD_H*0.72, speed: 0.9 });
   },
@@ -1644,6 +2062,19 @@ function drawCollectible(item,t){
   roundRect(-13,-13,26,26,6,false,true);
   ctx.globalAlpha = 1;
 
+  // ---- dropped items (wearables/consumables/etc): no bespoke pixel art, so draw the
+  //      item's emoji icon + a stack count. Re-collectable like any other pickup. ----
+  if(item.dropped && item.icon && !['bone','heart','ball','flower','fish'].includes(item.type)){
+    ctx.font='16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(item.icon, 0, 1);
+    if(item.qty>1){
+      ctx.fillStyle='#FFF8E8'; ctx.font='bold 9px monospace';
+      ctx.fillText('×'+item.qty, 6, 9);
+    }
+    ctx.restore();
+    return;
+  }
+
   // ---- icon ----
   if(item.type==='bone'){
     // bright cream, thick, unmistakable cross-bone shape
@@ -1956,8 +2387,9 @@ Entities.register('enemy', {
 
 function _enemyTouch(e, p){
   spawnSparkles(p.x, p.y-8, '#E05555', 10);
-  if(p.treats>0){ p.treats--; if(typeof updateHUD==='function') updateHUD(); showToast('😾 A grumpy badger snatched a treat!',1600); }
-  else showToast('😾 A grumpy badger! Keep your distance!',1500);
+  // A nip costs the dog health (1 heart). Health.damage handles HUD + faint.
+  if(typeof Health!=='undefined') Health.damage(p, 2);
+  showToast('😾 The grumpy badger nipped you! (-1 ❤️)', 1500);
   // knock the dog back a little
   const ang=Math.atan2(p.y-e.y, p.x-e.x);
   p.x=clamp(p.x+Math.cos(ang)*14, 20, WORLD_W-20);
@@ -1986,16 +2418,28 @@ Entities.register('npc', {
     const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/500)*1.5);
     // shadow
     ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+14,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
-    // little merchant critter (warm brown, wearing a green scarf)
-    px(x-10,y-2,20,16,'#B07A44');
+    // Per-look palette: default merchant (warm brown + green scarf) vs. the tailor
+    // (plum coat + purple beret, so the two NPCs read as different shops).
+    const tailor = e.look==='tailor';
+    const bodyC = tailor ? '#7E5AA6' : '#B07A44';
+    const earC  = tailor ? '#654888' : '#9A6636';
+    const scarfC= tailor ? '#E0A93C' : '#3E9A5A';
+    px(x-10,y-2,20,16,bodyC);
     px(x-6,y+4,12,9,'#E8C48A');    // apron/belly
-    px(x-9,y-16,18,15,'#B07A44');  // head
-    px(x-10,y-22,6,8,'#9A6636'); px(x+4,y-22,6,8,'#9A6636'); // ears
+    px(x-9,y-16,18,15,bodyC);      // head
+    px(x-10,y-22,6,8,earC); px(x+4,y-22,6,8,earC); // ears
     px(x-8,y-20,3,5,'#C89060'); px(x+5,y-20,3,5,'#C89060');
     px(x-5,y-10,3,3,'#2A2A2A'); px(x+2,y-10,3,3,'#2A2A2A'); // eyes
     px(x-4,y-10,1,1,'#fff'); px(x+3,y-10,1,1,'#fff');
     px(x-3,y-5,6,3,'#E8C48A'); px(x-1,y-6,3,3,'#2A2A2A'); // muzzle+nose
-    px(x-10,y-1,20,3,'#3E9A5A'); // green scarf
+    px(x-10,y-1,20,3,scarfC); // scarf
+    if(tailor){
+      px(x-8,y-24,16,4,'#5B3F7E');   // beret
+      px(x-9,y-21,18,2,'#4A3168');
+      px(x+7,y-24,2,3,'#F0D890');     // beret nub
+      px(x-13,y+2,4,6,'#E8C48A');     // arm holding a spool of thread
+      px(x-15,y+3,4,4,'#E0A93C'); px(x-14,y+4,2,2,'#B07A44');
+    }
 
     // floating "!" prompt bubble
     const by=y-30+Math.sin(t/220)*3;
@@ -2040,6 +2484,10 @@ function drawDog(p,t){
     ctx.clip();
   }
 
+  // Worn back-layer items (capes) sit behind the breed sprite.
+  const _wa = (typeof Wearables!=='undefined' && p.equipment) ? Wearables.anchor(x, by, p.dir, p.equipment, t) : null;
+  if(_wa) Wearables.drawBack(ctx, _wa);
+
   if(breed==='dinno') _drawDinno(x,by,t,C,D,L,W,K,p);
   else if(breed==='lolla') _drawLolla(x,by,t,C,D,L,W,K,p);
   else if(breed==='corgi') _drawCorgi(x,by,t,C,D,L,W,K,p);
@@ -2048,8 +2496,18 @@ function drawDog(p,t){
   else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
   else _drawHusky(x,by,t,C,D,L,W,K,p);
 
+  // Worn front-layer items (hat, scarf, coat, shades) sit on top of the breed sprite.
+  if(_wa) Wearables.drawFront(ctx, _wa);
+
   // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
   Abilities.drawOnDog(p,x,by);
+
+  // Brief red flash when the dog takes damage (Health.damage sets hurtTimer).
+  if(p.hurtTimer>0){
+    ctx.globalAlpha=Math.min(0.5, p.hurtTimer/520);
+    px(x-13,by-26,26,42,'#FF3B3B');
+    ctx.globalAlpha=1;
+  }
 
   if(p.swimming){
     ctx.restore(); // remove clip
@@ -2807,19 +3265,41 @@ function updatePlayer(p,controls,t,dt){
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
+  if(typeof Health!=='undefined') Health.tick(p,dt);
   Abilities.update(p,controls,dt);
   if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
 }
 
 function tryCollect(p){
+  const now=performance.now();
   collectibles.forEach(item=>{
     if(item.taken)return;
+    if(item.pickupAt && now<item.pickupAt) return;          // just-dropped: brief no-pickup window
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
-      item.taken=true;p.treats++;Inventory.add(p,item.type,1);
+      const qty=item.qty||1;
+      if(Inventory.roomFor(p,item.type) < qty){             // full bag → leave it on the ground
+        if(!p._invFullAt || now-p._invFullAt>2200){ showToast('🎒 Inventory full — make room to pick this up!',1600); p._invFullAt=now; }
+        return;
+      }
+      item.taken=true;
+      if(!item.dropped) p.treats++;                          // re-collecting a dropped item doesn't re-award a treat
+      Inventory.add(p,item.type,qty);
       spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
     }
   });
+}
+
+// Drop an item stack onto the ground just in front of the dog (used by the inventory
+// drag-out gesture). Spawns a collectible the world can draw and the dog can re-collect.
+function dropItemOnGround(p, id, qty){
+  const def=Items.get(id); if(!def) return;
+  const ang={up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0}[p.dir];
+  const a=(typeof ang==='number')?ang:Math.PI/2;
+  const x=clamp(p.x+Math.cos(a)*26, 30, WORLD_W-30);
+  const y=clamp(p.y+Math.sin(a)*26+6, 30, WORLD_H-30);
+  collectibles.push({ x, y, type:id, qty:qty||1, taken:false, bob:rand(0,Math.PI*2),
+    dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
 function tryDeliver(p,controls){
@@ -2902,7 +3382,9 @@ const Save = {
 
   _serializePlayer(p){
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
-             treats:p.treats, inventory:Object.assign({}, p.inventory) };
+             treats:p.treats,
+             inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp };
   },
 
   save(){
@@ -2955,7 +3437,11 @@ const Save = {
     twoPlayer = !!data.twoPlayer;
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
-      pl.dir = sp.dir; pl.treats = sp.treats; pl.inventory = sp.inventory || {};
+      pl.dir = sp.dir; pl.treats = sp.treats;
+      pl.inventory = sp.inventory || Inventory.create(); Inventory.cells(pl); // normalize length
+      pl.equipment = sp.equipment || {};
+      if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
+      if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);
@@ -2994,6 +3480,7 @@ const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   _dialog: null,      // { npc, player }
+  _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
   $(id){ return document.getElementById(id); },
   _show(id, on){ const el=this.$(id); if(el) el.style.display = on ? 'flex' : 'none'; },
@@ -3007,8 +3494,28 @@ const UI = {
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
+    // Heart bars (per active player) + P1 hotbar.
+    const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
+    const h2=this.$('p2hearts'); if(h2 && typeof p2!=='undefined' && p2) h2.innerHTML=this._heartMarkup(p2);
+    this.renderHotbar();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
     if(this.invOpen) this.renderInventory();
+  },
+
+  // ---------- hearts ----------
+  // 1 heart icon = 2 hp. Each heart shows one of three states based on the hp left in
+  // its pair: full (2), shrunk/half (1), or empty → a black dot (0).
+  _heartMarkup(p){
+    if(!p || !p.maxHp) return '';
+    const n=Health.heartsFor(p.maxHp);
+    let out='';
+    for(let i=0;i<n;i++){
+      const inHeart=Math.max(0, Math.min(Health.HEART_HP, p.hp - i*Health.HEART_HP));
+      if(inHeart>=2)      out+='<span class="hrt full">❤</span>';
+      else if(inHeart===1) out+='<span class="hrt half">❤</span>';
+      else                 out+='<span class="hrt empty">●</span>';
+    }
+    return out;
   },
 
   // ---------- panel plumbing ----------
@@ -3044,6 +3551,7 @@ const UI = {
 
   openInventory(){
     this.invOpen=true;
+    this._invPlayer=0;
     this.renderInventory();
     this._show('inventoryScreen', true);
   },
@@ -3053,25 +3561,237 @@ const UI = {
     this._show('inventoryScreen', false);
   },
 
+  // Which player the inventory is showing (clamped; follows the active tab).
+  _invTarget(){
+    const players=Game.players;
+    if(this._invPlayer>=players.length) this._invPlayer=0;
+    return players[this._invPlayer]||players[0];
+  },
+
   renderInventory(){
+    if(this._dragging) return;            // don't rebuild the DOM mid-drag (would abort it)
     const body=this.$('invBody'); if(!body) return;
     const players=Game.players;
-    body.innerHTML=players.map(p=>{
-      const b=Breeds.get(p.breed);
-      const items=Inventory.list(p);
-      const cells=items.length
-        ? items.map(e=>`<span class="inv-cell">${e.def?e.def.icon:'❓'} ${e.id}<span class="qty">×${e.qty}</span></span>`).join('')
-        : `<span class="inv-empty">No items yet — go collect some!</span>`;
-      return `<div class="inv-player">
-        <h3>🐾 P${p.id} · ${b.name}</h3>
-        <div class="inv-stats">
-          Treats: <b>${p.treats}</b><br>
-          Speed: <b>${p.stats.speed}</b> · Swim: <b>${p.stats.swim}</b><br>
-          Passive: ${b.passive}${b.abilityId?`<br>Ability: <b>${b.abilityId}</b>`:''}
-        </div>
-        <div class="inv-grid">${cells}</div>
-      </div>`;
-    }).join('');
+    const p=this._invTarget();
+    const b=Breeds.get(p.breed);
+
+    // Player tabs (only meaningful in 2-player).
+    const tabs=this.$('invTabs');
+    if(tabs){
+      tabs.innerHTML = players.length>1
+        ? players.map((pp,i)=>`<button class="inv-tab${i===this._invPlayer?' active':''}" data-act="tab" data-idx="${i}">P${pp.id}</button>`).join('')
+        : '';
+    }
+
+    // Paper-doll wearable slots. Drop a matching wearable here to equip; drag the worn
+    // item off to move/unequip it; click a filled slot to send it back to the bag.
+    const slotCell=(slot)=>{
+      const id=Wearables.equipped(p,slot);
+      const def=id?Items.get(id):null;
+      const label=Wearables.SLOT_LABEL[slot];
+      return `<button class="doll-slot slot-${slot}${id?' filled':''}" data-act="unequip" data-drop="equip" data-slot="${slot}" ${id?'draggable="true" data-drag="equip"':''} title="${label}${id?': '+def.name+' — drag off or click to remove':' (drop a '+label.toLowerCase()+' item here)'}">`
+        + (def?`<span class="slot-icon">${def.icon}</span>`:`<span class="slot-tag">${label}</span>`)
+        + `</button>`;
+    };
+
+    // Positional tile grid. First HOTBAR row = numeric quick-slots (keys 1..N). Every
+    // slot is a drop target; filled slots are draggable (reorder / equip / drop / bin).
+    const cellsArr=Inventory.cells(p);
+    let cells='';
+    for(let i=0;i<cellsArr.length;i++){
+      const c=cellsArr[i];
+      const hb=i<Inventory.HOTBAR;
+      const def=c?Items.get(c.id):null;
+      const t=def&&def.type;
+      const kind = c ? (t==='wearable'?' wearable' : t==='consumable'?' consumable' : t==='toy'?' toy' : '') : '';
+      cells+=`<div class="inv-tile${hb?' hb':''}${c?' filled'+kind:' empty'}" data-drop="slot" data-idx="${i}"`
+        + (c?` draggable="true" data-drag="slot" data-act="item" title="${def?def.name:c.id}"`:'')
+        + `>`
+        + (hb?`<span class="tile-key">${i+1}</span>`:'')
+        + (c?`<span class="tile-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="tile-qty">${c.qty}</span>`:''}`:'')
+        + `</div>`;
+    }
+
+    body.innerHTML=`
+      <div class="inv-doll-grid">
+        ${slotCell('face')}${slotCell('head')}<span class="doll-blank"></span>
+        ${slotCell('neck')}<canvas id="dollCanvas" width="92" height="100"></canvas>${slotCell('body')}
+        <span class="doll-blank"></span>${slotCell('back')}<span class="doll-blank"></span>
+      </div>
+      <div class="inv-meta">
+        <span class="inv-name">🐾 P${p.id} · ${b.name}</span>
+        <span class="inv-heartline">${this._heartMarkup(p)}</span>
+      </div>
+      <div class="inv-substats">Treats <b>${p.treats}</b> · HP <b>${p.hp}/${p.maxHp}</b> · Slots <b>${Inventory.list(p).length}/${Inventory.CAP}</b></div>
+      <div class="inv-tilegrid">${cells}</div>
+      <div class="inv-binrow">
+        <span class="inv-hint">Drag: reorder · onto dog to wear · out to the world to drop</span>
+        <button class="inv-bin" data-drop="bin" title="Drag an item here to delete it">🗑️</button>
+      </div>
+    `;
+
+    this._drawDoll(p);
+  },
+
+  // Draw the paper-doll dog (down-facing, enlarged) + its worn items onto the canvas.
+  _drawDoll(p){
+    const cv=this.$('dollCanvas'); if(!cv || typeof drawBreedPreviewInline!=='function') return;
+    const g=cv.getContext('2d'); if(!g) return;
+    g.clearRect(0,0,cv.width,cv.height);
+    const S=1.28;                                 // scale the whole dog up for a bigger preview
+    const t=(typeof performance!=='undefined')?performance.now():0;
+    g.save(); g.scale(S,S);
+    const cx=(cv.width/S)/2, cy=(cv.height/S)/2+5;
+    const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
+    if(a) Wearables.drawBack(g, a);
+    drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);
+    if(a) Wearables.drawFront(g, a);
+    g.restore();
+  },
+
+  // ---------- hotbar (always-visible, mirrors the inventory's first row) ----------
+  // Keys 1..N map to the first HOTBAR inventory slots. Anything can sit here; only some
+  // item types actually do something when used (see useHotbar).
+  renderHotbar(){
+    const bar=this.$('hotbar'); if(!bar) return;
+    const show = Game.state===SCENES.PLAYING||Game.state===SCENES.PAUSED||Game.state===SCENES.DIALOG||this.invOpen;
+    bar.style.display = show ? 'flex' : 'none';
+    if(!show){ bar.innerHTML=''; return; }
+    const cells=p1?Inventory.cells(p1):[];
+    let html='';
+    for(let i=0;i<Inventory.HOTBAR;i++){
+      const c=cells[i], def=c?Items.get(c.id):null;
+      html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${def?`title="${def.name} — press ${i+1}"`:''}>`
+        + `<span class="hb-key">${i+1}</span>`
+        + (c?`<span class="hb-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="hb-qty">${c.qty}</span>`:''}`:'')
+        + `</button>`;
+    }
+    bar.innerHTML=html;
+  },
+
+  // Use P1 hotbar slot n (1-based) = inventory slot n-1: consumables heal & are consumed,
+  // toys play, wearables equip; anything else isn't usable.
+  useHotbar(n){
+    if(Game.state!==SCENES.PLAYING) return;
+    const p=p1, cell=Inventory.at(p, n-1); if(!cell) return;
+    const def=Items.get(cell.id);
+    if(def && def.type==='consumable'){
+      if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
+      const healed=Health.heal(p, def.heal||2);
+      Inventory.removeAt(p, n-1, 1);
+      if(typeof sfxCollect==='function') sfxCollect();
+      showToast(`🍪 Ate ${def.name} · +${healed} HP`,1400);
+    } else if(def && def.type==='toy'){
+      if(typeof sfxCollect==='function') sfxCollect();
+      showToast(`🎾 You play with the ${def.name}!`,1200);
+    } else if(def && def.type==='wearable'){
+      if(Wearables.equipFromSlot(p, n-1, def.slot)) showToast(`🎩 Equipped ${def.name}!`,1200);
+    } else {
+      showToast(`You can't use the ${def?def.name:'item'}.`,1200);
+    }
+    this.updateHUD();
+  },
+
+  // ---------- inventory interactions: clicks + drag & drop ----------
+  // Clicks (no drag movement) equip/use/unequip. Drag routes through _applyDrop.
+  _onInvClick(ev){
+    const btn=ev.target.closest('[data-act]'); if(!btn) return;
+    const p=this._invTarget();
+    const act=btn.dataset.act;
+    if(act==='tab'){ this._invPlayer=+btn.dataset.idx; this.renderInventory(); return; }
+    if(act==='unequip'){ if(Wearables.unequip(p, btn.dataset.slot)) this.updateHUD(); else showToast('Bag is full — no room to remove that.',1400); return; }
+    if(act==='item'){
+      const idx=+btn.dataset.idx, cell=Inventory.at(p, idx), def=cell&&Items.get(cell.id);
+      if(!def) return;
+      if(def.type==='wearable'){ if(Wearables.equipFromSlot(p, idx, def.slot)) this.updateHUD(); }
+      else if(def.type==='consumable'){
+        if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
+        const healed=Health.heal(p, def.heal||2); Inventory.removeAt(p, idx, 1);
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🍪 Ate ${def.name} · +${healed} HP`,1400); this.updateHUD();
+      }
+      return;
+    }
+    if(act==='hotbar'){ this.useHotbar((+btn.dataset.idx)+1); return; }
+  },
+
+  // --- drag & drop plumbing (HTML5 DnD, delegated on invBody + the game canvas) ---
+  _onDragStart(ev){
+    const src=ev.target.closest('[data-drag]'); if(!src){ return; }
+    const kind=src.dataset.drag;
+    this._drag = kind==='equip' ? { kind:'equip', slot:src.dataset.slot } : { kind:'slot', idx:+src.dataset.idx };
+    this._dragging=true;
+    src.classList.add('dragging');
+    if(ev.dataTransfer){ ev.dataTransfer.effectAllowed='move'; try{ ev.dataTransfer.setData('text/plain','item'); }catch(e){} }
+  },
+  _onDragOver(ev){
+    const tgt=ev.target.closest('[data-drop]'); if(!tgt || !this._drag) return;
+    ev.preventDefault();
+    if(ev.dataTransfer) ev.dataTransfer.dropEffect='move';
+  },
+  _onDrop(ev){
+    const tgt=ev.target.closest('[data-drop]'); if(!tgt || !this._drag) return;
+    ev.preventDefault();
+    this._dragging=false;                 // allow the post-drop re-render
+    this._applyDrop(tgt.dataset.drop, tgt.dataset);
+    this._drag=null;
+  },
+  _onDragEnd(){
+    this._dragging=false; this._drag=null;
+    const el=this.$('invBody'); if(el){ const d=el.querySelector('.dragging'); if(d) d.classList.remove('dragging'); }
+  },
+
+  _applyDrop(dropKind, data){
+    const p=this._invTarget(), src=this._drag; if(!src) return;
+    if(dropKind==='slot'){
+      const to=+data.idx;
+      if(src.kind==='slot') Inventory.moveSlot(p, src.idx, to);
+      else Wearables.unequipToSlot(p, src.slot, to);
+      this.updateHUD();
+    } else if(dropKind==='equip'){
+      const wslot=data.slot;
+      if(src.kind==='slot'){ if(!Wearables.equipFromSlot(p, src.idx, wslot)) showToast("That doesn't go in that slot.",1300); }
+      else if(src.kind==='equip' && src.slot!==wslot){ /* different wearable slot — no-op */ }
+      this.updateHUD();
+    } else if(dropKind==='bin'){
+      this._askDelete(src);
+    } else if(dropKind==='ground'){
+      this._dropToGround(src);
+    }
+  },
+
+  _dropToGround(src){
+    const p=this._invTarget();
+    let id, qty;
+    if(src.kind==='slot'){ const c=Inventory.at(p, src.idx); if(!c) return; id=c.id; qty=c.qty; Inventory.removeAt(p, src.idx, qty); }
+    else { id=p.equipment&&p.equipment[src.slot]; if(!id) return; qty=1; delete p.equipment[src.slot]; }
+    if(typeof dropItemOnGround==='function') dropItemOnGround(p, id, qty);
+    const def=Items.get(id);
+    showToast(`Dropped ${def?def.name:id}${qty>1?' ×'+qty:''} on the ground.`,1400);
+    this.updateHUD();
+  },
+
+  // Deleting is destructive, so it goes through a confirm popup.
+  _askDelete(src){
+    const p=this._invTarget();
+    let id;
+    if(src.kind==='slot'){ const c=Inventory.at(p, src.idx); id=c&&c.id; }
+    else id=p.equipment&&p.equipment[src.slot];
+    if(!id) return;
+    const def=Items.get(id);
+    this._pendingDelete={ src, player:p };
+    const txt=this.$('confirmText'); if(txt) txt.innerHTML=`Permanently delete <b>${def?def.icon+' '+def.name:id}</b>?`;
+    this._show('confirmPopup', true);
+  },
+  confirmDelete(ok){
+    this._show('confirmPopup', false);
+    const pd=this._pendingDelete; this._pendingDelete=null;
+    if(!ok || !pd) return;
+    const p=pd.player;
+    if(pd.src.kind==='slot') Inventory.removeAt(p, pd.src.idx, Inventory.MAX_STACK);
+    else if(p.equipment) delete p.equipment[pd.src.slot];
+    if(typeof sfxHowl==='function') sfxHowl();
+    this.updateHUD();
   },
 
   // ---------- dialog / shop ----------
@@ -3090,20 +3810,22 @@ const UI = {
     const choices=this.$('dialogChoices');
     choices.innerHTML='';
 
-    // Sample shop: buy items with treats as currency. Future NPCs can supply their
-    // own choice lists via npc.choices.
-    const wares=[{id:'biscuit',cost:3},{id:'ribbon',cost:5}];
+    // Shop: buy items with treats as currency. Each NPC supplies its own `wares`
+    // (see level generate()); fall back to a default stall if none is set.
+    const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}];
     wares.forEach(w=>{
-      const def=Items.get(w.id);
+      const def=Items.get(w.id); if(!def) return;
       const afford=d.player.treats>=w.cost;
       const btn=document.createElement('button');
       btn.className='dialog-choice'+(afford?'':' disabled');
       btn.textContent=`${def.icon} Buy ${def.name} — ${w.cost} 🦴`;
       btn.addEventListener('click',()=>{
         if(d.player.treats<w.cost){ this.renderDialog("You don't have enough treats for that."); return; }
+        if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
         d.player.treats-=w.cost; Inventory.add(d.player, w.id, 1); this.updateHUD();
         if(typeof sfxCollect==='function') sfxCollect();
-        this.renderDialog(`Enjoy your ${def.name}! Anything else?`);
+        const tail = def.type==='wearable' ? ' Open your inventory (I) to wear it!' : ' Anything else?';
+        this.renderDialog(`Enjoy your ${def.name}!${tail}`);
       });
       choices.appendChild(btn);
     });
@@ -3124,6 +3846,7 @@ const UI = {
     this.$('startScreen').style.display='flex';
     this.refreshContinueButton();     // a save may have been made this session
     Game.state=SCENES.MENU;
+    this.renderHotbar();              // hides the hotbar back on the menu
   },
 
   // Show the main-menu "Load Saved Game" button only when a save actually exists.
@@ -3138,12 +3861,32 @@ const UI = {
   init(){
     const on=(id,fn)=>{ const el=this.$(id); if(el) el.addEventListener('click',fn); };
     on('btnResume', ()=>this.closePanel());
-    on('btnInvClose', ()=>this.closePanel());
     on('btnQuit', ()=>this.quitToMenu());
     on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
     on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
     // Start-screen "Continue" appears only when a save exists.
     on('btnContinue', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    // Delete-confirm popup buttons.
+    on('btnDelYes', ()=>this.confirmDelete(true));
+    on('btnDelNo',  ()=>this.confirmDelete(false));
+    // Delegated clicks + drag/drop for the inventory (listeners sit on the stable
+    // #invBody container, so they survive its innerHTML rebuilds).
+    const inv=this.$('invBody');
+    if(inv){
+      inv.addEventListener('click', e=>this._onInvClick(e));
+      inv.addEventListener('dragstart', e=>this._onDragStart(e));
+      inv.addEventListener('dragover',  e=>this._onDragOver(e));
+      inv.addEventListener('drop',      e=>this._onDrop(e));
+      inv.addEventListener('dragend',   e=>this._onDragEnd(e));
+    }
+    const bar=this.$('hotbar'); if(bar) bar.addEventListener('click', e=>this._onInvClick(e));
+    // The game canvas is the "drop out of the bag → onto the ground" target.
+    const game=this.$('game');
+    if(game){
+      game.addEventListener('dragover', e=>{ if(this._drag){ e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect='move'; } });
+      game.addEventListener('drop', e=>{ if(!this._drag) return; e.preventDefault(); this._dragging=false; this._applyDrop('ground',{}); this._drag=null; });
+    }
+    this.renderHotbar();
     // Start-screen "Load Saved Game" appears only when a save exists.
     this.refreshContinueButton();
   },
