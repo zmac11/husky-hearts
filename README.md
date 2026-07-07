@@ -10,7 +10,9 @@ A cozy 2D pixel-art game where you (and optionally a friend) explore a meadow as
 
 - 🎮 **Solo & 2-player co-op modes** — share a keyboard with a friend
 - 🗺️ **Campaign world map** — clear a level and a "Your Journey" map shows your progress across the biomes (cleared ✓ / current / locked), then continues you to the next. The world is designed as **environments of 3 levels + a boss** each; tap a region to preview what's ahead.
-- 🏞️ **Two playable levels so far** — the gentle **Sunny Meadow**, then the tougher **Rocky Mountains** (snow-capped peaks, a glacial stream, and a prowling wolf pack). More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
+- 🏞️ **Two playable levels so far** — the gentle **Sunny Meadow**, then the tougher **Rocky Mountains**: a lush Canadian-Rockies valley with jagged snow-veined peaks, vivid **turquoise glacial lakes**, cascading **waterfalls**, evergreen forest, a river, and a prowling wolf pack. More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
+- 🫎 **Friendly wildlife** — peaceful moose, beavers and loons roam the valley; greet them (action key) for a cheerful hello, sparkles, and a treat gift the first time. They never attack.
+- 🛠 **Dev mode** — a testing panel (start-screen button or the `` ` `` key) to jump straight into any registered level/biome.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot and a sad sound plays) and stays down for the rest of the level; a co-op partner can carry on, and everyone is revived at the next level. When every dog is down it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**
 - 🐕 **5 dog breeds** — Husky, Shiba, Corgi, Poodle, Dalmatian, each with its own pixel-art silhouette
 - 🎨 **8 colour swatches** per player with live animated previews on the breed cards
@@ -91,7 +93,7 @@ husky-hearts/
 │   ├── levels/
 │   │   ├── index.js         Levels registry
 │   │   ├── meadow.js        level 1 (size, theme, quest, generate; next → rocky)
-│   │   └── rocky.js         level 2 — Rocky Mountains (bigger/harder, cold theme)
+│   │   └── rocky.js         level 2 — Rocky Mountains (Canadian valley: lakes/waterfalls/peaks)
 │   ├── level-manager.js     LevelManager.load — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()
 │   ├── world-draw.js        tree/rock/pond/etc. renderers + drawWorld (theme-aware)
@@ -101,6 +103,8 @@ husky-hearts/
 │   │   ├── registry.js      Entities registry + level entity list + interaction
 │   │   ├── enemy.js         enemy kind (grumpy badger — wander/chase)
 │   │   ├── wolf.js          wolf kind (faster/tougher pack hunter — rocky mountains)
+│   │   ├── grave.js         grave marker left where a dog faints
+│   │   ├── critter.js       friendly wildlife (moose/beaver/loon — positive interaction)
 │   │   └── npc.js           NPC kind (interactable → dialog/shop)
 │   ├── abilities/
 │   │   ├── registry.js      Abilities registry (spawn/update/draw dispatch)
@@ -117,7 +121,8 @@ husky-hearts/
 │   ├── fullscreen.js        native fullscreen + iOS pseudo-fullscreen fallback
 │   ├── mobile-controls.js   touch d-pad binding
 │   ├── start.js             default resetGame() (overridden by charselect)
-│   └── charselect.js        character selection UI, launchGame, button handlers
+│   ├── charselect.js        character selection UI, launchGame, button handlers
+│   └── dev.js               dev-mode panel — jump to any level/biome for testing
 └── dist/               ← build outputs
     ├── bundle.js
     └── husky-hearts.html

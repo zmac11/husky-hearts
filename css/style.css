@@ -92,6 +92,28 @@
   .wm-note{ color:var(--brown-soft); font-size:12px; max-width:340px; line-height:1.4; }
   .wm-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
+  /* ---- dev mode (jump to any level/biome) ---- */
+  #devScreen{
+    position:absolute; inset:0; border-radius:10px; z-index:28;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:8px; text-align:center; padding:14px 12px; overflow-y:auto;
+    background:rgba(40,44,40,0.96);
+  }
+  #devScreen h2{ margin:0; color:var(--cream); font-size:clamp(14px,3.4vw,18px); }
+  #devBody{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:560px; }
+  .dev-env{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:6px 8px; }
+  .dev-env-h{ color:#EAD9B8; font-size:12px; font-weight:bold; text-align:left; margin-bottom:5px; }
+  .dev-levels{ display:flex; flex-wrap:wrap; gap:6px; }
+  .dev-lvl{
+    font-family:inherit; font-size:11px; font-weight:bold; cursor:pointer;
+    padding:5px 10px; border-radius:8px; border:2px solid #3a5a3a;
+    background:var(--meadow); color:var(--brown); box-shadow:0 2px 0 rgba(0,0,0,0.3);
+  }
+  .dev-lvl:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,0.3); }
+  .dev-lvl.boss{ background:var(--gold); }
+  .dev-lvl.soon{ background:rgba(255,255,255,0.07); color:#9aa39a; border:2px dashed rgba(255,255,255,0.15); cursor:default; box-shadow:none; }
+  #devScreen .overlay-hint{ color:var(--cream); }
+
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
   #gameOverScreen h2{ color:#FFE0E0; text-shadow:2px 2px 0 #5A1520; }

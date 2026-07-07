@@ -36,6 +36,7 @@
         <button class="modebtn secondary" id="btn2p">🐾🐾 Play Together (2 Players)</button>
         <button class="modebtn secondary" id="btnContinue" style="display:none;">📂 Load Saved Game</button>
         <button class="modebtn soundtrack" id="btnSoundtrack">🎵 Music: Cozy Meadow</button>
+        <button class="modebtn soundtrack" id="btnDev">🛠 Dev Mode</button>
       </div>
 
       <div id="winScreen">
@@ -53,6 +54,13 @@
           <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
         </div>
         <div class="overlay-hint">Tap a region to see what's ahead</div>
+      </div>
+
+      <div id="devScreen" style="display:none;">
+        <h2>🛠 Dev Mode — Jump to Level</h2>
+        <div id="devBody"></div>
+        <button class="modebtn secondary" id="devClose">✕ Close</button>
+        <div class="overlay-hint">Press <b>`</b> (backtick) anytime to toggle</div>
       </div>
 
       <div id="gameOverScreen" class="game-overlay" style="display:none;">

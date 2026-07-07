@@ -460,34 +460,71 @@ function drawRiver(t){
 // spawned by levels/rocky.js. Same pixel-art idiom (px/shade + a little canvas path work).
 
 function drawMountain(x,y,w,h,seed){
-  // A big snow-capped backdrop peak. `y` is the base; it rises to an apex at y-h.
+  // A majestic Canadian-Rockies massif: a jagged multi-peak ridgeline over a granite
+  // body with rock strata, a dark evergreen tree-line skirt at the base, and only thin
+  // snow veins in the summit couloirs (no big white cap). `y` is the base; apex at y-h.
+  const r=mulberry32(Math.floor((seed||7)+1));
   const half=w/2;
-  const rock='#8A8580', rockDark='#6E6A64', rockLight='#A6A29B', snow='#EAF2F6', snowSh='#C7D6E0';
-  // cast shadow / base skirt
-  ctx.globalAlpha=0.18; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.9,10,0,0,Math.PI*2); ctx.fillStyle='#2A2620'; ctx.fill(); ctx.globalAlpha=1;
-  // main rock body (triangle)
-  ctx.beginPath(); ctx.moveTo(x-half,y); ctx.lineTo(x,y-h); ctx.lineTo(x+half,y); ctx.closePath();
-  ctx.fillStyle=rock; ctx.fill();
-  // shaded right face
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+half,y); ctx.lineTo(x+half*0.18,y); ctx.closePath();
-  ctx.fillStyle=rockDark; ctx.fill();
-  // lit left ridge
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x-half*0.34,y); ctx.lineTo(x-half*0.06,y); ctx.closePath();
-  ctx.fillStyle=rockLight; ctx.fill();
-  // snow cap (upper third), with a jagged lower edge
-  const capH=h*0.34, capY=y-h+capH, capHalf=half*(capH/h);
-  ctx.beginPath(); ctx.moveTo(x,y-h);
-  ctx.lineTo(x-capHalf,capY);
-  const r=mulberry32(Math.floor(seed||3));
-  for(let i=-3;i<=3;i++){ const fx=x+(i/3)*capHalf, fy=capY-r()*6; ctx.lineTo(fx,fy); }
-  ctx.lineTo(x+capHalf,capY); ctx.closePath();
-  ctx.fillStyle=snow; ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+capHalf*0.5,capY-2); ctx.lineTo(x+capHalf,capY); ctx.closePath();
-  ctx.fillStyle=snowSh; ctx.fill();
-  // a couple of ridge cracks
-  ctx.strokeStyle='rgba(50,46,40,0.35)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(x-half*0.3,y); ctx.lineTo(x-half*0.1,y-h*0.5); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x+half*0.42,y); ctx.lineTo(x+half*0.12,y-h*0.55); ctx.stroke();
+  const rockLit='#9B978C', rock='#84817A', rockDark='#615E58', haze='#B7C1CB';
+  const forest='#2C5633', forestLt='#3B6C40', snow='#EEF4F7';
+
+  // base cast shadow to ground the massif
+  ctx.globalAlpha=0.16; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.92,10,0,0,Math.PI*2); ctx.fillStyle='#20241E'; ctx.fill(); ctx.globalAlpha=1;
+
+  // atmospheric haze silhouette behind the massif
+  ctx.globalAlpha=0.32;
+  ctx.beginPath(); ctx.moveTo(x-half*1.04,y);
+  ctx.lineTo(x-half*0.42,y-h*0.92); ctx.lineTo(x,y-h*1.03); ctx.lineTo(x+half*0.46,y-h*0.84); ctx.lineTo(x+half*1.04,y);
+  ctx.closePath(); ctx.fillStyle=haze; ctx.fill(); ctx.globalAlpha=1;
+
+  // jagged ridgeline: main summit (slightly left) + col + a secondary summit
+  const apexX=x-half*0.12;
+  const ridge=[
+    [x-half, y],
+    [x-half*0.62, y-h*0.48-r()*h*0.05],
+    [x-half*0.34, y-h*0.34],
+    [apexX, y-h],
+    [x-half*0.02, y-h*0.70],
+    [x+half*0.20, y-h*0.84-r()*h*0.04],
+    [x+half*0.50, y-h*0.48],
+    [x+half*0.74, y-h*0.26],
+    [x+half, y],
+  ];
+  ctx.beginPath(); ctx.moveTo(ridge[0][0],ridge[0][1]);
+  for(let i=1;i<ridge.length;i++) ctx.lineTo(ridge[i][0],ridge[i][1]);
+  ctx.closePath();
+  const grad=ctx.createLinearGradient(0,y-h,0,y);
+  grad.addColorStop(0,rockLit); grad.addColorStop(0.5,rock); grad.addColorStop(1,rockDark);
+  ctx.fillStyle=grad; ctx.fill();
+
+  // clip to the body for shading + strata
+  ctx.save(); ctx.clip();
+  // shadowed right faces (wedge from the main apex down to the right base)
+  ctx.beginPath(); ctx.moveTo(apexX,y-h); ctx.lineTo(x+half,y); ctx.lineTo(apexX,y); ctx.closePath();
+  ctx.fillStyle='rgba(66,64,58,0.34)'; ctx.fill();
+  // horizontal rock strata bands
+  ctx.strokeStyle='rgba(58,54,48,0.26)'; ctx.lineWidth=2;
+  for(let i=1;i<=5;i++){ const yy=y-(h*i/6); ctx.beginPath(); ctx.moveTo(x-half,yy+9); ctx.lineTo(x+half,yy-7); ctx.stroke(); }
+  // scree flecks near the base
+  ctx.fillStyle='rgba(48,46,42,0.4)';
+  for(let i=0;i<14;i++){ ctx.fillRect(Math.round(x-half+r()*w), Math.round(y-r()*h*0.4), 2, 2); }
+  ctx.restore();
+
+  // thin snow veins in the summit gullies (subtle — no full cap)
+  ctx.strokeStyle=snow; ctx.lineCap='round'; ctx.globalAlpha=0.9;
+  ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(apexX,y-h+2);      ctx.lineTo(apexX-4,y-h*0.56); ctx.stroke();
+  ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(apexX+3,y-h+4);    ctx.lineTo(apexX+9,y-h*0.6);  ctx.stroke();
+  ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+half*0.2,y-h*0.84+2); ctx.lineTo(x+half*0.16,y-h*0.56); ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.fillStyle=snow; ctx.beginPath(); ctx.arc(apexX,y-h+3,2.6,0,Math.PI*2); ctx.fill();
+
+  // evergreen tree-line skirt along the foot of the mountain
+  const baseY=y-1;
+  for(let fx=x-half+8; fx<x+half-8; fx+=9){
+    const th=8+r()*8, c=r()<0.5?forest:forestLt;
+    ctx.beginPath(); ctx.moveTo(fx,baseY); ctx.lineTo(fx+4,baseY-th); ctx.lineTo(fx+8,baseY); ctx.closePath();
+    ctx.fillStyle=c; ctx.fill();
+  }
 }
 
 function drawBoulder(x,y,big){
@@ -502,29 +539,32 @@ function drawBoulder(x,y,big){
     px(x+6,y-2,5,4,'#5E5A54');            // shade pocket
     px(x-14,y+4,5,3,'#5A8A4A');           // moss
     px(x+9,y+3,4,3,'#6A9A4A');
-    px(x-2,y-13,3,3,'#CFE6EC');           // snow dab on top
+    px(x-2,y-13,3,3,'#A9C089');           // pale lichen on top
   } else {
     ctx.globalAlpha=0.18; px(x-11,y+7,22,5,'#22201C'); ctx.globalAlpha=1;
     px(x-11,y,22,10,'#7C7770');
     px(x-8,y-5,16,8,'#8C877E');
     px(x-3,y-8,8,5,'#9A948A');
     px(x-6,y-4,4,3,'#B0AAA0');
-    px(x-2,y-8,3,2,'#CFE6EC');
+    px(x-2,y-8,3,2,'#9FB884');           // lichen fleck
   }
 }
 
 function drawSnowyPine(x,y,t){
+  // Lush Canadian evergreen (spruce/fir) with just a light dusting on the crown.
   const sway=Math.sin(t/1000+x*0.012)*0.7;
   const cx=x+sway;
   // trunk
   px(x-3,y+2,6,20,'#4A3320'); px(x-1,y+4,3,14,'#5A4028');
-  // tiers (dark evergreen) with snow layered on each shoulder
-  [[0,-50,10,12,'#1B4A26'],[-2,-38,14,16,'#1F5A2E'],[-4,-22,18,18,'#245F32'],[-6,-6,22,16,'#286838']].forEach(([ox,oy,w,h,c])=>{
+  // full green tiers with a sunlit highlight
+  [[0,-50,10,12,'#1E5A2C'],[-2,-38,14,16,'#22662F'],[-4,-22,18,18,'#2A7238'],[-6,-6,22,16,'#308040']].forEach(([ox,oy,w,h,c])=>{
     px(cx+ox,y+oy,w,h,c);
-    px(cx+ox,y+oy,w,3,'#EAF2F6');                 // snow shelf
-    px(cx+ox+1,y+oy+1,Math.max(2,w-6),1,'#FFFFFF');
+    px(cx+ox+2,y+oy+2,4,4,shade(c,20));            // sunlit highlight
+    px(cx+ox+w-4,y+oy+3,3,Math.max(2,h-6),shade(c,-16)); // shaded side
   });
-  px(cx-1,y-54,4,4,'#F4FAFF');                      // snowy tip
+  // faint snow dusting only on the very crown
+  px(cx-1,y-54,4,4,'#E6F1EC');
+  px(cx-3,y-49,3,2,'rgba(238,244,247,0.75)');
 }
 
 function drawDeadTree(x,y,t){
@@ -595,6 +635,70 @@ function drawCampfire(x,y,t){
   px(x-1,Math.round(y-18-f*2),1,1,'#FFD36A'); px(x+3,Math.round(y-14+f2),1,1,'#FFE79A');
 }
 
+function drawLake(x,y,w,h,seed,t,blobSeed){
+  // A big glacial lake — vivid turquoise fading to deep teal, ringed by a pebbly shore,
+  // with drifting light bands and sun glints. Uses the pond blob path for a natural edge.
+  const pts=pondBlobPoints(blobSeed!==undefined?blobSeed:seed);
+  const r=mulberry32(Math.floor((seed||1)*131)+7);
+  // pebbly gravel shore halo
+  tracePondPath(x,y,w,h,pts,1.14); ctx.fillStyle='rgba(158,146,122,0.55)'; ctx.fill();
+  tracePondPath(x,y,w,h,pts,1.07); ctx.fillStyle='rgba(198,188,166,0.5)'; ctx.fill();
+  // depth shadow offset
+  ctx.globalAlpha=0.18; ctx.save(); ctx.translate(3,5); tracePondPath(x,y,w,h,pts,1.02); ctx.restore();
+  ctx.fillStyle='#15343C'; ctx.fill(); ctx.globalAlpha=1;
+  // glacial water body
+  tracePondPath(x,y,w,h,pts,1);
+  const grad=ctx.createRadialGradient(x-w*0.12,y-h*0.16,4,x,y,Math.max(w,h)/2);
+  grad.addColorStop(0,'#9CF0E4'); grad.addColorStop(0.42,'#40CAC4'); grad.addColorStop(0.78,'#1F97AA'); grad.addColorStop(1,'#15708A');
+  ctx.fillStyle=grad; ctx.fill();
+  // shoreline stroke
+  ctx.strokeStyle='#2FB6B0'; ctx.lineWidth=2; ctx.stroke();
+  // drifting ripple bands
+  const rphase=t/1400+seed;
+  for(let i=0;i<4;i++){
+    const rs=0.22+i*0.16+Math.sin(rphase+i)*0.05;
+    ctx.globalAlpha=0.22-i*0.045;
+    ctx.beginPath(); ctx.ellipse(x+Math.sin(rphase+i)*w*0.03,y,w/2*rs,h/2*rs,0,0,Math.PI*2);
+    ctx.strokeStyle='#CFF7F0'; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  // sparkling sun glints
+  const gp=t/500;
+  for(let i=0;i<6;i++){
+    const gx=x+(r()-0.5)*w*0.62, gy=y+(r()-0.5)*h*0.5, s=Math.sin(gp+i*1.7);
+    if(s>0.55){ ctx.globalAlpha=(s-0.55)*1.6; ctx.fillStyle='#F0FFFB'; ctx.fillRect(Math.round(gx),Math.round(gy),2,2); }
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawWaterfall(x,y,t,h){
+  // A cascade tumbling down a rock cliff into a misty splash pool at (x,y). Reads as a
+  // waterfall feeding the lake it's placed against. Water streaks scroll downward.
+  h=h||100; const w=22;
+  // rock cliff flanks + dark chute behind the water
+  px(x-w/2-9,y-h,11,h,'#6E6A62'); px(x+w/2-2,y-h,11,h,'#615E57');
+  px(x-w/2-9,y-h,11,4,'#8C887F'); px(x+w/2-2,y-h,11,4,'#8C887F');
+  px(x-w/2,y-h,w,h,'#3E7C8C');
+  // falling water — animated scrolling streaks, clipped to the chute
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x-w/2,y-h,w,h); ctx.clip();
+  const scroll=(t*0.4)%20;
+  for(let i=0;i<5;i++){
+    const sx=x-w/2+3+i*4;
+    ctx.strokeStyle=i%2?'#EAFBFF':'#C7EDF4'; ctx.lineWidth=2;
+    for(let yy=-20;yy<h;yy+=20){ const ya=y-h+((yy+scroll)%(h+20)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+11); ctx.stroke(); }
+  }
+  ctx.restore();
+  // foam lip at the top
+  px(x-w/2-2,y-h-2,w+4,4,'#F2FCFF');
+  // splash pool + drifting mist
+  ctx.globalAlpha=0.92; ctx.fillStyle='#DFF6FB'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,7,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+  const m=Math.sin(t/220);
+  ctx.globalAlpha=0.38; ctx.fillStyle='#FFFFFF';
+  ctx.beginPath(); ctx.arc(x-6,y-2+m,5,0,Math.PI*2); ctx.arc(x+6,y-1-m,5,0,Math.PI*2); ctx.arc(x,y-4,4,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
@@ -620,6 +724,8 @@ function drawWorld(t){
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
       // --- rocky-mountain kinds (levels/rocky.js) ---
       case 'mountain':    drawMountain(obj.x,obj.y,obj.w,obj.h,obj.seed); break;
+      case 'lake':        drawLake(obj.x,obj.y,obj.w,obj.h,obj.seed,t,obj.blobSeed); break;
+      case 'waterfall':   drawWaterfall(obj.x,obj.y,t,obj.h); break;
       case 'boulder':     drawBoulder(obj.x,obj.y,obj.big); break;
       case 'snowypine':   drawSnowyPine(obj.x,obj.y,t); break;
       case 'deadtree':    drawDeadTree(obj.x,obj.y,t); break;

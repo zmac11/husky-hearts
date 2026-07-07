@@ -103,6 +103,28 @@
   .wm-note{ color:var(--brown-soft); font-size:12px; max-width:340px; line-height:1.4; }
   .wm-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
 
+  /* ---- dev mode (jump to any level/biome) ---- */
+  #devScreen{
+    position:absolute; inset:0; border-radius:10px; z-index:28;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:8px; text-align:center; padding:14px 12px; overflow-y:auto;
+    background:rgba(40,44,40,0.96);
+  }
+  #devScreen h2{ margin:0; color:var(--cream); font-size:clamp(14px,3.4vw,18px); }
+  #devBody{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:560px; }
+  .dev-env{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:6px 8px; }
+  .dev-env-h{ color:#EAD9B8; font-size:12px; font-weight:bold; text-align:left; margin-bottom:5px; }
+  .dev-levels{ display:flex; flex-wrap:wrap; gap:6px; }
+  .dev-lvl{
+    font-family:inherit; font-size:11px; font-weight:bold; cursor:pointer;
+    padding:5px 10px; border-radius:8px; border:2px solid #3a5a3a;
+    background:var(--meadow); color:var(--brown); box-shadow:0 2px 0 rgba(0,0,0,0.3);
+  }
+  .dev-lvl:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,0.3); }
+  .dev-lvl.boss{ background:var(--gold); }
+  .dev-lvl.soon{ background:rgba(255,255,255,0.07); color:#9aa39a; border:2px dashed rgba(255,255,255,0.15); cursor:default; box-shadow:none; }
+  #devScreen .overlay-hint{ color:var(--cream); }
+
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
   #gameOverScreen h2{ color:#FFE0E0; text-shadow:2px 2px 0 #5A1520; }
@@ -405,6 +427,7 @@
         <button class="modebtn secondary" id="btn2p">🐾🐾 Play Together (2 Players)</button>
         <button class="modebtn secondary" id="btnContinue" style="display:none;">📂 Load Saved Game</button>
         <button class="modebtn soundtrack" id="btnSoundtrack">🎵 Music: Cozy Meadow</button>
+        <button class="modebtn soundtrack" id="btnDev">🛠 Dev Mode</button>
       </div>
 
       <div id="winScreen">
@@ -422,6 +445,13 @@
           <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
         </div>
         <div class="overlay-hint">Tap a region to see what's ahead</div>
+      </div>
+
+      <div id="devScreen" style="display:none;">
+        <h2>🛠 Dev Mode — Jump to Level</h2>
+        <div id="devBody"></div>
+        <button class="modebtn secondary" id="devClose">✕ Close</button>
+        <div class="overlay-hint">Press <b>`</b> (backtick) anytime to toggle</div>
       </div>
 
       <div id="gameOverScreen" class="game-overlay" style="display:none;">
@@ -606,6 +636,7 @@ window.addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+  if(e.code === 'Backquote'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
   // Number keys 1-9 → use the matching P1 hotbar slot (consumables/toys).
   const m = /^Digit([1-9])$/.exec(e.code);
   if(m){ if(typeof UI!=='undefined' && UI.useHotbar) UI.useHotbar(+m[1]); }
@@ -1617,7 +1648,8 @@ function isOnBridge(px,py){
 }
 
 function isInPond(px,py,wasSwimming){
-  const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
+  // Ponds (meadow) and lakes (rocky) are both swimmable elliptical water bodies.
+  const inEllipse=worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
     ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
   const inWater=inEllipse || inRiver(px,py);
   if(!inWater) return false;
@@ -1726,132 +1758,140 @@ Levels.register({
 
 // ===== src/levels/rocky.js =====
 // ====================== LEVEL 2: ROCKY MOUNTAINS ======================
-// The trail out of the Sunny Meadow climbs into cold, stony highlands. Snow-capped
-// peaks line the skyline, a glacial stream cuts across the map, and a pack of wolves
-// prowls the slopes — so this level bites back harder than the meadow. You reach it by
-// clearing level 1 (meadow.next → 'rocky'); it's the final level (next: null).
+// The trail out of the Sunny Meadow climbs into a lush Canadian-Rockies valley: a
+// forested green basin ringed by jagged snow-veined peaks, dotted with vivid turquoise
+// glacial lakes, fed by cascading waterfalls, with a river winding through and a pack of
+// wolves on the prowl. Reached by clearing level 1 (meadow.next → 'rocky'); final level.
 //
-// Like meadow.js this is a thin declaration: a bigger `size`, a cold `theme`, a
-// `generate()` that lays down mountain-flavoured world objects / animals / actors, and
-// a `quest`. New visuals (mountains, boulders, snowy pines, dead trees, crystals, snow,
-// campfires) live in world-draw.js; new animals in friends.js; the wolf in entities/.
+// Like meadow.js this is a thin declaration: a bigger `size`, an alpine `theme`, a
+// `generate()` that lays down the terrain / animals / actors, and a `quest`. Visuals
+// (mountains, lakes, waterfalls, evergreens, boulders, campfires) live in world-draw.js;
+// new animals in friends.js; the wolf in entities/.
 
-// ---- world generation (mountain terrain + a glacial stream) ----
+// ---- world generation (alpine valley: peaks, glacial lakes, waterfalls, a river) ----
 function buildRockyWorld(){
   worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H;
 
-  // Cold, winding stream across the lower-middle of the map (create first so placement
-  // can steer clear of it). Narrower and colder than the meadow river.
+  // Winding river threading the lower-middle of the valley (create first so placement
+  // can steer clear of it).
   river={
-    pos:WORLD_H*0.6,
+    pos:H*0.62,
     amplitude:42, wavelength:680,
     amplitude2:16, wavelength2:230, phase2:2.1,
     baseWidth:58, widthAmp:18, widthWavelength:500, widthPhase:1.1,
   };
   river.pebbles=makeRiverPebbles();
 
-  // Placement helper: random point that avoids the stream and existing items.
+  // ---- Glacial lakes (big turquoise water bodies). Placed before everything else so
+  //      other objects steer around them; swimmable (isInPond treats 'lake' like 'pond'). ----
+  const lakes=[
+    { x:W*0.50, y:H*0.37, w:390, h:250 },   // hero lake below the central peaks
+    { x:W*0.23, y:H*0.52, w:300, h:210 },   // west lake
+    { x:W*0.79, y:H*0.45, w:280, h:190 },   // east lake
+  ];
+  lakes.forEach((l,i)=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
+    seed:Math.random()*100, blobSeed:Math.floor(Math.random()*9999)}));
+  function inLake(x,y,m){ return lakes.some(l=>((x-l.x)/(l.w/2+m))**2+((y-l.y)/(l.h/2+m))**2<1); }
+
+  // Placement helper: random point avoiding the river, lakes, and existing items.
   function pt(ax,ay,bx,by,minD,list,margin){
-    for(let a=0;a<50;a++){ const p=rand2(ax,ay,bx,by,minD,list); if(!inRiver(p.x,p.y,margin)) return p; }
+    for(let a=0;a<60;a++){
+      const p=rand2(ax,ay,bx,by,minD,list);
+      if(!inRiver(p.x,p.y,margin) && !inLake(p.x,p.y,margin)) return p;
+    }
     return rand2(ax,ay,bx,by,minD,list);
   }
 
-  // stone-wall border
-  addCollider(0,0,WORLD_W,14);
-  addCollider(0,WORLD_H-14,WORLD_W,14);
-  addCollider(0,0,14,WORLD_H);
-  addCollider(WORLD_W-14,0,14,WORLD_H);
+  // log-fence border
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
 
   const taken=[];
 
-  // Backdrop peaks along the top edge (low y → painter's algorithm draws them behind
-  // everything). A small collider at each base keeps dogs from walking "into" a peak.
+  // ---- Mountain range along the skyline: a run of wide, overlapping peaks whose summits
+  //      sit fully inside the world (apex y >= ~8) so they read as a continuous range
+  //      rather than triangles cut off by the top edge. Low y → drawn behind everything. ----
   const M=6;
   for(let i=0;i<M;i++){
-    const mx=WORLD_W*(0.08 + (i/(M-1))*0.84) + rand(-36,36);
-    const my=rand(120,185);
-    const w=rand(230,360), h=rand(150,240);
-    worldObjects.push({kind:'mountain',x:mx,y:my,w,h,seed:Math.floor(Math.random()*9999)});
-    addCollider(mx-16,my-8,32,14);
+    const mx=W*(0.06 + (i/(M-1))*0.88) + rand(-24,24);
+    const baseY=rand(196,216);
+    const mh=rand(150,188);          // apex = baseY - mh stays a little below the top edge
+    const mw=rand(360,500);
+    worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(Math.random()*9999)});
+    addCollider(mx-18,baseY-6,36,14);
   }
 
-  // Boulders — the level's main obstacles.
-  for(let i=0;i<16;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,120,taken,50); taken.push(p);
+  // ---- Waterfalls tumbling into the lakes they sit above ----
+  worldObjects.push({kind:'waterfall', x:lakes[0].x, y:lakes[0].y-lakes[0].h/2+10, h:120});
+  worldObjects.push({kind:'waterfall', x:lakes[2].x+10, y:lakes[2].y-lakes[2].h/2+8, h:96});
+
+  // Boulders — the valley's main obstacles.
+  for(let i=0;i<15;i++){
+    const p=pt(60,240,W-60,H-60,120,taken,50); taken.push(p);
     const big=Math.random()<0.6;
     worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
     addCollider(p.x-(big?16:11), p.y-2, big?32:22, big?16:12);
   }
 
-  // Rock clusters (generic grey renderer fits the theme perfectly).
-  for(let i=0;i<8;i++){
-    const p=pt(80,240,WORLD_W-80,WORLD_H-80,120,taken,45); taken.push(p);
+  // Rock clusters.
+  for(let i=0;i<7;i++){
+    const p=pt(80,240,W-80,H-80,120,taken,45); taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
     addCollider(p.x-26,p.y-4,50,18);
   }
 
-  // Snow-dusted pines.
-  for(let i=0;i<18;i++){
-    const p=pt(50,240,WORLD_W-50,WORLD_H-50,90,taken,42); taken.push(p);
+  // Evergreen forest — lush green spruce/fir (a lot of them: it's a forested valley).
+  for(let i=0;i<26;i++){
+    const p=pt(50,240,W-50,H-50,80,taken,40); taken.push(p);
     worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
     addCollider(p.x-4,p.y+12,8,12);
   }
 
-  // Bare, weathered dead trees.
-  for(let i=0;i<9;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,110,taken,42); taken.push(p);
+  // A few weathered deadfall trees.
+  for(let i=0;i<5;i++){
+    const p=pt(60,240,W-60,H-60,110,taken,42); taken.push(p);
     worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
     addCollider(p.x-4,p.y+14,8,12);
   }
 
   // Loose rocks (mostly walkable; big ones block).
-  for(let i=0;i<20;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,60,taken,35); taken.push(p);
+  for(let i=0;i<18;i++){
+    const p=pt(60,240,W-60,H-60,60,taken,35); taken.push(p);
     const big=Math.random()<0.25;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
     if(big) addCollider(p.x-13,p.y-2,26,16);
   }
 
-  // Glowing crystal clusters (decorative, walkable).
-  for(let i=0;i<12;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,30); taken.push(p);
-    worldObjects.push({kind:'crystal',x:p.x,y:p.y,seed:Math.random()*100});
-  }
-
-  // Snow drifts on the ground (no collider).
-  for(let i=0;i<26;i++){
-    worldObjects.push({kind:'snowpatch',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),seed:Math.random()*100});
-  }
-
   // Hardy shrubs.
-  for(let i=0;i<12;i++){
-    const p=pt(60,240,WORLD_W-60,WORLD_H-60,80,taken,40); taken.push(p);
+  for(let i=0;i<14;i++){
+    const p=pt(60,240,W-60,H-60,80,taken,40); taken.push(p);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
     addCollider(p.x-13,p.y+2,26,16);
   }
 
-  // Alpine flowers (cool palette) + dry grass tufts (no colliders).
-  const hues=['#BFD7FF','#D9C7FF','#FF9EC0','#FFE08A','#B6F0E0'];
-  for(let i=0;i<60;i++){
-    worldObjects.push({kind:'flower',x:rand(30,WORLD_W-30),y:rand(220,WORLD_H-30),
+  // Wildflowers + grass tufts across the green valley floor (no colliders).
+  const hues=['#FF9E6E','#FFD36A','#E58AC0','#B6E36A','#7FD4E0','#C79BFF'];
+  for(let i=0;i<70;i++){
+    worldObjects.push({kind:'flower',x:rand(30,W-30),y:rand(220,H-30),
       hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
   }
-  for(let i=0;i<16;i++){
-    worldObjects.push({kind:'tallgrass',x:rand(40,WORLD_W-40),y:rand(220,WORLD_H-40),
-      blades:Math.floor(rand(4,8)),seed:Math.random()*100});
+  for(let i=0;i<22;i++){
+    worldObjects.push({kind:'tallgrass',x:rand(40,W-40),y:rand(220,H-40),
+      blades:Math.floor(rand(4,9)),seed:Math.random()*100});
   }
 
-  // Cozy campfires — warm landmarks on the cold peaks.
-  worldObjects.push({kind:'campfire',x:WORLD_W*0.5, y:WORLD_H*0.30});
-  worldObjects.push({kind:'campfire',x:WORLD_W*0.19,y:WORLD_H*0.82});
+  // Cozy lakeside campfires — warm landmarks.
+  worldObjects.push({kind:'campfire',x:W*0.63, y:H*0.30});
+  worldObjects.push({kind:'campfire',x:W*0.15,y:H*0.82});
 
-  // A couple of stone trails.
-  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.12,y1:WORLD_H*0.36,x2:WORLD_W*0.88,y2:WORLD_H*0.42,seed:71});
-  worldObjects.push({kind:'stonepath',x1:WORLD_W*0.5, y1:WORLD_H*0.22,x2:WORLD_W*0.5, y2:WORLD_H*0.9, seed:72});
+  // A couple of trails.
+  worldObjects.push({kind:'stonepath',x1:W*0.12,y1:H*0.38,x2:W*0.88,y2:H*0.44,seed:71});
+  worldObjects.push({kind:'stonepath',x1:W*0.66,y1:H*0.20,x2:W*0.66,y2:H*0.9, seed:72});
 
-  // Stone crossings over the stream (drawn in main.js so swimmers pass underneath).
+  // Stone crossings over the river (drawn in main.js so swimmers pass underneath).
   [0.28,0.6,0.85].forEach((fx,i)=>{
-    const bx=WORLD_W*fx;
+    const bx=W*fx;
     const span=riverWidthAt(bx)/2+16;
     worldObjects.push({kind:'riverbridge',x:bx,y:riverY(bx),horizontal:false,seed:30+i,span});
   });
@@ -1900,13 +1940,12 @@ Levels.register({
   spawn: { x: 170, y: 250 },       // start on the lower-left plateau, below the peaks
   next: null,                      // final level
 
-  // Cold, stony palette (grass tones → gravel/scree; fence → stone wall).
+  // Lush alpine-valley palette (green basin, log-fence border, turquoise water on map).
   theme: {
-    grass:'#8C877C', grassDark:'#7A756A', grassLight:'#9C978C',
-    dirt:'rgba(120,104,84,0.20)',
-    fenceA:'#5E574E', fenceB:'#6E6658', rail:'#93887A',
-    minimapGrass:'#6E665A', minimapWater:'#5AA6C8',
-    snow:'#EAF2F6',
+    grass:'#86A867', grassDark:'#71934F', grassLight:'#9BBC79',
+    dirt:'rgba(122,100,64,0.18)',
+    fenceA:'#6B4A2E', fenceB:'#7C5636', rail:'#A9793F',
+    minimapGrass:'#5E8A46', minimapWater:'#3FC8C0',
   },
 
   generate(){
@@ -1915,13 +1954,13 @@ Levels.register({
     friends = makeRockyFriends();
 
     Entities.clear();
-    // Rusk the Ranger — a mountain guide/merchant near the summit campfire, stocking
-    // cold-weather gear and a hearty snack.
+    // Rusk the Ranger — a park-ranger guide/merchant by the lakeside camp, stocking
+    // outdoor gear and a hearty snack.
     Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.24,
+      x: WORLD_W*0.60, y: WORLD_H*0.22,
       name: 'Rusk the Ranger',
       look: 'ranger',
-      greeting: "Brr! Cold up here, pup. Gear up before the wolves catch your scent.",
+      greeting: "Welcome to the valley, pup! Gear up before the wolves catch your scent.",
       wares: [
         {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
         {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
@@ -1934,6 +1973,14 @@ Levels.register({
     Entities.spawn('wolf', { x: WORLD_W*0.30, y: WORLD_H*0.74, speed:1.1, chaseR:220 });
     // A grumpy badger still lurks too.
     Entities.spawn('enemy', { x: WORLD_W*0.78, y: WORLD_H*0.44, speed:1.0 });
+
+    // Friendly Canadian wildlife — peaceful, greet them for a positive reward. Loons
+    // ride on the lakes, the beaver keeps to a lakeshore, the moose roams the forest.
+    const lk = worldObjects.filter(o=>o.kind==='lake');
+    if(lk[0]) Entities.spawn('critter', { species:'loon',   x: lk[0].x-80, y: lk[0].y });
+    if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
+    if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
+    Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
   },
 
   quest: {
@@ -2424,34 +2471,71 @@ function drawRiver(t){
 // spawned by levels/rocky.js. Same pixel-art idiom (px/shade + a little canvas path work).
 
 function drawMountain(x,y,w,h,seed){
-  // A big snow-capped backdrop peak. `y` is the base; it rises to an apex at y-h.
+  // A majestic Canadian-Rockies massif: a jagged multi-peak ridgeline over a granite
+  // body with rock strata, a dark evergreen tree-line skirt at the base, and only thin
+  // snow veins in the summit couloirs (no big white cap). `y` is the base; apex at y-h.
+  const r=mulberry32(Math.floor((seed||7)+1));
   const half=w/2;
-  const rock='#8A8580', rockDark='#6E6A64', rockLight='#A6A29B', snow='#EAF2F6', snowSh='#C7D6E0';
-  // cast shadow / base skirt
-  ctx.globalAlpha=0.18; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.9,10,0,0,Math.PI*2); ctx.fillStyle='#2A2620'; ctx.fill(); ctx.globalAlpha=1;
-  // main rock body (triangle)
-  ctx.beginPath(); ctx.moveTo(x-half,y); ctx.lineTo(x,y-h); ctx.lineTo(x+half,y); ctx.closePath();
-  ctx.fillStyle=rock; ctx.fill();
-  // shaded right face
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+half,y); ctx.lineTo(x+half*0.18,y); ctx.closePath();
-  ctx.fillStyle=rockDark; ctx.fill();
-  // lit left ridge
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x-half*0.34,y); ctx.lineTo(x-half*0.06,y); ctx.closePath();
-  ctx.fillStyle=rockLight; ctx.fill();
-  // snow cap (upper third), with a jagged lower edge
-  const capH=h*0.34, capY=y-h+capH, capHalf=half*(capH/h);
-  ctx.beginPath(); ctx.moveTo(x,y-h);
-  ctx.lineTo(x-capHalf,capY);
-  const r=mulberry32(Math.floor(seed||3));
-  for(let i=-3;i<=3;i++){ const fx=x+(i/3)*capHalf, fy=capY-r()*6; ctx.lineTo(fx,fy); }
-  ctx.lineTo(x+capHalf,capY); ctx.closePath();
-  ctx.fillStyle=snow; ctx.fill();
-  ctx.beginPath(); ctx.moveTo(x,y-h); ctx.lineTo(x+capHalf*0.5,capY-2); ctx.lineTo(x+capHalf,capY); ctx.closePath();
-  ctx.fillStyle=snowSh; ctx.fill();
-  // a couple of ridge cracks
-  ctx.strokeStyle='rgba(50,46,40,0.35)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(x-half*0.3,y); ctx.lineTo(x-half*0.1,y-h*0.5); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x+half*0.42,y); ctx.lineTo(x+half*0.12,y-h*0.55); ctx.stroke();
+  const rockLit='#9B978C', rock='#84817A', rockDark='#615E58', haze='#B7C1CB';
+  const forest='#2C5633', forestLt='#3B6C40', snow='#EEF4F7';
+
+  // base cast shadow to ground the massif
+  ctx.globalAlpha=0.16; ctx.beginPath(); ctx.ellipse(x,y+4,half*0.92,10,0,0,Math.PI*2); ctx.fillStyle='#20241E'; ctx.fill(); ctx.globalAlpha=1;
+
+  // atmospheric haze silhouette behind the massif
+  ctx.globalAlpha=0.32;
+  ctx.beginPath(); ctx.moveTo(x-half*1.04,y);
+  ctx.lineTo(x-half*0.42,y-h*0.92); ctx.lineTo(x,y-h*1.03); ctx.lineTo(x+half*0.46,y-h*0.84); ctx.lineTo(x+half*1.04,y);
+  ctx.closePath(); ctx.fillStyle=haze; ctx.fill(); ctx.globalAlpha=1;
+
+  // jagged ridgeline: main summit (slightly left) + col + a secondary summit
+  const apexX=x-half*0.12;
+  const ridge=[
+    [x-half, y],
+    [x-half*0.62, y-h*0.48-r()*h*0.05],
+    [x-half*0.34, y-h*0.34],
+    [apexX, y-h],
+    [x-half*0.02, y-h*0.70],
+    [x+half*0.20, y-h*0.84-r()*h*0.04],
+    [x+half*0.50, y-h*0.48],
+    [x+half*0.74, y-h*0.26],
+    [x+half, y],
+  ];
+  ctx.beginPath(); ctx.moveTo(ridge[0][0],ridge[0][1]);
+  for(let i=1;i<ridge.length;i++) ctx.lineTo(ridge[i][0],ridge[i][1]);
+  ctx.closePath();
+  const grad=ctx.createLinearGradient(0,y-h,0,y);
+  grad.addColorStop(0,rockLit); grad.addColorStop(0.5,rock); grad.addColorStop(1,rockDark);
+  ctx.fillStyle=grad; ctx.fill();
+
+  // clip to the body for shading + strata
+  ctx.save(); ctx.clip();
+  // shadowed right faces (wedge from the main apex down to the right base)
+  ctx.beginPath(); ctx.moveTo(apexX,y-h); ctx.lineTo(x+half,y); ctx.lineTo(apexX,y); ctx.closePath();
+  ctx.fillStyle='rgba(66,64,58,0.34)'; ctx.fill();
+  // horizontal rock strata bands
+  ctx.strokeStyle='rgba(58,54,48,0.26)'; ctx.lineWidth=2;
+  for(let i=1;i<=5;i++){ const yy=y-(h*i/6); ctx.beginPath(); ctx.moveTo(x-half,yy+9); ctx.lineTo(x+half,yy-7); ctx.stroke(); }
+  // scree flecks near the base
+  ctx.fillStyle='rgba(48,46,42,0.4)';
+  for(let i=0;i<14;i++){ ctx.fillRect(Math.round(x-half+r()*w), Math.round(y-r()*h*0.4), 2, 2); }
+  ctx.restore();
+
+  // thin snow veins in the summit gullies (subtle — no full cap)
+  ctx.strokeStyle=snow; ctx.lineCap='round'; ctx.globalAlpha=0.9;
+  ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(apexX,y-h+2);      ctx.lineTo(apexX-4,y-h*0.56); ctx.stroke();
+  ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(apexX+3,y-h+4);    ctx.lineTo(apexX+9,y-h*0.6);  ctx.stroke();
+  ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+half*0.2,y-h*0.84+2); ctx.lineTo(x+half*0.16,y-h*0.56); ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.fillStyle=snow; ctx.beginPath(); ctx.arc(apexX,y-h+3,2.6,0,Math.PI*2); ctx.fill();
+
+  // evergreen tree-line skirt along the foot of the mountain
+  const baseY=y-1;
+  for(let fx=x-half+8; fx<x+half-8; fx+=9){
+    const th=8+r()*8, c=r()<0.5?forest:forestLt;
+    ctx.beginPath(); ctx.moveTo(fx,baseY); ctx.lineTo(fx+4,baseY-th); ctx.lineTo(fx+8,baseY); ctx.closePath();
+    ctx.fillStyle=c; ctx.fill();
+  }
 }
 
 function drawBoulder(x,y,big){
@@ -2466,29 +2550,32 @@ function drawBoulder(x,y,big){
     px(x+6,y-2,5,4,'#5E5A54');            // shade pocket
     px(x-14,y+4,5,3,'#5A8A4A');           // moss
     px(x+9,y+3,4,3,'#6A9A4A');
-    px(x-2,y-13,3,3,'#CFE6EC');           // snow dab on top
+    px(x-2,y-13,3,3,'#A9C089');           // pale lichen on top
   } else {
     ctx.globalAlpha=0.18; px(x-11,y+7,22,5,'#22201C'); ctx.globalAlpha=1;
     px(x-11,y,22,10,'#7C7770');
     px(x-8,y-5,16,8,'#8C877E');
     px(x-3,y-8,8,5,'#9A948A');
     px(x-6,y-4,4,3,'#B0AAA0');
-    px(x-2,y-8,3,2,'#CFE6EC');
+    px(x-2,y-8,3,2,'#9FB884');           // lichen fleck
   }
 }
 
 function drawSnowyPine(x,y,t){
+  // Lush Canadian evergreen (spruce/fir) with just a light dusting on the crown.
   const sway=Math.sin(t/1000+x*0.012)*0.7;
   const cx=x+sway;
   // trunk
   px(x-3,y+2,6,20,'#4A3320'); px(x-1,y+4,3,14,'#5A4028');
-  // tiers (dark evergreen) with snow layered on each shoulder
-  [[0,-50,10,12,'#1B4A26'],[-2,-38,14,16,'#1F5A2E'],[-4,-22,18,18,'#245F32'],[-6,-6,22,16,'#286838']].forEach(([ox,oy,w,h,c])=>{
+  // full green tiers with a sunlit highlight
+  [[0,-50,10,12,'#1E5A2C'],[-2,-38,14,16,'#22662F'],[-4,-22,18,18,'#2A7238'],[-6,-6,22,16,'#308040']].forEach(([ox,oy,w,h,c])=>{
     px(cx+ox,y+oy,w,h,c);
-    px(cx+ox,y+oy,w,3,'#EAF2F6');                 // snow shelf
-    px(cx+ox+1,y+oy+1,Math.max(2,w-6),1,'#FFFFFF');
+    px(cx+ox+2,y+oy+2,4,4,shade(c,20));            // sunlit highlight
+    px(cx+ox+w-4,y+oy+3,3,Math.max(2,h-6),shade(c,-16)); // shaded side
   });
-  px(cx-1,y-54,4,4,'#F4FAFF');                      // snowy tip
+  // faint snow dusting only on the very crown
+  px(cx-1,y-54,4,4,'#E6F1EC');
+  px(cx-3,y-49,3,2,'rgba(238,244,247,0.75)');
 }
 
 function drawDeadTree(x,y,t){
@@ -2559,6 +2646,70 @@ function drawCampfire(x,y,t){
   px(x-1,Math.round(y-18-f*2),1,1,'#FFD36A'); px(x+3,Math.round(y-14+f2),1,1,'#FFE79A');
 }
 
+function drawLake(x,y,w,h,seed,t,blobSeed){
+  // A big glacial lake — vivid turquoise fading to deep teal, ringed by a pebbly shore,
+  // with drifting light bands and sun glints. Uses the pond blob path for a natural edge.
+  const pts=pondBlobPoints(blobSeed!==undefined?blobSeed:seed);
+  const r=mulberry32(Math.floor((seed||1)*131)+7);
+  // pebbly gravel shore halo
+  tracePondPath(x,y,w,h,pts,1.14); ctx.fillStyle='rgba(158,146,122,0.55)'; ctx.fill();
+  tracePondPath(x,y,w,h,pts,1.07); ctx.fillStyle='rgba(198,188,166,0.5)'; ctx.fill();
+  // depth shadow offset
+  ctx.globalAlpha=0.18; ctx.save(); ctx.translate(3,5); tracePondPath(x,y,w,h,pts,1.02); ctx.restore();
+  ctx.fillStyle='#15343C'; ctx.fill(); ctx.globalAlpha=1;
+  // glacial water body
+  tracePondPath(x,y,w,h,pts,1);
+  const grad=ctx.createRadialGradient(x-w*0.12,y-h*0.16,4,x,y,Math.max(w,h)/2);
+  grad.addColorStop(0,'#9CF0E4'); grad.addColorStop(0.42,'#40CAC4'); grad.addColorStop(0.78,'#1F97AA'); grad.addColorStop(1,'#15708A');
+  ctx.fillStyle=grad; ctx.fill();
+  // shoreline stroke
+  ctx.strokeStyle='#2FB6B0'; ctx.lineWidth=2; ctx.stroke();
+  // drifting ripple bands
+  const rphase=t/1400+seed;
+  for(let i=0;i<4;i++){
+    const rs=0.22+i*0.16+Math.sin(rphase+i)*0.05;
+    ctx.globalAlpha=0.22-i*0.045;
+    ctx.beginPath(); ctx.ellipse(x+Math.sin(rphase+i)*w*0.03,y,w/2*rs,h/2*rs,0,0,Math.PI*2);
+    ctx.strokeStyle='#CFF7F0'; ctx.lineWidth=1; ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  // sparkling sun glints
+  const gp=t/500;
+  for(let i=0;i<6;i++){
+    const gx=x+(r()-0.5)*w*0.62, gy=y+(r()-0.5)*h*0.5, s=Math.sin(gp+i*1.7);
+    if(s>0.55){ ctx.globalAlpha=(s-0.55)*1.6; ctx.fillStyle='#F0FFFB'; ctx.fillRect(Math.round(gx),Math.round(gy),2,2); }
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawWaterfall(x,y,t,h){
+  // A cascade tumbling down a rock cliff into a misty splash pool at (x,y). Reads as a
+  // waterfall feeding the lake it's placed against. Water streaks scroll downward.
+  h=h||100; const w=22;
+  // rock cliff flanks + dark chute behind the water
+  px(x-w/2-9,y-h,11,h,'#6E6A62'); px(x+w/2-2,y-h,11,h,'#615E57');
+  px(x-w/2-9,y-h,11,4,'#8C887F'); px(x+w/2-2,y-h,11,4,'#8C887F');
+  px(x-w/2,y-h,w,h,'#3E7C8C');
+  // falling water — animated scrolling streaks, clipped to the chute
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x-w/2,y-h,w,h); ctx.clip();
+  const scroll=(t*0.4)%20;
+  for(let i=0;i<5;i++){
+    const sx=x-w/2+3+i*4;
+    ctx.strokeStyle=i%2?'#EAFBFF':'#C7EDF4'; ctx.lineWidth=2;
+    for(let yy=-20;yy<h;yy+=20){ const ya=y-h+((yy+scroll)%(h+20)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+11); ctx.stroke(); }
+  }
+  ctx.restore();
+  // foam lip at the top
+  px(x-w/2-2,y-h-2,w+4,4,'#F2FCFF');
+  // splash pool + drifting mist
+  ctx.globalAlpha=0.92; ctx.fillStyle='#DFF6FB'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,7,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
+  const m=Math.sin(t/220);
+  ctx.globalAlpha=0.38; ctx.fillStyle='#FFFFFF';
+  ctx.beginPath(); ctx.arc(x-6,y-2+m,5,0,Math.PI*2); ctx.arc(x+6,y-1-m,5,0,Math.PI*2); ctx.arc(x,y-4,4,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+}
+
 function drawWorld(t){
   // ground (pre-rendered)
   if(groundCanvas) ctx.drawImage(groundCanvas,0,0);
@@ -2584,6 +2735,8 @@ function drawWorld(t){
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
       // --- rocky-mountain kinds (levels/rocky.js) ---
       case 'mountain':    drawMountain(obj.x,obj.y,obj.w,obj.h,obj.seed); break;
+      case 'lake':        drawLake(obj.x,obj.y,obj.w,obj.h,obj.seed,t,obj.blobSeed); break;
+      case 'waterfall':   drawWaterfall(obj.x,obj.y,t,obj.h); break;
       case 'boulder':     drawBoulder(obj.x,obj.y,obj.big); break;
       case 'snowypine':   drawSnowyPine(obj.x,obj.y,t); break;
       case 'deadtree':    drawDeadTree(obj.x,obj.y,t); break;
@@ -3178,6 +3331,124 @@ Entities.register('grave', {
   },
 });
 
+// ===== src/entities/critter.js =====
+// ====================== ENTITY: CRITTER (friendly wildlife) ======================
+// Peaceful Canadian wildlife that roams the valley and NEVER attacks. Walk up and press
+// the action key to greet them: sparkles, a happy sound, and a cheerful message. The
+// first greeting makes friends and gifts a few treats; after that they just say hello.
+// Distinct from `friends` (the sad animals you must cheer to win) — critters are a
+// purely positive bonus. Add a species by giving it an entry in CRITTERS + a draw branch.
+
+const CRITTERS = {
+  moose:  { name:'Moose',  icon:'🫎', gift:3, roam:74, speed:0.35,
+            greet:'The gentle moose lowers its great antlers to say hello!',
+            lines:['The moose snuffles your ear and huffs happily.',
+                   'The moose ambles alongside you for a while.'] },
+  beaver: { name:'Beaver', icon:'🦫', gift:2, roam:56, speed:0.4,
+            greet:'The busy beaver waves a friendly flat-tailed hello!',
+            lines:['The beaver proudly shows off its big front teeth.',
+                   'The beaver nudges a little twig over to you.'] },
+  loon:   { name:'Loon',   icon:'🐦', gift:2, roam:48, speed:0.28,
+            greet:'The loon lifts its head and sings a beautiful call!',
+            lines:['The loon warbles a cheerful, echoing tune.',
+                   'The loon drifts calmly at your side.'] },
+};
+
+Entities.register('critter', {
+  radius: 40,
+
+  init(e){
+    e.species = e.species || 'moose';
+    const d = CRITTERS[e.species] || {};
+    e.speed = e.speed || d.speed || 0.35;
+    e.roam  = e.roam  || d.roam  || 60;
+    e.homeX = (typeof e.homeX==='number') ? e.homeX : e.x;
+    e.homeY = (typeof e.homeY==='number') ? e.homeY : e.y;
+    e.dir = 1; e.wanderT = 0; e.wanderAng = 0; e.cool = 0; e.greeted = !!e.greeted; e.bob = 0;
+  },
+
+  // Gentle wander around home — never chases, never leaves its patch.
+  update(e, t, dt){
+    e.wanderT -= dt;
+    if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed, ny=e.y+Math.sin(e.wanderAng)*e.speed;
+    if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
+    else { e.wanderT=0; }                       // turned back at the edge of its range
+    e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);
+    if(e.cool>0) e.cool=Math.max(0,e.cool-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/600+e.homeX)*1.2), D=e.dir;
+    // ground shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+14,16,5,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+
+    if(e.species==='moose'){
+      const B='#6E4A2E', BD='#553920', BL='#8A5E3A', M='#3A2A1C', bell='#4A3320';
+      // legs
+      px(x-9,y+3,3,13,M); px(x-3,y+5,3,11,M); px(x+3,y+3,3,13,M); px(x+8,y+5,3,11,M);
+      // body + shoulder hump
+      px(x-12,y-8,24,15,B); px(x-9,y-3,18,8,BL); px(x-12,y-12,9,6,B);
+      // head (offset toward facing dir) + snout + dewlap
+      const hx=x+D*11;
+      px(hx-5,y-19,10,11,B); px(hx+D*4,y-15,6,5,BD); px(hx-2,y-8,5,8,bell);
+      px(hx-5,y-21,3,4,BD); px(hx+4,y-21,3,4,BD);          // ears
+      px(hx+(D>0?2:-2),y-15,2,2,'#141414');                // eye
+      // broad palmate antlers
+      px(hx-11,y-25,8,4,BL); px(hx-13,y-28,6,4,BL); px(hx-14,y-24,3,3,BL);
+      px(hx+4,y-25,8,4,BL);  px(hx+8,y-28,6,4,BL);  px(hx+12,y-24,3,3,BL);
+    } else if(e.species==='beaver'){
+      const B='#6B4A30', BD='#523620', BL='#8A6242', T='#3E2A18', teeth='#F4EAD0';
+      // flat paddle tail behind
+      px(x-D*11-2,y+3,9,7,T); px(x-D*13,y+4,4,5,'#2E2012');
+      // body
+      px(x-8,y-4,16,13,B); px(x-5,y+2,10,6,BL);
+      // head + ears + eyes + nose + buck teeth
+      const hx=x+D*6;
+      px(hx-5,y-12,11,10,B);
+      px(hx-4,y-14,3,3,BD); px(hx+3,y-14,3,3,BD);
+      px(hx-2,y-8,2,2,'#141414'); px(hx+2,y-8,2,2,'#141414');
+      px(hx-1,y-4,3,2,'#3A2A1A'); px(hx-1,y-2,3,2,teeth);
+      // paws
+      px(x-6,y+8,3,3,BD); px(x+3,y+8,3,3,BD);
+    } else if(e.species==='loon'){
+      const blk='#22262C', wht='#EDEDE6', red='#C43A3A';
+      // floating body (black back, pale side) with checkered specks
+      px(x-10,y-4,20,10,blk); px(x-8,y+0,16,6,wht);
+      px(x-6,y-3,2,2,wht); px(x-1,y-3,2,2,wht); px(x+4,y-3,2,2,wht);
+      // upright neck + head + beak + red eye + white collar
+      const hx=x+D*9;
+      px(hx-3,y-13,6,10,blk); px(hx+D*1,y-15,5,5,blk);
+      px(hx+D*5,y-13,4,2,'#2A2E34');
+      px(hx+(D>0?1:-1),y-12,1,1,red);
+      px(hx-3,y-6,6,2,wht);
+    }
+
+    // floating mood: a heart once befriended, a chat bubble before
+    const by=y-28+Math.sin(t/240+e.homeY)*3;
+    ctx.font='13px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(e.greeted?'💛':'💬', x, by);
+  },
+
+  onInteract(e, p){
+    if(e.cool>0) return;
+    e.cool=800;
+    const d=CRITTERS[e.species]||{};
+    spawnSparkles(e.x, e.y-8, e.greeted?'#FF8FA3':'#FFD93D', 18);
+    if(typeof sfxCheer==='function') sfxCheer();
+    if(!e.greeted){
+      e.greeted=true;
+      const gift=d.gift||2; p.treats+=gift;
+      if(typeof updateHUD==='function') updateHUD();
+      showToast(`${d.icon||'🐾'} ${d.greet||'A friendly critter says hi!'} (+${gift} treats)`, 2600);
+    } else {
+      const lines=d.lines||['So happy to see you!'];
+      showToast(`${d.icon||'🐾'} ${lines[Math.floor(Math.random()*lines.length)]}`, 2000);
+    }
+  },
+});
+
 // ===== src/entities/npc.js =====
 // ====================== ENTITY: NPC (interactable critter) ======================
 // A stationary character you can walk up to and interact with (action key). Phase 3
@@ -3701,8 +3972,8 @@ function drawMinimap(){
     for(let i=steps;i>=0;i--){const x=i*(WORLD_W/steps);ctx.lineTo(MX+x*sx,MY+(riverY(x)+riverWidthAt(x)/2)*sy);}
     ctx.closePath();ctx.fill();
   }
-  // ponds
-  worldObjects.filter(o=>o.kind==='pond').forEach(o=>{
+  // ponds + lakes
+  worldObjects.filter(o=>o.kind==='pond'||o.kind==='lake').forEach(o=>{
     ctx.fillStyle=mmWater;
     ctx.beginPath(); ctx.ellipse(MX+o.x*(MW/WORLD_W),MY+o.y*(MH/WORLD_H),(o.w/2)*(MW/WORLD_W),(o.h/2)*(MH/WORLD_H),0,0,Math.PI*2); ctx.fill();
   });
@@ -3711,10 +3982,11 @@ function drawMinimap(){
   collectibles.forEach(c=>{ if(c.taken)return; ctx.fillStyle=c.type==='fish'?'#4AC8FF':'#FFD93D'; ctx.fillRect(MX+c.x*sx-1,MY+c.y*sy-1,3,3); });
   // friends
   friends.forEach(f=>{ ctx.fillStyle=f.cheered?'#FFD93D':'#FFAAAA'; ctx.fillRect(MX+f.x*sx-3,MY+f.y*sy-3,6,6); });
-  // registry entities (hostiles red, graves grey, NPCs warm yellow)
+  // registry entities (hostiles red, friendly wildlife green, graves grey, NPCs yellow)
   const hostile={enemy:1,wolf:1};
   entities.forEach(e=>{
     if(e.kind==='grave'){ ctx.fillStyle='#9A9A92'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-2,3,4); return; }
+    if(e.kind==='critter'){ ctx.fillStyle='#7FE0A0'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); return; }
     ctx.fillStyle=hostile[e.kind]?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4);
   });
   // viewport
@@ -5507,6 +5779,82 @@ if(soundtrackBtn){
     refreshSoundtrackBtn();
   });
 }
+
+// ===== src/dev.js =====
+// ====================== DEV MODE ======================
+// A testing panel to jump straight into any level/biome, skipping the menu and
+// char-select. Lists every campaign environment (data/campaign.js) with its levels;
+// levels backed by a registered, playable level are buttons, the rest show "soon".
+//
+// Open it from the "🛠 Dev Mode" button on the start screen, or press the backtick key
+// (`) anytime (see core/input.js). Purely a dev convenience — nothing here affects a
+// normal playthrough.
+
+const DevMode = {
+  _pausedByDev: false,
+
+  open(){
+    // Freeze the world if we're opening mid-game so the dog doesn't wander behind the panel.
+    if(Game.state===SCENES.PLAYING){ Game.state=SCENES.PAUSED; this._pausedByDev=true; }
+    this.render();
+    if(typeof UI!=='undefined') UI._show('devScreen', true);
+  },
+
+  close(){
+    if(typeof UI!=='undefined') UI._show('devScreen', false);
+    if(this._pausedByDev && Game.state===SCENES.PAUSED){ Game.state=SCENES.PLAYING; }
+    this._pausedByDev=false;
+  },
+
+  toggle(){
+    const el=document.getElementById('devScreen'); if(!el) return;
+    (getComputedStyle(el).display==='none') ? this.open() : this.close();
+  },
+
+  render(){
+    const body=document.getElementById('devBody'); if(!body) return;
+    let html='';
+    Campaign.environments.forEach(env=>{
+      html += `<div class="dev-env"><div class="dev-env-h">${env.icon} ${env.name}</div><div class="dev-levels">`;
+      env.levels.forEach(l=>{
+        const playable = !!l.real && (typeof Levels!=='undefined') && Levels.get(l.id);
+        const tag = l.kind==='boss' ? '👑 ' : '';
+        html += playable
+          ? `<button class="dev-lvl${l.kind==='boss'?' boss':''}" data-lvl="${l.id}">${tag}${l.name}</button>`
+          : `<span class="dev-lvl soon">${tag}${l.name} · soon</span>`;
+      });
+      html += `</div></div>`;
+    });
+    body.innerHTML=html;
+  },
+
+  // Boot a solo run straight into `levelId` with the currently-selected dogs.
+  play(levelId){
+    if(!(typeof Levels!=='undefined' && Levels.get(levelId))) return;
+    this._pausedByDev=false;
+    this.close();
+    twoPlayer=false;
+    const p2p=document.getElementById('p2panel'); if(p2p) p2p.style.display='none';
+    const p2c=document.getElementById('p2controls'); if(p2c) p2c.style.display='none';
+    const ss=document.getElementById('startScreen'); if(ss) ss.style.display='none';
+    if(typeof WorldMap!=='undefined') WorldMap.hide();
+    resetGame(dogConfig.p1, dogConfig.p2, levelId);
+    if(typeof Abilities!=='undefined') Abilities.spawnAll();
+    Game.state=SCENES.PLAYING;
+    if(typeof startMusic==='function') startMusic();
+    if(typeof isTouchDevice==='function' && isTouchDevice() && typeof showMobileControls==='function') showMobileControls(true);
+    if(typeof showToast==='function') showToast('🛠 Dev: '+Levels.get(levelId).name, 1600);
+  },
+
+  init(){
+    const body=document.getElementById('devBody');
+    if(body) body.addEventListener('click', e=>{ const b=e.target.closest('[data-lvl]'); if(b) this.play(b.dataset.lvl); });
+    const close=document.getElementById('devClose'); if(close) close.addEventListener('click',()=>this.close());
+    const open=document.getElementById('btnDev'); if(open) open.addEventListener('click',()=>this.open());
+  },
+};
+
+DevMode.init();
 
 </script>
 </body>

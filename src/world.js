@@ -317,7 +317,8 @@ function isOnBridge(px,py){
 }
 
 function isInPond(px,py,wasSwimming){
-  const inEllipse=worldObjects.some(o=>o.kind==='pond'&&
+  // Ponds (meadow) and lakes (rocky) are both swimmable elliptical water bodies.
+  const inEllipse=worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
     ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
   const inWater=inEllipse || inRiver(px,py);
   if(!inWater) return false;
