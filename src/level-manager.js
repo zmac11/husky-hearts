@@ -23,6 +23,13 @@ const LevelManager = {
     if(typeof level.seed === 'number') RNG.reseed(level.seed);
     level.generate();
 
+    // Keep quest animals (friends) and merchants (NPC entities) out of the water — their
+    // spawn points are fixed, so a procedurally-placed pond/lake can land on one.
+    if(typeof nudgeOutOfWater==='function'){
+      if(typeof friends!=='undefined' && friends) friends.forEach(f=>nudgeOutOfWater(f));
+      if(typeof entities!=='undefined' && entities) entities.forEach(e=>{ if(e.kind==='npc') nudgeOutOfWater(e); });
+    }
+
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
 

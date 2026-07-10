@@ -1,0 +1,72 @@
+// ====================== QUESTS ======================
+// Lightweight, data-driven quest system for NPCs. An NPC becomes a quest-giver simply by
+// carrying a `quest` object (see the shape below); the NPC draw shows a yellow "!" when a
+// quest is available or ready to hand in, and the dialog panel (ui.js) walks the player
+// through offer → progress → turn-in. Quest state lives on the NPC entity, so it rides
+// along in save/load like any other entity data.
+//
+// Adding a NEW quest TYPE = add an entry to `Quests.TYPES` implementing summary/canComplete/
+// remaining/take. The "give" type (bring N of an item) is the first; talk-to / fetch-from /
+// cheer-N / defeat-N types can slot in later without touching the NPC or dialog code.
+//
+// Quest object shape (on npc.quest):
+//   { id, type:'give', give:{ item:'bone', count:3 },
+//     offer, ready, progress, done,          // optional dialog strings (defaults generated)
+//     reward:{ treats:6 }  |  { item:'ribbon', count:1 },   // optional
+//     state }                                // 'available' → 'active' → 'done' (managed here)
+
+const Quests = {
+  TYPES: {
+    give: {
+      summary(q){ const d=Items.get(q.give.item); return `${q.give.count} ${d?d.icon+' '+d.name:q.give.item}`; },
+      have(q,p){ return Inventory.count(p, q.give.item); },
+      remaining(q,p){ return Math.max(0, q.give.count - Inventory.count(p, q.give.item)); },
+      canComplete(q,p){ return Inventory.count(p, q.give.item) >= q.give.count; },
+      take(q,p){ Inventory.remove(p, q.give.item, q.give.count); },
+    },
+  },
+
+  _t(q){ return this.TYPES[(q && q.type)] || this.TYPES.give; },
+  stateOf(q){ return (q && q.state) || 'available'; },
+  summary(q){ return this._t(q).summary(q); },
+  canComplete(q,p){ return this.stateOf(q)==='active' && !!p && this._t(q).canComplete(q,p); },
+
+  // What mark floats over the NPC's head: 'available' / 'ready' (yellow !), 'active' (grey ?),
+  // or null (nothing — quest done). "ready" means some active player can hand it in now.
+  indicator(e){
+    const q=e && e.quest; if(!q) return null;
+    const st=this.stateOf(q);
+    if(st==='available') return 'available';
+    if(st==='done') return null;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>this._t(q).canComplete(q,p)) ? 'ready' : 'active';
+  },
+
+  accept(q){
+    if(this.stateOf(q)!=='available') return;
+    q.state='active';
+    if(typeof showToast==='function') showToast(`📜 New task: bring ${this.summary(q)}`, 2600);
+  },
+
+  progressText(q,p){
+    const rem=this._t(q).remaining(q,p);
+    if(q.progress) return q.progress.replace('{remaining}', rem);
+    return `You still need ${rem} more — bring me ${this.summary(q)}.`;
+  },
+
+  // Hand in the quest: consume the requirement, grant any reward, mark done. Returns a short
+  // reward description (e.g. "+6 treats") for the thank-you line, or '' if none.
+  complete(q,p){
+    const t=this._t(q);
+    if(this.stateOf(q)!=='active' || !t.canComplete(q,p)) return '';
+    t.take(q,p);
+    q.state='done';
+    let rewardStr='';
+    const r=q.reward;
+    if(r && r.treats){ p.treats=(p.treats||0)+r.treats; rewardStr=`+${r.treats} treats`; }
+    else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
+    if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);
+    return rewardStr;
+  },
+};

@@ -16,8 +16,8 @@ const Campaign = {
     { id:'meadow', name:'Sunny Meadows', icon:'🌳', color:'#9ED87A', boss:'The Badger Baron',
       levels:[
         { id:'meadow',      name:'Sunny Meadow',    kind:'level', real:true },
-        { id:'meadow-2',    name:'Wildflower Field', kind:'level' },
-        { id:'meadow-3',    name:'Old Orchard Path', kind:'level' },
+        { id:'meadow-2',    name:'Wildflower Field', kind:'level', real:true },
+        { id:'meadow-3',    name:'Old Orchard Path', kind:'level', real:true },
         { id:'meadow-boss', name:'The Badger Baron',  kind:'boss' },
       ] },
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',

@@ -29,13 +29,16 @@ LOAD_ORDER = [
     'data/items.js',      # item definitions (inventory / shop)
     'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
+    'quests.js',          # NPC quest system (give-item + future types)
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
     'levels/index.js',    # Levels registry
-    'levels/meadow.js',   # level 1 definition (size, theme, quest, generate)
-    'levels/rocky.js',    # level 2 — Rocky Mountains (harder; meadow.next → 'rocky')
+    'levels/meadow.js',   # Sunny Meadows 1 (size, theme, quest, generate)
+    'levels/meadow2.js',  # Sunny Meadows 2 — Wildflower Field (friendly wildlife intro)
+    'levels/meadow3.js',  # Sunny Meadows 3 — Old Orchard Path (gentle enemy + water)
+    'levels/rocky.js',    # Rocky Mountains — Canadian valley (harder)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible

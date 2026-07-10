@@ -99,8 +99,13 @@ function buildWorld(){
   ];
   for(let i=0;i<5;i++){
     const {w,h}=pondShapes[i%pondShapes.length]();
-    const margin=Math.max(w,h)/2+50; // keep ponds well clear of the river & each other
-    const p=safePt(140,140,WORLD_W-140,WORLD_H-140,260,taken,margin);
+    // Keep clear of other ponds AND of the river along the pond's whole width (so a wide
+    // pond can't overlap the river where its meander bulges toward the bank).
+    let p, ok=false;
+    for(let a=0;a<90 && !ok; a++){
+      p=rand2(140,140,WORLD_W-140,WORLD_H-140,260,taken);
+      ok = !inWater(p.x,p.y,Math.max(w,h)/2+24) && ellipseClearOfRiver(p.x,p.y,w,h,22);
+    }
     taken.push(p);
     worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100,blobSeed:Math.floor(Math.random()*9999)});
   }
@@ -111,12 +116,12 @@ function buildWorld(){
   addCollider(0,0,14,WORLD_H);
   addCollider(WORLD_W-14,0,14,WORLD_H);
 
-  // ---- OAK TREES ----
+  // ---- OAK TREES ---- (collider fitted to the trunk + roots at the base, not the canopy)
   for(let i=0;i<22;i++){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
     worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
-    addCollider(p.x-9,p.y+14,18,18);
+    addCollider(p.x-7,p.y+19,14,13);
   }
 
   // ---- PINE TREES ----
@@ -124,16 +129,16 @@ function buildWorld(){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,80,taken,45);
     taken.push(p);
     worldObjects.push({kind:'pine',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+14,8,12);
+    addCollider(p.x-4,p.y+15,8,10);
   }
 
-  // ---- ROCKS ----
+  // ---- ROCKS ---- (only big rocks block; collider hugs the rock's ground footprint)
   for(let i=0;i<18;i++){
     const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
     const big=Math.random()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13,p.y-2,26,16);
+    if(big) addCollider(p.x-12,p.y+2,24,12);
   }
 
   // ---- ROCK CLUSTERS ----
@@ -141,7 +146,7 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26,p.y-4,50,18);
+    addCollider(p.x-24,p.y-2,48,16);
   }
 
   // ---- TALL GRASS patches (no collider) ----
@@ -160,13 +165,16 @@ function buildWorld(){
     taken.push(p);
     const variant=Math.floor(Math.random()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
-    addCollider(p.x-13,p.y+2,26,16);
+    addCollider(p.x-12,p.y+3,24,13);
   }
 
-  // ---- FLOWERS (no collider) ----
+  // ---- FLOWERS (no collider, kept on dry land) ----
   const flowerHues=['#FF8FA3','#FFD93D','#C9A6FF','#FFB199','#FF6B81','#A8E6CF'];
   for(let i=0;i<100;i++){
-    worldObjects.push({kind:'flower',x:rand(30,WORLD_W-30),y:rand(30,WORLD_H-30),
+    let fx,fy;
+    for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!inWater(fx,fy,4)) break; }
+    if(inWater(fx,fy,4)) continue;   // no dry spot found this try — skip rather than float on water
+    worldObjects.push({kind:'flower',x:fx,y:fy,
       hue:flowerHues[Math.floor(Math.random()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
   }
 
@@ -175,7 +183,7 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,100,taken,50);
     taken.push(p);
     worldObjects.push({kind:'willow',x:p.x,y:p.y});
-    addCollider(p.x-9,p.y+16,18,18);
+    addCollider(p.x-8,p.y+19,16,15);
   }
 
   // ---- MUSHROOMS ----
@@ -193,6 +201,40 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
     worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
+  }
+
+  // ---- CATTAILS / REEDS along the pond shores (no collider) ----
+  worldObjects.filter(o=>o.kind==='pond').forEach(pond=>{
+    const n=Math.floor(rand(3,6));
+    for(let k=0;k<n;k++){
+      const ang=rand(0,Math.PI*2);
+      worldObjects.push({kind:'cattail', seed:Math.random()*100,
+        x:pond.x+Math.cos(ang)*(pond.w/2+rand(2,10)),
+        y:pond.y+Math.sin(ang)*(pond.h/2+rand(2,10))});
+    }
+  });
+
+  // ---- FALLEN LOGS (solid) ----
+  for(let i=0;i<5;i++){
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,40);
+    taken.push(p);
+    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:Math.random()*100});
+    addCollider(p.x-16,p.y-1,32,9);
+  }
+
+  // ---- TREE STUMPS (solid) ----
+  for(let i=0;i<5;i++){
+    const p=safePt(70,70,WORLD_W-70,WORLD_H-70,80,taken,35);
+    taken.push(p);
+    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:Math.random()*100});
+    addCollider(p.x-8,p.y-1,16,10);
+  }
+
+  // ---- BUTTERFLIES (animated ambient life, no collider) ----
+  const bflyHues=['#FFFFFF','#FFD93D','#FF9E6E','#8FD4E8','#C9A6FF','#FF8FB0'];
+  for(let i=0;i<14;i++){
+    worldObjects.push({kind:'butterfly', x:rand(60,WORLD_W-60), y:rand(60,WORLD_H-60),
+      hue:bflyHues[Math.floor(Math.random()*bflyHues.length)], seed:Math.random()*1000});
   }
 
   // ---- STONE PATHS ----
@@ -294,6 +336,19 @@ function inRiver(x,y,margin=0){
   return Math.abs(y-riverY(x)) < riverWidthAt(x)/2+margin;
 }
 
+// True if an elliptical water body (centre cx,cy, size w×h) stays `margin` clear of the
+// river across its whole horizontal span. Checking only the centre misses the case where
+// the meandering river bulges toward a wide pond's edge, so we sample across the width.
+function ellipseClearOfRiver(cx,cy,w,h,margin=20){
+  if(!river) return true;
+  const steps=8;
+  for(let i=0;i<=steps;i++){
+    const sx=cx-w/2 + w*(i/steps);
+    if(Math.abs(cy-riverY(sx)) < riverWidthAt(sx)/2 + h/2 + margin) return false;
+  }
+  return true;
+}
+
 function isOnSpecificBridge(o,px,py){
   if(o.kind==='riverbridge'){
     const span=o.span||30, road=9; // span covers the full river crossing; road is the walkway width
@@ -325,6 +380,28 @@ function isInPond(px,py,wasSwimming){
   if(isOnWalkableBridge(px,py)) return false; // pond bridge deck — never swimming
   if(onRiverBridge(px,py) && !wasSwimming) return false; // stepping onto bridge from dry land
   return true; // open water, or already swimming and passing underneath a river bridge
+}
+
+// Pure "is this point in water" test (river OR any pond/lake), ignoring bridges. Used for
+// placement: keep land plants, NPCs and quest animals out of the water.
+function isWater(x,y,margin=0){
+  if(inRiver(x,y,margin)) return true;
+  return worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
+    ((x-o.x)/(o.w/2+margin))**2+((y-o.y)/(o.h/2+margin))**2<1);
+}
+
+// Move an object (with .x/.y) to the nearest dry land if it spawned in water. Keeps
+// merchants and quest animals off the water; searches outward in rings for a dry spot.
+function nudgeOutOfWater(obj, margin=10){
+  if(!obj || !isWater(obj.x,obj.y,margin)) return;
+  for(let r=24; r<=560; r+=24){
+    for(let a=0;a<16;a++){
+      const ang=a/16*Math.PI*2;
+      const nx=clamp(obj.x+Math.cos(ang)*r, 30, WORLD_W-30);
+      const ny=clamp(obj.y+Math.sin(ang)*r, 30, WORLD_H-30);
+      if(!isWater(nx,ny,margin)){ obj.x=nx; obj.y=ny; return; }
+    }
+  }
 }
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){

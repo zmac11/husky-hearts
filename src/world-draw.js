@@ -280,6 +280,103 @@ function drawMushroomRing(x,y,seed){
   });
 }
 
+// ---- meadow ambient life & props (Sunny Meadows biome) ----
+function drawCattail(x,y,seed,t){
+  const r=mulberry32(Math.floor(seed*61)+1);
+  const n=3+Math.floor(r()*3);
+  for(let i=0;i<n;i++){
+    const bx=x+(r()-0.5)*11, by=y+(r()-0.5)*4;
+    const h=16+r()*10, sway=Math.sin(t/600+bx*0.1+seed)*2;
+    px(bx-3+sway*0.6, by-h*0.7, 2, 8, '#4E8A3A');       // leaf blade
+    px(bx+sway,   by-h, 2, h, '#4E8A3A');                // stalk
+    px(bx+sway+1, by-h, 1, Math.floor(h*0.6), '#5FA048');
+    px(bx-1+sway, by-h+3, 4, 8, '#7A4A26');              // brown cattail head
+    px(bx+sway,   by-h+4, 2, 6, '#93602F');
+  }
+}
+
+function drawLog(x,y,seed){
+  const r=mulberry32(Math.floor(seed*47)+1);
+  ctx.globalAlpha=0.2; px(x-16,y+6,32,4,'#2A2018'); ctx.globalAlpha=1;
+  px(x-16,y-4,32,10,'#6B4A2E');                          // bark body
+  px(x-16,y-4,32,3,'#7C5636');                           // top-lit
+  px(x-16,y+4,32,2,'#4E3420');                           // underside shade
+  ctx.globalAlpha=0.3; for(let i=-12;i<12;i+=6) px(x+i,y-2,1,7,'#3E2A18'); ctx.globalAlpha=1;
+  px(x-18,y-4,3,10,'#8A6242');                           // shaded cut end
+  px(x+15,y-4,3,10,'#C79B6A');                           // lit cut end + rings
+  px(x+16,y-2,1,6,'#8A6242'); px(x+16,y-1,1,4,'#A87C4E');
+  if(r()<0.8){ px(x-6,y-5,6,2,'#6A9A4A'); px(x+2,y-5,4,2,'#5A8A3A'); } // moss
+}
+
+function drawStump(x,y){
+  ctx.globalAlpha=0.2; px(x-8,y+5,16,4,'#2A2018'); ctx.globalAlpha=1;
+  px(x-8,y-2,16,9,'#6B4A2E'); px(x-8,y+5,16,2,'#4E3420');
+  px(x-8,y-2,3,9,'#7C5636'); px(x+5,y-2,3,9,'#523620');
+  ctx.globalAlpha=0.3; px(x-3,y-1,1,7,'#3E2A18'); px(x+1,y-1,1,7,'#3E2A18'); ctx.globalAlpha=1;
+  px(x-8,y-5,16,4,'#A87C4E'); px(x-6,y-4,12,2,'#C79B6A');    // top cut
+  ctx.strokeStyle='#8A6242'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.ellipse(x,y-3,4,1.6,0,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(x,y-3,2,0.9,0,0,Math.PI*2); ctx.stroke();
+  px(x+4,y-6,1,3,'#5FA048'); px(x-5,y-6,1,3,'#5FA048');      // grass sprouts
+}
+
+function drawButterfly(x,y,hue,seed,t){
+  // loops gently around its home point; wings pulse with the beat
+  const ph=seed;
+  const fx=x+Math.sin(t/900+ph)*18+Math.cos(t/430+ph)*6;
+  const fy=y+Math.cos(t/760+ph)*12+Math.sin(t/380+ph)*5;
+  const ww=2+Math.abs(Math.sin(t/70+ph))*3, dark=shade(hue,-45);
+  ctx.globalAlpha=0.12; ctx.beginPath(); ctx.ellipse(x,y+2,4,1.5,0,0,Math.PI*2); ctx.fillStyle='#2A3A2A'; ctx.fill(); ctx.globalAlpha=1;
+  const bx=Math.round(fx), by=Math.round(fy);
+  px(bx,by-3,1,6,dark);                                  // body
+  ctx.fillStyle=hue;                                     // wings
+  ctx.fillRect(Math.round(bx-1-ww),by-3,Math.round(ww),3);
+  ctx.fillRect(bx+1,by-3,Math.round(ww),3);
+  ctx.fillRect(Math.round(bx-1-ww*0.8),by,Math.round(ww*0.8),3);
+  ctx.fillRect(bx+1,by,Math.round(ww*0.8),3);
+  ctx.fillStyle=dark;
+  ctx.fillRect(Math.round(bx-1-ww),by-3,1,6); ctx.fillRect(Math.round(bx+ww),by-3,1,6);
+  px(bx-1,by-4,1,1,dark); px(bx+1,by-4,1,1,dark);        // antennae
+}
+
+// Expanding ripple ring drawn under a floating (aquatic) entity like a duck or loon —
+// they sit naturally on the surface, so they just need a light wake, not submersion.
+function drawWaterRipple(x,y,t){
+  ctx.save();
+  ctx.strokeStyle='#E8FBFF'; ctx.lineWidth=1;
+  const p=(t/600+x*0.01)%1;
+  ctx.globalAlpha=(1-p)*0.55; ctx.beginPath(); ctx.ellipse(x,y+7,7+p*7,3+p*3,0,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha=0.28;       ctx.beginPath(); ctx.ellipse(x,y+8,11,4,0,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+// Full "swimming" treatment for a land creature that's entered the water — same look as
+// the dog: the lower body is clipped away below a waterline, and a water disc + expanding
+// ripples sit over it. `drawFn` paints the creature's normal sprite at (x,y).
+function drawSwimming(x,y,t,drawFn){
+  const wl=Math.round(y)+3;                        // waterline across the body
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x-34, y-46, 68, wl-(y-46)); ctx.clip();   // keep only above the waterline
+  drawFn();
+  ctx.restore();
+  const sw=Math.sin(t/600+x*0.05)*3;
+  // water disc over the submerged lower body
+  ctx.globalAlpha=0.72;
+  ctx.beginPath(); ctx.ellipse(x+sw*0.3, wl, 15, 5.5, 0, 0, Math.PI*2);
+  const wg=ctx.createRadialGradient(x-4,wl-2,1,x,wl,15);
+  wg.addColorStop(0,'#9CE4FF'); wg.addColorStop(1,'#3AAACC');
+  ctx.fillStyle=wg; ctx.fill();
+  ctx.globalAlpha=1;
+  // animated expanding ripples
+  for(let i=0;i<3;i++){
+    const phase=((t/1000+i/3)%1), rs=1+phase*1.6;
+    ctx.globalAlpha=0.34*(1-phase);
+    ctx.beginPath(); ctx.ellipse(x+sw*0.3, wl, 15*rs, 5.5*rs, 0, 0, Math.PI*2);
+    ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
 function drawStonePath(x1,y1,x2,y2,seed){
   // draw a row of stone tiles between two points
   const rng=mulberry32(Math.floor(seed*31));
@@ -672,30 +769,49 @@ function drawLake(x,y,w,h,seed,t,blobSeed){
 }
 
 function drawWaterfall(x,y,t,h){
-  // A cascade tumbling down a rock cliff into a misty splash pool at (x,y). Reads as a
-  // waterfall feeding the lake it's placed against. Water streaks scroll downward.
-  h=h||100; const w=22;
-  // rock cliff flanks + dark chute behind the water
-  px(x-w/2-9,y-h,11,h,'#6E6A62'); px(x+w/2-2,y-h,11,h,'#615E57');
-  px(x-w/2-9,y-h,11,4,'#8C887F'); px(x+w/2-2,y-h,11,4,'#8C887F');
-  px(x-w/2,y-h,w,h,'#3E7C8C');
-  // falling water — animated scrolling streaks, clipped to the chute
+  // A realistic cascade: a stone cliff notch, a sheet of falling water with a vertical
+  // aqua→foam gradient and multiple strands scrolling at different speeds, spilling into a
+  // plunge pool with expanding ripple rings, rising mist and flicking spray at (x,y).
+  h=h||110; const w=26, L=x-w/2, R=x+w/2;
+  const rock='#6E6A62', rockD='#565249', rockL='#847F76';
+  // rock cliff flanks
+  px(L-12,y-h,12,h+6,rockD); px(L-12,y-h,12,4,rockL); px(L-10,y-h+9,4,h-12,rock);
+  px(R,   y-h,12,h+6,rockD); px(R,   y-h,12,4,rockL); px(R+6, y-h+9,4,h-12,rock);
+  // dark wet notch behind the water
+  px(L,y-h,w,h,'#274C55'); px(L,y-h,w,6,'#1E3A42');
+
+  // falling water sheet (clipped to the chute)
   ctx.save();
-  ctx.beginPath(); ctx.rect(x-w/2,y-h,w,h); ctx.clip();
-  const scroll=(t*0.4)%20;
-  for(let i=0;i<5;i++){
-    const sx=x-w/2+3+i*4;
-    ctx.strokeStyle=i%2?'#EAFBFF':'#C7EDF4'; ctx.lineWidth=2;
-    for(let yy=-20;yy<h;yy+=20){ const ya=y-h+((yy+scroll)%(h+20)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+11); ctx.stroke(); }
+  ctx.beginPath(); ctx.rect(L,y-h,w,h); ctx.clip();
+  const g=ctx.createLinearGradient(0,y-h,0,y);
+  g.addColorStop(0,'#BFEFF6'); g.addColorStop(0.5,'#9FE0EC'); g.addColorStop(0.85,'#E8FBFF'); g.addColorStop(1,'#FFFFFF');
+  ctx.fillStyle=g; ctx.fillRect(L+2,y-h+4,w-4,h);
+  for(let i=0;i<6;i++){                                  // strands at varied speeds
+    const sx=L+3+i*((w-6)/5), spd=0.3+(i%3)*0.12, scroll=(t*spd)%22;
+    ctx.strokeStyle=i%2?'rgba(255,255,255,0.9)':'rgba(198,236,244,0.8)'; ctx.lineWidth=2;
+    for(let yy=-22;yy<h;yy+=22){ const ya=y-h+((yy+scroll)%(h+22)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+13); ctx.stroke(); }
   }
   ctx.restore();
-  // foam lip at the top
-  px(x-w/2-2,y-h-2,w+4,4,'#F2FCFF');
-  // splash pool + drifting mist
-  ctx.globalAlpha=0.92; ctx.fillStyle='#DFF6FB'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,7,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-  const m=Math.sin(t/220);
-  ctx.globalAlpha=0.38; ctx.fillStyle='#FFFFFF';
-  ctx.beginPath(); ctx.arc(x-6,y-2+m,5,0,Math.PI*2); ctx.arc(x+6,y-1-m,5,0,Math.PI*2); ctx.arc(x,y-4,4,0,Math.PI*2); ctx.fill();
+  // lip where the water rolls over
+  px(L-2,y-h-3,w+4,5,'#CFF3F8'); px(L,y-h-1,w,2,'#8FD8E4');
+
+  // plunge pool
+  ctx.fillStyle='#7FD0DC'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,8,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#B9EEF4'; ctx.beginPath(); ctx.ellipse(x,y-1,w*0.58,5,0,0,Math.PI*2); ctx.fill();
+  // expanding ripple rings
+  for(let i=0;i<3;i++){
+    const p=((t/700)+i/3)%1;
+    ctx.globalAlpha=(1-p)*0.5; ctx.strokeStyle='#EAFBFF'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+2,4+p*w*0.9,1.5+p*4,0,0,Math.PI*2); ctx.stroke();
+  }
+  // rising mist puffs
+  for(let i=0;i<4;i++){
+    const mp=((t/900)+i/4)%1, my=y-mp*24, mx=x+Math.sin((t/300)+i*1.7)*8;
+    ctx.globalAlpha=(1-mp)*0.4; ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.arc(mx,my,3+mp*3,0,Math.PI*2); ctx.fill();
+  }
+  // spray flicking off the base
+  for(let i=0;i<6;i++){ const a=(t/200+i*0.17)%1; if(a<0.5){ ctx.globalAlpha=(0.5-a)*1.5; ctx.fillStyle='#FFFFFF'; ctx.fillRect(Math.round(x+(i-3)*6),Math.round(y-a*11),2,2); } }
   ctx.globalAlpha=1;
 }
 
@@ -720,6 +836,10 @@ function drawWorld(t){
       case 'willow':      drawWillow(obj.x,obj.y,t); break;
       case 'mushroom':    drawMushroom(obj.x,obj.y,obj.big); break;
       case 'mushroomring':drawMushroomRing(obj.x,obj.y,obj.seed); break;
+      case 'cattail':     drawCattail(obj.x,obj.y,obj.seed,t); break;
+      case 'log':         drawLog(obj.x,obj.y,obj.seed); break;
+      case 'stump':       drawStump(obj.x,obj.y); break;
+      case 'butterfly':   drawButterfly(obj.x,obj.y,obj.hue,obj.seed,t); break;
       case 'stonepath':   drawStonePath(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
       // --- rocky-mountain kinds (levels/rocky.js) ---
