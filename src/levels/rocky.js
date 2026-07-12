@@ -27,11 +27,13 @@ function buildRockyWorld(){
   // ---- Glacial lakes (big turquoise water bodies). Placed before everything else so
   //      other objects steer around them; swimmable (isInPond treats 'lake' like 'pond'). ----
   const lakes=[
-    { x:W*0.50, y:H*0.37, w:390, h:250 },   // hero lake below the central peaks
-    { x:W*0.23, y:H*0.52, w:300, h:210 },   // west lake
-    { x:W*0.79, y:H*0.45, w:280, h:190 },   // east lake
+    { x:W*0.50, y:H*0.34, w:390, h:250 },   // hero lake below the central peaks
+    { x:W*0.22, y:H*0.46, w:300, h:210 },   // west lake
+    { x:W*0.79, y:H*0.42, w:280, h:190 },   // east lake
   ];
-  lakes.forEach((l,i)=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
+  // Keep every lake fully clear of the river — nudge it up the valley if it would cross.
+  lakes.forEach(l=>{ let guard=0; while(!ellipseClearOfRiver(l.x,l.y,l.w,l.h,26) && guard++<50) l.y-=12; });
+  lakes.forEach(l=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
     seed:Math.random()*100, blobSeed:Math.floor(Math.random()*9999)}));
   function inLake(x,y,m){ return lakes.some(l=>((x-l.x)/(l.w/2+m))**2+((y-l.y)/(l.h/2+m))**2<1); }
 
@@ -60,7 +62,8 @@ function buildRockyWorld(){
     const mh=rand(150,188);          // apex = baseY - mh stays a little below the top edge
     const mw=rand(360,500);
     worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(Math.random()*9999)});
-    addCollider(mx-18,baseY-6,36,14);
+    // Solid across most of the base so you can't walk into the massif (matches the rock).
+    addCollider(mx-mw*0.4, baseY-4, mw*0.8, 16);
   }
 
   // ---- Waterfalls tumbling into the lakes they sit above ----
@@ -72,28 +75,28 @@ function buildRockyWorld(){
     const p=pt(60,240,W-60,H-60,120,taken,50); taken.push(p);
     const big=Math.random()<0.6;
     worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
-    addCollider(p.x-(big?16:11), p.y-2, big?32:22, big?16:12);
+    addCollider(p.x-(big?16:11), p.y+(big?1:0), big?32:22, big?14:11);
   }
 
   // Rock clusters.
   for(let i=0;i<7;i++){
     const p=pt(80,240,W-80,H-80,120,taken,45); taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26,p.y-4,50,18);
+    addCollider(p.x-24,p.y-2,48,16);
   }
 
   // Evergreen forest — lush green spruce/fir (a lot of them: it's a forested valley).
   for(let i=0;i<26;i++){
     const p=pt(50,240,W-50,H-50,80,taken,40); taken.push(p);
     worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+12,8,12);
+    addCollider(p.x-4,p.y+14,8,9);
   }
 
   // A few weathered deadfall trees.
   for(let i=0;i<5;i++){
     const p=pt(60,240,W-60,H-60,110,taken,42); taken.push(p);
     worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+14,8,12);
+    addCollider(p.x-6,p.y+18,12,11);
   }
 
   // Loose rocks (mostly walkable; big ones block).
@@ -101,25 +104,30 @@ function buildRockyWorld(){
     const p=pt(60,240,W-60,H-60,60,taken,35); taken.push(p);
     const big=Math.random()<0.25;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13,p.y-2,26,16);
+    if(big) addCollider(p.x-12,p.y+2,24,12);
   }
 
   // Hardy shrubs.
   for(let i=0;i<14;i++){
     const p=pt(60,240,W-60,H-60,80,taken,40); taken.push(p);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
-    addCollider(p.x-13,p.y+2,26,16);
+    addCollider(p.x-12,p.y+3,24,13);
   }
 
   // Wildflowers + grass tufts across the green valley floor (no colliders).
   const hues=['#FF9E6E','#FFD36A','#E58AC0','#B6E36A','#7FD4E0','#C79BFF'];
   for(let i=0;i<70;i++){
-    worldObjects.push({kind:'flower',x:rand(30,W-30),y:rand(220,H-30),
+    let fx,fy;
+    for(let a=0;a<20;a++){ fx=rand(30,W-30); fy=rand(220,H-30); if(!isWater(fx,fy,4)) break; }
+    if(isWater(fx,fy,4)) continue;   // alpine flowers stay on dry land
+    worldObjects.push({kind:'flower',x:fx,y:fy,
       hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
   }
   for(let i=0;i<22;i++){
-    worldObjects.push({kind:'tallgrass',x:rand(40,W-40),y:rand(220,H-40),
-      blades:Math.floor(rand(4,9)),seed:Math.random()*100});
+    let gx,gy;
+    for(let a=0;a<20;a++){ gx=rand(40,W-40); gy=rand(220,H-40); if(!isWater(gx,gy,4)) break; }
+    if(isWater(gx,gy,4)) continue;
+    worldObjects.push({kind:'tallgrass',x:gx,y:gy,blades:Math.floor(rand(4,9)),seed:Math.random()*100});
   }
 
   // Cozy lakeside campfires — warm landmarks.

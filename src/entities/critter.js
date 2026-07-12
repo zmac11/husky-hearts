@@ -14,10 +14,18 @@ const CRITTERS = {
             greet:'The busy beaver waves a friendly flat-tailed hello!',
             lines:['The beaver proudly shows off its big front teeth.',
                    'The beaver nudges a little twig over to you.'] },
-  loon:   { name:'Loon',   icon:'🐦', gift:2, roam:48, speed:0.28,
+  loon:   { name:'Loon',   icon:'🐦', gift:2, roam:48, speed:0.28, aquatic:true,
             greet:'The loon lifts its head and sings a beautiful call!',
             lines:['The loon warbles a cheerful, echoing tune.',
                    'The loon drifts calmly at your side.'] },
+  duck:   { name:'Duck',   icon:'🦆', gift:2, roam:40, speed:0.3, aquatic:true,
+            greet:'The duck paddles right over with a happy quack!',
+            lines:['The duck bobs its head and quacks softly.',
+                   'The duck preens its glossy feathers, content.'] },
+  squirrel:{name:'Squirrel',icon:'🐿️', gift:2, roam:66, speed:0.5,
+            greet:'The squirrel scampers up and offers you an acorn!',
+            lines:['The squirrel flicks its big bushy tail at you.',
+                   'The squirrel chatters brightly from a low branch.'] },
 };
 
 Entities.register('critter', {
@@ -30,14 +38,21 @@ Entities.register('critter', {
     e.roam  = e.roam  || d.roam  || 60;
     e.homeX = (typeof e.homeX==='number') ? e.homeX : e.x;
     e.homeY = (typeof e.homeY==='number') ? e.homeY : e.y;
+    e.aquatic = !!d.aquatic;    // ducks/loons float on the surface; land critters submerge
     e.dir = 1; e.wanderT = 0; e.wanderAng = 0; e.cool = 0; e.greeted = !!e.greeted; e.bob = 0;
   },
 
   // Gentle wander around home — never chases, never leaves its patch.
   update(e, t, dt){
+    // Land critters slow to a swim in water; water birds (aquatic) glide freely. Either
+    // way, being on water flags a ripple in the draw pass.
+    const d=CRITTERS[e.species]||{};
+    const inW = (typeof isInPond==='function' && isInPond(e.x,e.y,e.swimming));
+    const swim = (inW && !d.aquatic) ? 0.5 : 1;
+    e.swimming = inW;
     e.wanderT -= dt;
     if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
-    const nx=e.x+Math.cos(e.wanderAng)*e.speed, ny=e.y+Math.sin(e.wanderAng)*e.speed;
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim;
     if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
     else { e.wanderT=0; }                       // turned back at the edge of its range
     e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);
@@ -89,6 +104,28 @@ Entities.register('critter', {
       px(hx+D*5,y-13,4,2,'#2A2E34');
       px(hx+(D>0?1:-1),y-12,1,1,red);
       px(hx-3,y-6,6,2,wht);
+    } else if(e.species==='duck'){
+      const body='#8A6A46', head='#2E6B44', wing='#6E5236', bill='#E8A23C', wht='#EDE6D6';
+      // rounded floating body + pale underside + wing + tail tuft
+      px(x-9,y-3,18,10,body); px(x-7,y+1,14,6,wht); px(x-2,y-2,8,6,wing); px(x-11,y-4,4,4,body);
+      // neck + glossy green head + white ring + bill + eye
+      const hx=x+D*8;
+      px(hx-3,y-11,6,9,head); px(hx+D*2,y-12,5,5,head); px(hx-3,y-6,6,2,wht);
+      px(hx+D*5,y-10,4,3,bill);
+      px(hx+(D>0?1:-1),y-10,1,1,'#141414');
+    } else if(e.species==='squirrel'){
+      const B='#A85A2E', BD='#8A4520', BL='#C87A44', wht='#F0DDC0', acorn='#7A5230';
+      // big bushy curled tail behind
+      px(x-D*8-2,y-11,6,16,BD); px(x-D*10,y-13,5,10,B); px(x-D*9,y-4,4,8,BL);
+      // upright body + pale belly
+      px(x-6,y-6,12,14,B); px(x-4,y+0,8,9,wht);
+      // head + ears + eye + nose
+      const hx=x+D*3;
+      px(hx-5,y-14,10,9,B);
+      px(hx-5,y-17,3,4,BD); px(hx+3,y-17,3,4,BD);
+      px(hx+(D>0?2:-2),y-11,2,2,'#141414'); px(hx+(D>0?4:-4),y-9,2,2,'#3A2A1A');
+      // little paws holding an acorn
+      px(x-2,y-2,4,5,BL); px(x-1,y+1,3,3,acorn);
     }
 
     // floating mood: a heart once befriended, a chat bubble before

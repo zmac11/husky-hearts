@@ -328,13 +328,37 @@ const UI = {
     this.updateHUD();
   },
 
-  // ---------- dialog / shop ----------
+  // ---------- dialog / shop / quest ----------
   openDialog(npc, player){
     this.closeInventory();            // dialog is blocking; don't stack it over inventory
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
-    this.renderDialog(npc.greeting);
+    const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
+    if(q && hasQuests && Quests.stateOf(q)!=='done') this.renderQuest();           // offer / progress / turn-in
+    else this.renderDialog(q && q.done ? q.done : npc.greeting);                   // finished quest → thanks; else shop/talk
     this._show('dialogScreen', true);
+  },
+
+  // Quest dialog: offer it, report progress, or take the hand-in — driven by quest state.
+  renderQuest(){
+    const d=this._dialog; if(!d || !d.npc.quest) return;
+    const npc=d.npc, p=d.player, q=npc.quest;
+    this.$('dialogName').textContent=npc.name;
+    const choices=this.$('dialogChoices'); choices.innerHTML='';
+    const add=(label,fn)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; b.addEventListener('click',fn); choices.appendChild(b); };
+    const st=Quests.stateOf(q);
+    if(st==='available'){
+      this.$('dialogText').textContent = q.offer || `Could you help me? I need ${Quests.summary(q)}.`;
+      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); });
+      add(`🐾 Maybe later`, ()=>this.closePanel());
+    } else if(Quests.canComplete(q, p)){
+      this.$('dialogText').textContent = q.ready || `You've got ${Quests.summary(q)} — hand them over?`;
+      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); });
+      add(`🐾 Not yet`, ()=>this.closePanel());
+    } else {
+      this.$('dialogText').textContent = Quests.progressText(q, p);
+      add(`👍 Okay`, ()=>this.closePanel());
+    }
   },
 
   renderDialog(text){
@@ -345,8 +369,9 @@ const UI = {
     choices.innerHTML='';
 
     // Shop: buy items with treats as currency. Each NPC supplies its own `wares`
-    // (see level generate()); fall back to a default stall if none is set.
-    const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}];
+    // (see level generate()); fall back to a default stall if none is set — but a pure
+    // quest-giver (has a quest, no wares) shows no shop, just its text.
+    const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : (d.npc.quest ? [] : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}]);
     wares.forEach(w=>{
       const def=Items.get(w.id); if(!def) return;
       const afford=d.player.treats>=w.cost;

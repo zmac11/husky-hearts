@@ -10,7 +10,7 @@ Levels.register({
   seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
   size: { w: 1920, h: 1280 },
   spawn: { x: 200, y: 200 },   // where the dogs start on this level
-  next: 'rocky',               // clearing the meadow leads up into the mountains
+  next: 'meadow-2',            // on through the Sunny Meadows learning biome
 
   // Visual palette — moved out of world-draw.js so different levels look different.
   theme: {
@@ -27,27 +27,10 @@ Levels.register({
     collectibles = makeCollectibles();
     friends = makeFriends();
 
-    // Dynamic entities (registry-driven). Placed on open ground near the map centre.
+    // The very first level is pure basics — just wander, collect treats, and cheer up
+    // friends. No merchants and no enemies yet; those are introduced in later levels
+    // (shops in Wildflower Field, a first gentle enemy in Old Orchard Path).
     Entities.clear();
-    Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.30,
-      name: 'Marla the Merchant',
-      greeting: "Welcome, pup! Fresh biscuits to keep your tail wagging.",
-      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
-    });
-    // Fenwick the Tailor — sells wearables (head/face/neck/body/back) for testing the
-    // equip + on-dog-render feature. Warm-toned merchant near the centre-west.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.36, y: WORLD_H*0.42,
-      name: 'Fenwick the Tailor',
-      greeting: "Ah, a pup with style! Try something on — it'll look grand on you.",
-      look: 'tailor',
-      wares: [
-        {id:'tophat',  cost:8},  {id:'ballcap', cost:6}, {id:'shades', cost:7},
-        {id:'scarf',   cost:6},  {id:'raincoat',cost:9}, {id:'cape',   cost:10},
-      ],
-    });
-    Entities.spawn('enemy', { x: WORLD_W*0.32, y: WORLD_H*0.72, speed: 0.9 });
   },
 
   // Completion condition (the "quest"). checkWin() consults this.

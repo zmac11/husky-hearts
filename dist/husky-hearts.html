@@ -770,8 +770,8 @@ const Campaign = {
     { id:'meadow', name:'Sunny Meadows', icon:'🌳', color:'#9ED87A', boss:'The Badger Baron',
       levels:[
         { id:'meadow',      name:'Sunny Meadow',    kind:'level', real:true },
-        { id:'meadow-2',    name:'Wildflower Field', kind:'level' },
-        { id:'meadow-3',    name:'Old Orchard Path', kind:'level' },
+        { id:'meadow-2',    name:'Wildflower Field', kind:'level', real:true },
+        { id:'meadow-3',    name:'Old Orchard Path', kind:'level', real:true },
         { id:'meadow-boss', name:'The Badger Baron',  kind:'boss' },
       ] },
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
@@ -938,6 +938,80 @@ const Inventory = {
     return out;
   },
   total(p){ return this.cells(p).reduce((s,c)=> s + (c?c.qty:0), 0); },
+};
+
+// ===== src/quests.js =====
+// ====================== QUESTS ======================
+// Lightweight, data-driven quest system for NPCs. An NPC becomes a quest-giver simply by
+// carrying a `quest` object (see the shape below); the NPC draw shows a yellow "!" when a
+// quest is available or ready to hand in, and the dialog panel (ui.js) walks the player
+// through offer → progress → turn-in. Quest state lives on the NPC entity, so it rides
+// along in save/load like any other entity data.
+//
+// Adding a NEW quest TYPE = add an entry to `Quests.TYPES` implementing summary/canComplete/
+// remaining/take. The "give" type (bring N of an item) is the first; talk-to / fetch-from /
+// cheer-N / defeat-N types can slot in later without touching the NPC or dialog code.
+//
+// Quest object shape (on npc.quest):
+//   { id, type:'give', give:{ item:'bone', count:3 },
+//     offer, ready, progress, done,          // optional dialog strings (defaults generated)
+//     reward:{ treats:6 }  |  { item:'ribbon', count:1 },   // optional
+//     state }                                // 'available' → 'active' → 'done' (managed here)
+
+const Quests = {
+  TYPES: {
+    give: {
+      summary(q){ const d=Items.get(q.give.item); return `${q.give.count} ${d?d.icon+' '+d.name:q.give.item}`; },
+      have(q,p){ return Inventory.count(p, q.give.item); },
+      remaining(q,p){ return Math.max(0, q.give.count - Inventory.count(p, q.give.item)); },
+      canComplete(q,p){ return Inventory.count(p, q.give.item) >= q.give.count; },
+      take(q,p){ Inventory.remove(p, q.give.item, q.give.count); },
+    },
+  },
+
+  _t(q){ return this.TYPES[(q && q.type)] || this.TYPES.give; },
+  stateOf(q){ return (q && q.state) || 'available'; },
+  summary(q){ return this._t(q).summary(q); },
+  canComplete(q,p){ return this.stateOf(q)==='active' && !!p && this._t(q).canComplete(q,p); },
+
+  // What mark floats over the NPC's head: 'available' / 'ready' (yellow !), 'active' (grey ?),
+  // or null (nothing — quest done). "ready" means some active player can hand it in now.
+  indicator(e){
+    const q=e && e.quest; if(!q) return null;
+    const st=this.stateOf(q);
+    if(st==='available') return 'available';
+    if(st==='done') return null;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>this._t(q).canComplete(q,p)) ? 'ready' : 'active';
+  },
+
+  accept(q){
+    if(this.stateOf(q)!=='available') return;
+    q.state='active';
+    if(typeof showToast==='function') showToast(`📜 New task: bring ${this.summary(q)}`, 2600);
+  },
+
+  progressText(q,p){
+    const rem=this._t(q).remaining(q,p);
+    if(q.progress) return q.progress.replace('{remaining}', rem);
+    return `You still need ${rem} more — bring me ${this.summary(q)}.`;
+  },
+
+  // Hand in the quest: consume the requirement, grant any reward, mark done. Returns a short
+  // reward description (e.g. "+6 treats") for the thank-you line, or '' if none.
+  complete(q,p){
+    const t=this._t(q);
+    if(this.stateOf(q)!=='active' || !t.canComplete(q,p)) return '';
+    t.take(q,p);
+    q.state='done';
+    let rewardStr='';
+    const r=q.reward;
+    if(r && r.treats){ p.treats=(p.treats||0)+r.treats; rewardStr=`+${r.treats} treats`; }
+    else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
+    if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);
+    return rewardStr;
+  },
 };
 
 // ===== src/health.js =====
@@ -1430,8 +1504,13 @@ function buildWorld(){
   ];
   for(let i=0;i<5;i++){
     const {w,h}=pondShapes[i%pondShapes.length]();
-    const margin=Math.max(w,h)/2+50; // keep ponds well clear of the river & each other
-    const p=safePt(140,140,WORLD_W-140,WORLD_H-140,260,taken,margin);
+    // Keep clear of other ponds AND of the river along the pond's whole width (so a wide
+    // pond can't overlap the river where its meander bulges toward the bank).
+    let p, ok=false;
+    for(let a=0;a<90 && !ok; a++){
+      p=rand2(140,140,WORLD_W-140,WORLD_H-140,260,taken);
+      ok = !inWater(p.x,p.y,Math.max(w,h)/2+24) && ellipseClearOfRiver(p.x,p.y,w,h,22);
+    }
     taken.push(p);
     worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100,blobSeed:Math.floor(Math.random()*9999)});
   }
@@ -1442,12 +1521,12 @@ function buildWorld(){
   addCollider(0,0,14,WORLD_H);
   addCollider(WORLD_W-14,0,14,WORLD_H);
 
-  // ---- OAK TREES ----
+  // ---- OAK TREES ---- (collider fitted to the trunk + roots at the base, not the canopy)
   for(let i=0;i<22;i++){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
     worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
-    addCollider(p.x-9,p.y+14,18,18);
+    addCollider(p.x-7,p.y+19,14,13);
   }
 
   // ---- PINE TREES ----
@@ -1455,16 +1534,16 @@ function buildWorld(){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,80,taken,45);
     taken.push(p);
     worldObjects.push({kind:'pine',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+14,8,12);
+    addCollider(p.x-4,p.y+15,8,10);
   }
 
-  // ---- ROCKS ----
+  // ---- ROCKS ---- (only big rocks block; collider hugs the rock's ground footprint)
   for(let i=0;i<18;i++){
     const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
     const big=Math.random()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13,p.y-2,26,16);
+    if(big) addCollider(p.x-12,p.y+2,24,12);
   }
 
   // ---- ROCK CLUSTERS ----
@@ -1472,7 +1551,7 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26,p.y-4,50,18);
+    addCollider(p.x-24,p.y-2,48,16);
   }
 
   // ---- TALL GRASS patches (no collider) ----
@@ -1491,13 +1570,16 @@ function buildWorld(){
     taken.push(p);
     const variant=Math.floor(Math.random()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
-    addCollider(p.x-13,p.y+2,26,16);
+    addCollider(p.x-12,p.y+3,24,13);
   }
 
-  // ---- FLOWERS (no collider) ----
+  // ---- FLOWERS (no collider, kept on dry land) ----
   const flowerHues=['#FF8FA3','#FFD93D','#C9A6FF','#FFB199','#FF6B81','#A8E6CF'];
   for(let i=0;i<100;i++){
-    worldObjects.push({kind:'flower',x:rand(30,WORLD_W-30),y:rand(30,WORLD_H-30),
+    let fx,fy;
+    for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!inWater(fx,fy,4)) break; }
+    if(inWater(fx,fy,4)) continue;   // no dry spot found this try — skip rather than float on water
+    worldObjects.push({kind:'flower',x:fx,y:fy,
       hue:flowerHues[Math.floor(Math.random()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
   }
 
@@ -1506,7 +1588,7 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,100,taken,50);
     taken.push(p);
     worldObjects.push({kind:'willow',x:p.x,y:p.y});
-    addCollider(p.x-9,p.y+16,18,18);
+    addCollider(p.x-8,p.y+19,16,15);
   }
 
   // ---- MUSHROOMS ----
@@ -1524,6 +1606,40 @@ function buildWorld(){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
     worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
+  }
+
+  // ---- CATTAILS / REEDS along the pond shores (no collider) ----
+  worldObjects.filter(o=>o.kind==='pond').forEach(pond=>{
+    const n=Math.floor(rand(3,6));
+    for(let k=0;k<n;k++){
+      const ang=rand(0,Math.PI*2);
+      worldObjects.push({kind:'cattail', seed:Math.random()*100,
+        x:pond.x+Math.cos(ang)*(pond.w/2+rand(2,10)),
+        y:pond.y+Math.sin(ang)*(pond.h/2+rand(2,10))});
+    }
+  });
+
+  // ---- FALLEN LOGS (solid) ----
+  for(let i=0;i<5;i++){
+    const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,40);
+    taken.push(p);
+    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:Math.random()*100});
+    addCollider(p.x-16,p.y-1,32,9);
+  }
+
+  // ---- TREE STUMPS (solid) ----
+  for(let i=0;i<5;i++){
+    const p=safePt(70,70,WORLD_W-70,WORLD_H-70,80,taken,35);
+    taken.push(p);
+    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:Math.random()*100});
+    addCollider(p.x-8,p.y-1,16,10);
+  }
+
+  // ---- BUTTERFLIES (animated ambient life, no collider) ----
+  const bflyHues=['#FFFFFF','#FFD93D','#FF9E6E','#8FD4E8','#C9A6FF','#FF8FB0'];
+  for(let i=0;i<14;i++){
+    worldObjects.push({kind:'butterfly', x:rand(60,WORLD_W-60), y:rand(60,WORLD_H-60),
+      hue:bflyHues[Math.floor(Math.random()*bflyHues.length)], seed:Math.random()*1000});
   }
 
   // ---- STONE PATHS ----
@@ -1625,6 +1741,19 @@ function inRiver(x,y,margin=0){
   return Math.abs(y-riverY(x)) < riverWidthAt(x)/2+margin;
 }
 
+// True if an elliptical water body (centre cx,cy, size w×h) stays `margin` clear of the
+// river across its whole horizontal span. Checking only the centre misses the case where
+// the meandering river bulges toward a wide pond's edge, so we sample across the width.
+function ellipseClearOfRiver(cx,cy,w,h,margin=20){
+  if(!river) return true;
+  const steps=8;
+  for(let i=0;i<=steps;i++){
+    const sx=cx-w/2 + w*(i/steps);
+    if(Math.abs(cy-riverY(sx)) < riverWidthAt(sx)/2 + h/2 + margin) return false;
+  }
+  return true;
+}
+
 function isOnSpecificBridge(o,px,py){
   if(o.kind==='riverbridge'){
     const span=o.span||30, road=9; // span covers the full river crossing; road is the walkway width
@@ -1656,6 +1785,28 @@ function isInPond(px,py,wasSwimming){
   if(isOnWalkableBridge(px,py)) return false; // pond bridge deck — never swimming
   if(onRiverBridge(px,py) && !wasSwimming) return false; // stepping onto bridge from dry land
   return true; // open water, or already swimming and passing underneath a river bridge
+}
+
+// Pure "is this point in water" test (river OR any pond/lake), ignoring bridges. Used for
+// placement: keep land plants, NPCs and quest animals out of the water.
+function isWater(x,y,margin=0){
+  if(inRiver(x,y,margin)) return true;
+  return worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
+    ((x-o.x)/(o.w/2+margin))**2+((y-o.y)/(o.h/2+margin))**2<1);
+}
+
+// Move an object (with .x/.y) to the nearest dry land if it spawned in water. Keeps
+// merchants and quest animals off the water; searches outward in rings for a dry spot.
+function nudgeOutOfWater(obj, margin=10){
+  if(!obj || !isWater(obj.x,obj.y,margin)) return;
+  for(let r=24; r<=560; r+=24){
+    for(let a=0;a<16;a++){
+      const ang=a/16*Math.PI*2;
+      const nx=clamp(obj.x+Math.cos(ang)*r, 30, WORLD_W-30);
+      const ny=clamp(obj.y+Math.sin(ang)*r, 30, WORLD_H-30);
+      if(!isWater(nx,ny,margin)){ obj.x=nx; obj.y=ny; return; }
+    }
+  }
 }
 
 function makePlayer(id,color,x,y,breed='husky',markings='classic'){
@@ -1707,7 +1858,7 @@ Levels.register({
   seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
   size: { w: 1920, h: 1280 },
   spawn: { x: 200, y: 200 },   // where the dogs start on this level
-  next: 'rocky',               // clearing the meadow leads up into the mountains
+  next: 'meadow-2',            // on through the Sunny Meadows learning biome
 
   // Visual palette — moved out of world-draw.js so different levels look different.
   theme: {
@@ -1724,33 +1875,193 @@ Levels.register({
     collectibles = makeCollectibles();
     friends = makeFriends();
 
-    // Dynamic entities (registry-driven). Placed on open ground near the map centre.
+    // The very first level is pure basics — just wander, collect treats, and cheer up
+    // friends. No merchants and no enemies yet; those are introduced in later levels
+    // (shops in Wildflower Field, a first gentle enemy in Old Orchard Path).
     Entities.clear();
-    Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.30,
-      name: 'Marla the Merchant',
-      greeting: "Welcome, pup! Fresh biscuits to keep your tail wagging.",
-      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
-    });
-    // Fenwick the Tailor — sells wearables (head/face/neck/body/back) for testing the
-    // equip + on-dog-render feature. Warm-toned merchant near the centre-west.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.36, y: WORLD_H*0.42,
-      name: 'Fenwick the Tailor',
-      greeting: "Ah, a pup with style! Try something on — it'll look grand on you.",
-      look: 'tailor',
-      wares: [
-        {id:'tophat',  cost:8},  {id:'ballcap', cost:6}, {id:'shades', cost:7},
-        {id:'scarf',   cost:6},  {id:'raincoat',cost:9}, {id:'cape',   cost:10},
-      ],
-    });
-    Entities.spawn('enemy', { x: WORLD_W*0.32, y: WORLD_H*0.72, speed: 0.9 });
   },
 
   // Completion condition (the "quest"). checkWin() consults this.
   quest: {
     id: 'cheer-all',
     label: 'Cheer up every lonely friend',
+    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
+  },
+});
+
+// ===== src/levels/meadow2.js =====
+// ====================== LEVEL: WILDFLOWER FIELD (Sunny Meadows 2) ======================
+// The second step of the friendly Sunny Meadows biome — a bright, safe flower field with
+// NO enemies. Its teaching job is the gentle stuff: keep practising collect→deliver, and
+// meet the FRIENDLY WILDLIFE for the first time (ducks on the ponds, squirrels in the
+// grass) so the player learns the positive "greet" interaction before it matters in the
+// mountains. Reuses the meadow terrain generator (buildWorld) and carpets it in flowers.
+
+Levels.register({
+  id: 'meadow-2',
+  name: 'Wildflower Field',
+  seed: 13579,
+  size: { w: 1600, h: 1120 },        // cozy and easy to explore
+  spawn: { x: 200, y: 200 },
+  next: 'meadow-3',
+
+  // Bright spring palette.
+  theme: {
+    grass:'#A6DE86', grassDark:'#96D573', grassLight:'#BCEA98',
+    dirt:'rgba(210,160,120,0.14)',
+    fenceA:'#9A7048', fenceB:'#B0824E', rail:'#D4A45E',
+    minimapGrass:'#5AAA46', minimapWater:'#4AACDC',
+  },
+
+  generate(){
+    buildWorld();
+    // Carpet the field in extra wildflowers — this is the wildflower field, after all.
+    const hues=['#FF8FA3','#FFD93D','#C9A6FF','#FFB199','#FF6B81','#A8E6CF','#FF9EC0','#B6E36A','#FFE066'];
+    for(let i=0;i<130;i++){
+      let fx,fy;
+      for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!isWater(fx,fy,4)) break; }
+      if(isWater(fx,fy,4)) continue;   // keep wildflowers on dry land
+      worldObjects.push({kind:'flower', x:fx, y:fy,
+        hue:hues[Math.floor(Math.random()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
+    }
+    worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+
+    collectibles = makeCollectibles();
+
+    // Just three friends, each needing only a couple of treats — an easy, encouraging clear.
+    friends = [
+      {name:'Sunny the Cat',  x:WORLD_W*0.24, y:WORLD_H*0.30, need:2,given:0,cheered:false,kind:'cat',   msg:"Ooh, are those treats for me?"},
+      {name:'Hoppy Bunny',    x:WORLD_W*0.78, y:WORLD_H*0.34, need:2,given:0,cheered:false,kind:'bunny', msg:"I'd love a snack, thank you!"},
+      {name:'Chirpy Bird',    x:WORLD_W*0.5,  y:WORLD_H*0.74, need:3,given:0,cheered:false,kind:'bird',  msg:"Tweet! Any treats to share?"},
+    ];
+
+    Entities.clear();
+    // A friendly merchant to reinforce the shop.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.5, y: WORLD_H*0.30,
+      name: 'Marla the Merchant',
+      greeting: "Lovely day for a stroll! Fresh biscuits and ribbons here.",
+      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
+    });
+
+    // A quest-giver (yellow "!"): bring her some bones and she rewards you with treats.
+    // This is the first of a growing set of quest types — see src/quests.js.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.30, y: WORLD_H*0.40,
+      name: 'Nella the Nurse',
+      look: 'tailor',
+      greeting: "Hello, dear pup!",
+      quest: {
+        id: 'nella-bones', type: 'give', give: { item:'bone', count:3 },
+        offer:    "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?",
+        ready:    "Three whole bones? You're a darling — may I take them?",
+        progress: "Still hunting for bones? I need 3 in all. Thank you, pup!",
+        done:     "Bless you! The pups are chewing away happily now. 💛",
+        reward:   { treats: 6 },
+      },
+    });
+
+    // Friendly wildlife — walk up and press the action key to greet them. No enemies here.
+    const ponds = worldObjects.filter(o=>o.kind==='pond');
+    if(ponds[0]) Entities.spawn('critter', { species:'duck', x:ponds[0].x, y:ponds[0].y });
+    if(ponds[1]) Entities.spawn('critter', { species:'duck', x:ponds[1].x, y:ponds[1].y });
+    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.68, y:WORLD_H*0.62 });
+    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.30, y:WORLD_H*0.58 });
+  },
+
+  quest: {
+    id: 'cheer-all-meadow2',
+    label: 'Cheer up every friend in the field',
+    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
+  },
+});
+
+// ===== src/levels/meadow3.js =====
+// ====================== LEVEL: OLD ORCHARD PATH (Sunny Meadows 3) ======================
+// The last friendly step before the mountains. Still cozy, but it eases the player toward
+// the tougher biome ahead: reinforces the shop + wearables (both merchants are here), a
+// single SLOW badger reminds them enemies exist and hearts matter, and the meadow's ponds
+// + bridges give a low-stakes place to practise crossing water. Reuses the meadow terrain
+// generator (buildWorld) and plants extra oak "orchard" clusters over it.
+
+// Keep augment-planted oaks out of the water (buildWorld's own placement already does this
+// for its objects; ours needs the same guard).
+function _orchardClearOfWater(x, y, m){
+  if(typeof inRiver==='function' && inRiver(x, y, m)) return false;
+  return !worldObjects.some(o => o.kind==='pond' &&
+    ((x-o.x)/(o.w/2+m))**2 + ((y-o.y)/(o.h/2+m))**2 < 1);
+}
+
+Levels.register({
+  id: 'meadow-3',
+  name: 'Old Orchard Path',
+  seed: 20241,
+  size: { w: 1760, h: 1200 },
+  spawn: { x: 200, y: 200 },
+  next: 'rocky',                      // the trail out of the meadows climbs into the mountains
+
+  // Warmer, late-summer palette.
+  theme: {
+    grass:'#9CCB6E', grassDark:'#8ABF5C', grassLight:'#B0D982',
+    dirt:'rgba(196,150,96,0.18)',
+    fenceA:'#7E5632', fenceB:'#946439', rail:'#BE8C48',
+    minimapGrass:'#4E9838', minimapWater:'#4AACDC',
+  },
+
+  generate(){
+    buildWorld();
+    // Orchard clusters — extra oaks (with a toadstool or two at the base) dotted around.
+    for(let i=0;i<10;i++){
+      let x, y, ok=false;
+      for(let a=0;a<30 && !ok; a++){
+        x=rand(90,WORLD_W-90); y=rand(90,WORLD_H-90);
+        ok=_orchardClearOfWater(x,y,40);
+      }
+      worldObjects.push({kind:'oak', x, y, variant:Math.floor(Math.random()*3)});
+      addCollider(x-7, y+19, 14, 13);
+      if(Math.random()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:Math.random()<0.3});
+    }
+    worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+
+    collectibles = makeCollectibles();
+
+    // Four friends needing three treats each — a small step up from the field.
+    friends = [
+      {name:'Prickle the Hedgehog', x:WORLD_W*0.22, y:WORLD_H*0.28, need:3,given:0,cheered:false,kind:'hedgehog', msg:"Oh! You startled me... got a treat?"},
+      {name:'Shelly the Tortoise',  x:WORLD_W*0.80, y:WORLD_H*0.30, need:3,given:0,cheered:false,kind:'tortoise', msg:"Slow day in the orchard, isn't it?"},
+      {name:'Clover Bunny',         x:WORLD_W*0.28, y:WORLD_H*0.78, need:3,given:0,cheered:false,kind:'bunny',    msg:"These apples aren't ripe yet..."},
+      {name:'Robin the Bird',       x:WORLD_W*0.76, y:WORLD_H*0.76, need:3,given:0,cheered:false,kind:'bird',     msg:"Chirp! My nest could use some cheer."},
+    ];
+
+    Entities.clear();
+    // Both merchants — reinforce buying treats/consumables and trying on wearables.
+    Entities.spawn('npc', {
+      x: WORLD_W*0.5, y: WORLD_H*0.28,
+      name: 'Marla the Merchant',
+      greeting: "Stock up before the trail, pup — biscuits keep your hearts full!",
+      wares: [ {id:'biscuit', cost:3}, {id:'trailmix', cost:4}, {id:'ribbon', cost:5} ],
+    });
+    Entities.spawn('npc', {
+      x: WORLD_W*0.62, y: WORLD_H*0.5,
+      name: 'Fenwick the Tailor',
+      look: 'tailor',
+      greeting: "Heading for the mountains? Let's find you something warm to wear!",
+      wares: [
+        {id:'ballcap', cost:6}, {id:'scarf', cost:6}, {id:'shades', cost:7},
+        {id:'raincoat',cost:9}, {id:'cape',  cost:10},
+      ],
+    });
+    // One slow, easy badger — a gentle reminder that enemies (and hearts) exist.
+    Entities.spawn('enemy', { x: WORLD_W*0.5, y: WORLD_H*0.6, speed:0.8, chaseR:90 });
+    // A friendly squirrel keeps the orchard cheerful.
+    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.4, y:WORLD_H*0.4 });
+  },
+
+  quest: {
+    id: 'cheer-all-meadow3',
+    label: 'Cheer up every friend in the orchard',
     describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
     isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
   },
@@ -1786,11 +2097,13 @@ function buildRockyWorld(){
   // ---- Glacial lakes (big turquoise water bodies). Placed before everything else so
   //      other objects steer around them; swimmable (isInPond treats 'lake' like 'pond'). ----
   const lakes=[
-    { x:W*0.50, y:H*0.37, w:390, h:250 },   // hero lake below the central peaks
-    { x:W*0.23, y:H*0.52, w:300, h:210 },   // west lake
-    { x:W*0.79, y:H*0.45, w:280, h:190 },   // east lake
+    { x:W*0.50, y:H*0.34, w:390, h:250 },   // hero lake below the central peaks
+    { x:W*0.22, y:H*0.46, w:300, h:210 },   // west lake
+    { x:W*0.79, y:H*0.42, w:280, h:190 },   // east lake
   ];
-  lakes.forEach((l,i)=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
+  // Keep every lake fully clear of the river — nudge it up the valley if it would cross.
+  lakes.forEach(l=>{ let guard=0; while(!ellipseClearOfRiver(l.x,l.y,l.w,l.h,26) && guard++<50) l.y-=12; });
+  lakes.forEach(l=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
     seed:Math.random()*100, blobSeed:Math.floor(Math.random()*9999)}));
   function inLake(x,y,m){ return lakes.some(l=>((x-l.x)/(l.w/2+m))**2+((y-l.y)/(l.h/2+m))**2<1); }
 
@@ -1819,7 +2132,8 @@ function buildRockyWorld(){
     const mh=rand(150,188);          // apex = baseY - mh stays a little below the top edge
     const mw=rand(360,500);
     worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(Math.random()*9999)});
-    addCollider(mx-18,baseY-6,36,14);
+    // Solid across most of the base so you can't walk into the massif (matches the rock).
+    addCollider(mx-mw*0.4, baseY-4, mw*0.8, 16);
   }
 
   // ---- Waterfalls tumbling into the lakes they sit above ----
@@ -1831,28 +2145,28 @@ function buildRockyWorld(){
     const p=pt(60,240,W-60,H-60,120,taken,50); taken.push(p);
     const big=Math.random()<0.6;
     worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
-    addCollider(p.x-(big?16:11), p.y-2, big?32:22, big?16:12);
+    addCollider(p.x-(big?16:11), p.y+(big?1:0), big?32:22, big?14:11);
   }
 
   // Rock clusters.
   for(let i=0;i<7;i++){
     const p=pt(80,240,W-80,H-80,120,taken,45); taken.push(p);
     worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
-    addCollider(p.x-26,p.y-4,50,18);
+    addCollider(p.x-24,p.y-2,48,16);
   }
 
   // Evergreen forest — lush green spruce/fir (a lot of them: it's a forested valley).
   for(let i=0;i<26;i++){
     const p=pt(50,240,W-50,H-50,80,taken,40); taken.push(p);
     worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+12,8,12);
+    addCollider(p.x-4,p.y+14,8,9);
   }
 
   // A few weathered deadfall trees.
   for(let i=0;i<5;i++){
     const p=pt(60,240,W-60,H-60,110,taken,42); taken.push(p);
     worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
-    addCollider(p.x-4,p.y+14,8,12);
+    addCollider(p.x-6,p.y+18,12,11);
   }
 
   // Loose rocks (mostly walkable; big ones block).
@@ -1860,25 +2174,30 @@ function buildRockyWorld(){
     const p=pt(60,240,W-60,H-60,60,taken,35); taken.push(p);
     const big=Math.random()<0.25;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
-    if(big) addCollider(p.x-13,p.y-2,26,16);
+    if(big) addCollider(p.x-12,p.y+2,24,12);
   }
 
   // Hardy shrubs.
   for(let i=0;i<14;i++){
     const p=pt(60,240,W-60,H-60,80,taken,40); taken.push(p);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
-    addCollider(p.x-13,p.y+2,26,16);
+    addCollider(p.x-12,p.y+3,24,13);
   }
 
   // Wildflowers + grass tufts across the green valley floor (no colliders).
   const hues=['#FF9E6E','#FFD36A','#E58AC0','#B6E36A','#7FD4E0','#C79BFF'];
   for(let i=0;i<70;i++){
-    worldObjects.push({kind:'flower',x:rand(30,W-30),y:rand(220,H-30),
+    let fx,fy;
+    for(let a=0;a<20;a++){ fx=rand(30,W-30); fy=rand(220,H-30); if(!isWater(fx,fy,4)) break; }
+    if(isWater(fx,fy,4)) continue;   // alpine flowers stay on dry land
+    worldObjects.push({kind:'flower',x:fx,y:fy,
       hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
   }
   for(let i=0;i<22;i++){
-    worldObjects.push({kind:'tallgrass',x:rand(40,W-40),y:rand(220,H-40),
-      blades:Math.floor(rand(4,9)),seed:Math.random()*100});
+    let gx,gy;
+    for(let a=0;a<20;a++){ gx=rand(40,W-40); gy=rand(220,H-40); if(!isWater(gx,gy,4)) break; }
+    if(isWater(gx,gy,4)) continue;
+    worldObjects.push({kind:'tallgrass',x:gx,y:gy,blades:Math.floor(rand(4,9)),seed:Math.random()*100});
   }
 
   // Cozy lakeside campfires — warm landmarks.
@@ -2291,6 +2610,103 @@ function drawMushroomRing(x,y,seed){
   });
 }
 
+// ---- meadow ambient life & props (Sunny Meadows biome) ----
+function drawCattail(x,y,seed,t){
+  const r=mulberry32(Math.floor(seed*61)+1);
+  const n=3+Math.floor(r()*3);
+  for(let i=0;i<n;i++){
+    const bx=x+(r()-0.5)*11, by=y+(r()-0.5)*4;
+    const h=16+r()*10, sway=Math.sin(t/600+bx*0.1+seed)*2;
+    px(bx-3+sway*0.6, by-h*0.7, 2, 8, '#4E8A3A');       // leaf blade
+    px(bx+sway,   by-h, 2, h, '#4E8A3A');                // stalk
+    px(bx+sway+1, by-h, 1, Math.floor(h*0.6), '#5FA048');
+    px(bx-1+sway, by-h+3, 4, 8, '#7A4A26');              // brown cattail head
+    px(bx+sway,   by-h+4, 2, 6, '#93602F');
+  }
+}
+
+function drawLog(x,y,seed){
+  const r=mulberry32(Math.floor(seed*47)+1);
+  ctx.globalAlpha=0.2; px(x-16,y+6,32,4,'#2A2018'); ctx.globalAlpha=1;
+  px(x-16,y-4,32,10,'#6B4A2E');                          // bark body
+  px(x-16,y-4,32,3,'#7C5636');                           // top-lit
+  px(x-16,y+4,32,2,'#4E3420');                           // underside shade
+  ctx.globalAlpha=0.3; for(let i=-12;i<12;i+=6) px(x+i,y-2,1,7,'#3E2A18'); ctx.globalAlpha=1;
+  px(x-18,y-4,3,10,'#8A6242');                           // shaded cut end
+  px(x+15,y-4,3,10,'#C79B6A');                           // lit cut end + rings
+  px(x+16,y-2,1,6,'#8A6242'); px(x+16,y-1,1,4,'#A87C4E');
+  if(r()<0.8){ px(x-6,y-5,6,2,'#6A9A4A'); px(x+2,y-5,4,2,'#5A8A3A'); } // moss
+}
+
+function drawStump(x,y){
+  ctx.globalAlpha=0.2; px(x-8,y+5,16,4,'#2A2018'); ctx.globalAlpha=1;
+  px(x-8,y-2,16,9,'#6B4A2E'); px(x-8,y+5,16,2,'#4E3420');
+  px(x-8,y-2,3,9,'#7C5636'); px(x+5,y-2,3,9,'#523620');
+  ctx.globalAlpha=0.3; px(x-3,y-1,1,7,'#3E2A18'); px(x+1,y-1,1,7,'#3E2A18'); ctx.globalAlpha=1;
+  px(x-8,y-5,16,4,'#A87C4E'); px(x-6,y-4,12,2,'#C79B6A');    // top cut
+  ctx.strokeStyle='#8A6242'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.ellipse(x,y-3,4,1.6,0,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(x,y-3,2,0.9,0,0,Math.PI*2); ctx.stroke();
+  px(x+4,y-6,1,3,'#5FA048'); px(x-5,y-6,1,3,'#5FA048');      // grass sprouts
+}
+
+function drawButterfly(x,y,hue,seed,t){
+  // loops gently around its home point; wings pulse with the beat
+  const ph=seed;
+  const fx=x+Math.sin(t/900+ph)*18+Math.cos(t/430+ph)*6;
+  const fy=y+Math.cos(t/760+ph)*12+Math.sin(t/380+ph)*5;
+  const ww=2+Math.abs(Math.sin(t/70+ph))*3, dark=shade(hue,-45);
+  ctx.globalAlpha=0.12; ctx.beginPath(); ctx.ellipse(x,y+2,4,1.5,0,0,Math.PI*2); ctx.fillStyle='#2A3A2A'; ctx.fill(); ctx.globalAlpha=1;
+  const bx=Math.round(fx), by=Math.round(fy);
+  px(bx,by-3,1,6,dark);                                  // body
+  ctx.fillStyle=hue;                                     // wings
+  ctx.fillRect(Math.round(bx-1-ww),by-3,Math.round(ww),3);
+  ctx.fillRect(bx+1,by-3,Math.round(ww),3);
+  ctx.fillRect(Math.round(bx-1-ww*0.8),by,Math.round(ww*0.8),3);
+  ctx.fillRect(bx+1,by,Math.round(ww*0.8),3);
+  ctx.fillStyle=dark;
+  ctx.fillRect(Math.round(bx-1-ww),by-3,1,6); ctx.fillRect(Math.round(bx+ww),by-3,1,6);
+  px(bx-1,by-4,1,1,dark); px(bx+1,by-4,1,1,dark);        // antennae
+}
+
+// Expanding ripple ring drawn under a floating (aquatic) entity like a duck or loon —
+// they sit naturally on the surface, so they just need a light wake, not submersion.
+function drawWaterRipple(x,y,t){
+  ctx.save();
+  ctx.strokeStyle='#E8FBFF'; ctx.lineWidth=1;
+  const p=(t/600+x*0.01)%1;
+  ctx.globalAlpha=(1-p)*0.55; ctx.beginPath(); ctx.ellipse(x,y+7,7+p*7,3+p*3,0,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha=0.28;       ctx.beginPath(); ctx.ellipse(x,y+8,11,4,0,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+// Full "swimming" treatment for a land creature that's entered the water — same look as
+// the dog: the lower body is clipped away below a waterline, and a water disc + expanding
+// ripples sit over it. `drawFn` paints the creature's normal sprite at (x,y).
+function drawSwimming(x,y,t,drawFn){
+  const wl=Math.round(y)+3;                        // waterline across the body
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x-34, y-46, 68, wl-(y-46)); ctx.clip();   // keep only above the waterline
+  drawFn();
+  ctx.restore();
+  const sw=Math.sin(t/600+x*0.05)*3;
+  // water disc over the submerged lower body
+  ctx.globalAlpha=0.72;
+  ctx.beginPath(); ctx.ellipse(x+sw*0.3, wl, 15, 5.5, 0, 0, Math.PI*2);
+  const wg=ctx.createRadialGradient(x-4,wl-2,1,x,wl,15);
+  wg.addColorStop(0,'#9CE4FF'); wg.addColorStop(1,'#3AAACC');
+  ctx.fillStyle=wg; ctx.fill();
+  ctx.globalAlpha=1;
+  // animated expanding ripples
+  for(let i=0;i<3;i++){
+    const phase=((t/1000+i/3)%1), rs=1+phase*1.6;
+    ctx.globalAlpha=0.34*(1-phase);
+    ctx.beginPath(); ctx.ellipse(x+sw*0.3, wl, 15*rs, 5.5*rs, 0, 0, Math.PI*2);
+    ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
 function drawStonePath(x1,y1,x2,y2,seed){
   // draw a row of stone tiles between two points
   const rng=mulberry32(Math.floor(seed*31));
@@ -2683,30 +3099,49 @@ function drawLake(x,y,w,h,seed,t,blobSeed){
 }
 
 function drawWaterfall(x,y,t,h){
-  // A cascade tumbling down a rock cliff into a misty splash pool at (x,y). Reads as a
-  // waterfall feeding the lake it's placed against. Water streaks scroll downward.
-  h=h||100; const w=22;
-  // rock cliff flanks + dark chute behind the water
-  px(x-w/2-9,y-h,11,h,'#6E6A62'); px(x+w/2-2,y-h,11,h,'#615E57');
-  px(x-w/2-9,y-h,11,4,'#8C887F'); px(x+w/2-2,y-h,11,4,'#8C887F');
-  px(x-w/2,y-h,w,h,'#3E7C8C');
-  // falling water — animated scrolling streaks, clipped to the chute
+  // A realistic cascade: a stone cliff notch, a sheet of falling water with a vertical
+  // aqua→foam gradient and multiple strands scrolling at different speeds, spilling into a
+  // plunge pool with expanding ripple rings, rising mist and flicking spray at (x,y).
+  h=h||110; const w=26, L=x-w/2, R=x+w/2;
+  const rock='#6E6A62', rockD='#565249', rockL='#847F76';
+  // rock cliff flanks
+  px(L-12,y-h,12,h+6,rockD); px(L-12,y-h,12,4,rockL); px(L-10,y-h+9,4,h-12,rock);
+  px(R,   y-h,12,h+6,rockD); px(R,   y-h,12,4,rockL); px(R+6, y-h+9,4,h-12,rock);
+  // dark wet notch behind the water
+  px(L,y-h,w,h,'#274C55'); px(L,y-h,w,6,'#1E3A42');
+
+  // falling water sheet (clipped to the chute)
   ctx.save();
-  ctx.beginPath(); ctx.rect(x-w/2,y-h,w,h); ctx.clip();
-  const scroll=(t*0.4)%20;
-  for(let i=0;i<5;i++){
-    const sx=x-w/2+3+i*4;
-    ctx.strokeStyle=i%2?'#EAFBFF':'#C7EDF4'; ctx.lineWidth=2;
-    for(let yy=-20;yy<h;yy+=20){ const ya=y-h+((yy+scroll)%(h+20)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+11); ctx.stroke(); }
+  ctx.beginPath(); ctx.rect(L,y-h,w,h); ctx.clip();
+  const g=ctx.createLinearGradient(0,y-h,0,y);
+  g.addColorStop(0,'#BFEFF6'); g.addColorStop(0.5,'#9FE0EC'); g.addColorStop(0.85,'#E8FBFF'); g.addColorStop(1,'#FFFFFF');
+  ctx.fillStyle=g; ctx.fillRect(L+2,y-h+4,w-4,h);
+  for(let i=0;i<6;i++){                                  // strands at varied speeds
+    const sx=L+3+i*((w-6)/5), spd=0.3+(i%3)*0.12, scroll=(t*spd)%22;
+    ctx.strokeStyle=i%2?'rgba(255,255,255,0.9)':'rgba(198,236,244,0.8)'; ctx.lineWidth=2;
+    for(let yy=-22;yy<h;yy+=22){ const ya=y-h+((yy+scroll)%(h+22)); ctx.beginPath(); ctx.moveTo(sx,ya); ctx.lineTo(sx,ya+13); ctx.stroke(); }
   }
   ctx.restore();
-  // foam lip at the top
-  px(x-w/2-2,y-h-2,w+4,4,'#F2FCFF');
-  // splash pool + drifting mist
-  ctx.globalAlpha=0.92; ctx.fillStyle='#DFF6FB'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,7,0,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-  const m=Math.sin(t/220);
-  ctx.globalAlpha=0.38; ctx.fillStyle='#FFFFFF';
-  ctx.beginPath(); ctx.arc(x-6,y-2+m,5,0,Math.PI*2); ctx.arc(x+6,y-1-m,5,0,Math.PI*2); ctx.arc(x,y-4,4,0,Math.PI*2); ctx.fill();
+  // lip where the water rolls over
+  px(L-2,y-h-3,w+4,5,'#CFF3F8'); px(L,y-h-1,w,2,'#8FD8E4');
+
+  // plunge pool
+  ctx.fillStyle='#7FD0DC'; ctx.beginPath(); ctx.ellipse(x,y,w*0.95,8,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#B9EEF4'; ctx.beginPath(); ctx.ellipse(x,y-1,w*0.58,5,0,0,Math.PI*2); ctx.fill();
+  // expanding ripple rings
+  for(let i=0;i<3;i++){
+    const p=((t/700)+i/3)%1;
+    ctx.globalAlpha=(1-p)*0.5; ctx.strokeStyle='#EAFBFF'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(x,y+2,4+p*w*0.9,1.5+p*4,0,0,Math.PI*2); ctx.stroke();
+  }
+  // rising mist puffs
+  for(let i=0;i<4;i++){
+    const mp=((t/900)+i/4)%1, my=y-mp*24, mx=x+Math.sin((t/300)+i*1.7)*8;
+    ctx.globalAlpha=(1-mp)*0.4; ctx.fillStyle='#FFFFFF';
+    ctx.beginPath(); ctx.arc(mx,my,3+mp*3,0,Math.PI*2); ctx.fill();
+  }
+  // spray flicking off the base
+  for(let i=0;i<6;i++){ const a=(t/200+i*0.17)%1; if(a<0.5){ ctx.globalAlpha=(0.5-a)*1.5; ctx.fillStyle='#FFFFFF'; ctx.fillRect(Math.round(x+(i-3)*6),Math.round(y-a*11),2,2); } }
   ctx.globalAlpha=1;
 }
 
@@ -2731,6 +3166,10 @@ function drawWorld(t){
       case 'willow':      drawWillow(obj.x,obj.y,t); break;
       case 'mushroom':    drawMushroom(obj.x,obj.y,obj.big); break;
       case 'mushroomring':drawMushroomRing(obj.x,obj.y,obj.seed); break;
+      case 'cattail':     drawCattail(obj.x,obj.y,obj.seed,t); break;
+      case 'log':         drawLog(obj.x,obj.y,obj.seed); break;
+      case 'stump':       drawStump(obj.x,obj.y); break;
+      case 'butterfly':   drawButterfly(obj.x,obj.y,obj.hue,obj.seed,t); break;
       case 'stonepath':   drawStonePath(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
       case 'bridge':      drawBridge(obj.x,obj.y,obj.horizontal,t,'wood'); break;
       // --- rocky-mountain kinds (levels/rocky.js) ---
@@ -3146,22 +3585,25 @@ Entities.register('enemy', {
   },
 
   update(e, t, dt){
+    // Slow to a swim in water, just like the dogs.
+    const swim = (typeof isInPond==='function' && isInPond(e.x,e.y,e.swimming)) ? 0.5 : 1;
+    e.swimming = swim<1;
     const target=_nearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
     if(target && dist<e.chaseR){
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*1.4;
-      e.y+=Math.sin(ang)*e.speed*1.4;
+      e.x+=Math.cos(ang)*e.speed*1.4*swim;
+      e.y+=Math.sin(ang)*e.speed*1.4*swim;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
-      e.x+=Math.cos(e.wanderAng)*e.speed;
-      e.y+=Math.sin(e.wanderAng)*e.speed;
+      e.x+=Math.cos(e.wanderAng)*e.speed*swim;
+      e.y+=Math.sin(e.wanderAng)*e.speed*swim;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3235,6 +3677,9 @@ Entities.register('wolf', {
   },
 
   update(e, t, dt){
+    // Slow to a swim in water, just like the dogs.
+    const swim = (typeof isInPond==='function' && isInPond(e.x,e.y,e.swimming)) ? 0.5 : 1;
+    e.swimming = swim<1;
     const target=_wolfNearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
@@ -3243,16 +3688,16 @@ Entities.register('wolf', {
       if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*burst;
-      e.y+=Math.sin(ang)*e.speed*burst;
+      e.x+=Math.cos(ang)*e.speed*burst*swim;
+      e.y+=Math.sin(ang)*e.speed*burst*swim;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*0.8;
-      e.y+=Math.sin(e.wanderAng)*e.speed*0.8;
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim;
+      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3348,10 +3793,18 @@ const CRITTERS = {
             greet:'The busy beaver waves a friendly flat-tailed hello!',
             lines:['The beaver proudly shows off its big front teeth.',
                    'The beaver nudges a little twig over to you.'] },
-  loon:   { name:'Loon',   icon:'🐦', gift:2, roam:48, speed:0.28,
+  loon:   { name:'Loon',   icon:'🐦', gift:2, roam:48, speed:0.28, aquatic:true,
             greet:'The loon lifts its head and sings a beautiful call!',
             lines:['The loon warbles a cheerful, echoing tune.',
                    'The loon drifts calmly at your side.'] },
+  duck:   { name:'Duck',   icon:'🦆', gift:2, roam:40, speed:0.3, aquatic:true,
+            greet:'The duck paddles right over with a happy quack!',
+            lines:['The duck bobs its head and quacks softly.',
+                   'The duck preens its glossy feathers, content.'] },
+  squirrel:{name:'Squirrel',icon:'🐿️', gift:2, roam:66, speed:0.5,
+            greet:'The squirrel scampers up and offers you an acorn!',
+            lines:['The squirrel flicks its big bushy tail at you.',
+                   'The squirrel chatters brightly from a low branch.'] },
 };
 
 Entities.register('critter', {
@@ -3364,14 +3817,21 @@ Entities.register('critter', {
     e.roam  = e.roam  || d.roam  || 60;
     e.homeX = (typeof e.homeX==='number') ? e.homeX : e.x;
     e.homeY = (typeof e.homeY==='number') ? e.homeY : e.y;
+    e.aquatic = !!d.aquatic;    // ducks/loons float on the surface; land critters submerge
     e.dir = 1; e.wanderT = 0; e.wanderAng = 0; e.cool = 0; e.greeted = !!e.greeted; e.bob = 0;
   },
 
   // Gentle wander around home — never chases, never leaves its patch.
   update(e, t, dt){
+    // Land critters slow to a swim in water; water birds (aquatic) glide freely. Either
+    // way, being on water flags a ripple in the draw pass.
+    const d=CRITTERS[e.species]||{};
+    const inW = (typeof isInPond==='function' && isInPond(e.x,e.y,e.swimming));
+    const swim = (inW && !d.aquatic) ? 0.5 : 1;
+    e.swimming = inW;
     e.wanderT -= dt;
     if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
-    const nx=e.x+Math.cos(e.wanderAng)*e.speed, ny=e.y+Math.sin(e.wanderAng)*e.speed;
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim;
     if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
     else { e.wanderT=0; }                       // turned back at the edge of its range
     e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);
@@ -3423,6 +3883,28 @@ Entities.register('critter', {
       px(hx+D*5,y-13,4,2,'#2A2E34');
       px(hx+(D>0?1:-1),y-12,1,1,red);
       px(hx-3,y-6,6,2,wht);
+    } else if(e.species==='duck'){
+      const body='#8A6A46', head='#2E6B44', wing='#6E5236', bill='#E8A23C', wht='#EDE6D6';
+      // rounded floating body + pale underside + wing + tail tuft
+      px(x-9,y-3,18,10,body); px(x-7,y+1,14,6,wht); px(x-2,y-2,8,6,wing); px(x-11,y-4,4,4,body);
+      // neck + glossy green head + white ring + bill + eye
+      const hx=x+D*8;
+      px(hx-3,y-11,6,9,head); px(hx+D*2,y-12,5,5,head); px(hx-3,y-6,6,2,wht);
+      px(hx+D*5,y-10,4,3,bill);
+      px(hx+(D>0?1:-1),y-10,1,1,'#141414');
+    } else if(e.species==='squirrel'){
+      const B='#A85A2E', BD='#8A4520', BL='#C87A44', wht='#F0DDC0', acorn='#7A5230';
+      // big bushy curled tail behind
+      px(x-D*8-2,y-11,6,16,BD); px(x-D*10,y-13,5,10,B); px(x-D*9,y-4,4,8,BL);
+      // upright body + pale belly
+      px(x-6,y-6,12,14,B); px(x-4,y+0,8,9,wht);
+      // head + ears + eye + nose
+      const hx=x+D*3;
+      px(hx-5,y-14,10,9,B);
+      px(hx-5,y-17,3,4,BD); px(hx+3,y-17,3,4,BD);
+      px(hx+(D>0?2:-2),y-11,2,2,'#141414'); px(hx+(D>0?4:-4),y-9,2,2,'#3A2A1A');
+      // little paws holding an acorn
+      px(x-2,y-2,4,5,BL); px(x-1,y+1,3,3,acorn);
     }
 
     // floating mood: a heart once befriended, a chat bubble before
@@ -3461,6 +3943,7 @@ Entities.register('npc', {
   init(e){
     e.name     = e.name     || 'Wanderer';
     e.greeting = e.greeting || 'Hello there, friend!';
+    if(e.quest && !e.quest.state) e.quest.state = 'available';   // quest-givers start offering
     e.bob      = 0;
   },
 
@@ -3504,12 +3987,30 @@ Entities.register('npc', {
       px(x-6,y+6,12,2,'#3A5468');     // parka belt
     }
 
-    // floating "!" prompt bubble
+    // floating interaction prompt above the head. Quest-givers get a glowing yellow "!"
+    // when there's a task to take or hand in, a grey "?" while it's in progress; plain
+    // shopkeepers keep the cream "!" talk prompt.
     const by=y-30+Math.sin(t/220)*3;
-    ctx.fillStyle='#FFF8EF'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
-    roundRect(x-8,by-9,16,16,4,true,true);
-    ctx.fillStyle='#4A3F35'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
-    ctx.fillText('!', x, by+3);
+    const ind=(typeof Quests!=='undefined' && Quests.indicator) ? Quests.indicator(e) : null;
+    ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    if(ind==='available' || ind==='ready'){
+      const glow=0.55+Math.sin(t/200)*0.3;
+      ctx.globalAlpha=0.35*glow; ctx.beginPath(); ctx.arc(x,by,12,0,Math.PI*2); ctx.fillStyle='#FFD23D'; ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#FFD23D'; ctx.strokeStyle='#7A5A10'; ctx.lineWidth=1.5;
+      roundRect(x-7,by-10,14,19,4,true,true);
+      ctx.fillStyle='#5A3F0A'; ctx.font='bold 15px monospace'; ctx.fillText('!', x, by+5);
+    } else if(ind==='active'){
+      ctx.fillStyle='#EAE6DE'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
+      roundRect(x-7,by-9,14,17,4,true,true);
+      ctx.fillStyle='#6A6055'; ctx.font='bold 12px monospace'; ctx.fillText('?', x, by+3);
+    } else {
+      ctx.fillStyle='#FFF8EF'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
+      roundRect(x-8,by-9,16,16,4,true,true);
+      ctx.fillStyle='#4A3F35'; ctx.font='bold 12px monospace'; ctx.fillText('!', x, by+3);
+    }
+    ctx.restore();
   },
 
   onInteract(e, p){
@@ -4302,6 +4803,13 @@ const LevelManager = {
     if(typeof level.seed === 'number') RNG.reseed(level.seed);
     level.generate();
 
+    // Keep quest animals (friends) and merchants (NPC entities) out of the water — their
+    // spawn points are fixed, so a procedurally-placed pond/lake can land on one.
+    if(typeof nudgeOutOfWater==='function'){
+      if(typeof friends!=='undefined' && friends) friends.forEach(f=>nudgeOutOfWater(f));
+      if(typeof entities!=='undefined' && entities) entities.forEach(e=>{ if(e.kind==='npc') nudgeOutOfWater(e); });
+    }
+
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
 
@@ -4901,13 +5409,37 @@ const UI = {
     this.updateHUD();
   },
 
-  // ---------- dialog / shop ----------
+  // ---------- dialog / shop / quest ----------
   openDialog(npc, player){
     this.closeInventory();            // dialog is blocking; don't stack it over inventory
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
-    this.renderDialog(npc.greeting);
+    const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
+    if(q && hasQuests && Quests.stateOf(q)!=='done') this.renderQuest();           // offer / progress / turn-in
+    else this.renderDialog(q && q.done ? q.done : npc.greeting);                   // finished quest → thanks; else shop/talk
     this._show('dialogScreen', true);
+  },
+
+  // Quest dialog: offer it, report progress, or take the hand-in — driven by quest state.
+  renderQuest(){
+    const d=this._dialog; if(!d || !d.npc.quest) return;
+    const npc=d.npc, p=d.player, q=npc.quest;
+    this.$('dialogName').textContent=npc.name;
+    const choices=this.$('dialogChoices'); choices.innerHTML='';
+    const add=(label,fn)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; b.addEventListener('click',fn); choices.appendChild(b); };
+    const st=Quests.stateOf(q);
+    if(st==='available'){
+      this.$('dialogText').textContent = q.offer || `Could you help me? I need ${Quests.summary(q)}.`;
+      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); });
+      add(`🐾 Maybe later`, ()=>this.closePanel());
+    } else if(Quests.canComplete(q, p)){
+      this.$('dialogText').textContent = q.ready || `You've got ${Quests.summary(q)} — hand them over?`;
+      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); });
+      add(`🐾 Not yet`, ()=>this.closePanel());
+    } else {
+      this.$('dialogText').textContent = Quests.progressText(q, p);
+      add(`👍 Okay`, ()=>this.closePanel());
+    }
   },
 
   renderDialog(text){
@@ -4918,8 +5450,9 @@ const UI = {
     choices.innerHTML='';
 
     // Shop: buy items with treats as currency. Each NPC supplies its own `wares`
-    // (see level generate()); fall back to a default stall if none is set.
-    const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}];
+    // (see level generate()); fall back to a default stall if none is set — but a pure
+    // quest-giver (has a quest, no wares) shows no shop, just its text.
+    const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : (d.npc.quest ? [] : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}]);
     wares.forEach(w=>{
       const def=Items.get(w.id); if(!def) return;
       const afford=d.player.treats>=w.cost;
@@ -5263,7 +5796,11 @@ function loop(now){
     // Dogs + registry entities (enemies/NPCs/graves) share one painter's-algorithm pass
     // by y. Fainted dogs aren't drawn — their grave (a spawned entity) stands in for them.
     const actors=activePlayers.filter(p=>!p.dead).map(p=>({y:p.y, d:()=>drawDog(p,now)}));
-    entities.forEach(e=>{ const def=Entities.def(e.kind); if(def&&def.draw) actors.push({y:e.y, d:()=>def.draw(e,now)}); });
+    entities.forEach(e=>{ const def=Entities.def(e.kind); if(!def||!def.draw) return;
+      actors.push({y:e.y, d:()=>{
+        if(e.swimming && !e.aquatic) drawSwimming(Math.round(e.x), Math.round(e.y), now, ()=>def.draw(e,now));  // land creature submerged like the dog
+        else { if(e.swimming) drawWaterRipple(e.x,e.y,now); def.draw(e,now); }                                 // aquatic bird floats with a light wake
+      }}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();

@@ -10,8 +10,9 @@ A cozy 2D pixel-art game where you (and optionally a friend) explore a meadow as
 
 - 🎮 **Solo & 2-player co-op modes** — share a keyboard with a friend
 - 🗺️ **Campaign world map** — clear a level and a "Your Journey" map shows your progress across the biomes (cleared ✓ / current / locked), then continues you to the next. The world is designed as **environments of 3 levels + a boss** each; tap a region to preview what's ahead.
-- 🏞️ **Two playable levels so far** — the gentle **Sunny Meadow**, then the tougher **Rocky Mountains**: a lush Canadian-Rockies valley with jagged snow-veined peaks, vivid **turquoise glacial lakes**, cascading **waterfalls**, evergreen forest, a river, and a prowling wolf pack. More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
-- 🫎 **Friendly wildlife** — peaceful moose, beavers and loons roam the valley; greet them (action key) for a cheerful hello, sparkles, and a treat gift the first time. They never attack.
+- 🏞️ **Four playable levels so far** — the **Sunny Meadows** learning biome (a gentle 3-level onboarding arc: *Sunny Meadow* → *Wildflower Field*, a safe, enemy-free field that introduces friendly wildlife → *Old Orchard Path*, which eases in a slow enemy and a river crossing), then the tougher **Rocky Mountains**: a lush Canadian-Rockies valley with jagged snow-veined peaks, vivid **turquoise glacial lakes**, cascading **waterfalls**, evergreen forest, a river, and a prowling wolf pack. More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
+- 🫎 **Friendly wildlife** — peaceful moose, beavers, loons, ducks and squirrels roam the world; greet them (action key) for a cheerful hello, sparkles, and a treat gift the first time. They never attack. Land animals (and enemies) **swim** when they enter water; ducks and loons float.
+- 📜 **NPC quests** — quest-givers show a glowing yellow **"!"**; press space to hear the task, accept it, and hand in the goal (first quest type: *bring N of an item* for a reward). Data-driven and built to grow more quest types.
 - 🛠 **Dev mode** — a testing panel (start-screen button or the `` ` `` key) to jump straight into any registered level/biome.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot and a sad sound plays) and stays down for the rest of the level; a co-op partner can carry on, and everyone is revived at the next level. When every dog is down it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**
 - 🐕 **5 dog breeds** — Husky, Shiba, Corgi, Poodle, Dalmatian, each with its own pixel-art silhouette
@@ -88,11 +89,14 @@ husky-hearts/
 │   │   ├── items.js         item definitions (inventory / shop wares)
 │   │   └── campaign.js      world-map environments (3 levels + boss each) + Progress
 │   ├── inventory.js         per-player inventory add/remove/has
+│   ├── quests.js            NPC quest system (give-item + future types)
 │   ├── audio.js             Web Audio engine, music loop, SFX
 │   ├── world.js             world size, colliders, world objects, players, makePlayer
 │   ├── levels/
 │   │   ├── index.js         Levels registry
-│   │   ├── meadow.js        level 1 (size, theme, quest, generate; next → rocky)
+│   │   ├── meadow.js        Sunny Meadows 1 (size, theme, quest, generate)
+│   │   ├── meadow2.js       Sunny Meadows 2 — Wildflower Field (wildlife intro, no enemies)
+│   │   ├── meadow3.js       Sunny Meadows 3 — Old Orchard Path (gentle enemy + river)
 │   │   └── rocky.js         level 2 — Rocky Mountains (Canadian valley: lakes/waterfalls/peaks)
 │   ├── level-manager.js     LevelManager.load — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()

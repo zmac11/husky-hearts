@@ -9,6 +9,7 @@ Entities.register('npc', {
   init(e){
     e.name     = e.name     || 'Wanderer';
     e.greeting = e.greeting || 'Hello there, friend!';
+    if(e.quest && !e.quest.state) e.quest.state = 'available';   // quest-givers start offering
     e.bob      = 0;
   },
 
@@ -52,12 +53,30 @@ Entities.register('npc', {
       px(x-6,y+6,12,2,'#3A5468');     // parka belt
     }
 
-    // floating "!" prompt bubble
+    // floating interaction prompt above the head. Quest-givers get a glowing yellow "!"
+    // when there's a task to take or hand in, a grey "?" while it's in progress; plain
+    // shopkeepers keep the cream "!" talk prompt.
     const by=y-30+Math.sin(t/220)*3;
-    ctx.fillStyle='#FFF8EF'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
-    roundRect(x-8,by-9,16,16,4,true,true);
-    ctx.fillStyle='#4A3F35'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
-    ctx.fillText('!', x, by+3);
+    const ind=(typeof Quests!=='undefined' && Quests.indicator) ? Quests.indicator(e) : null;
+    ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+    if(ind==='available' || ind==='ready'){
+      const glow=0.55+Math.sin(t/200)*0.3;
+      ctx.globalAlpha=0.35*glow; ctx.beginPath(); ctx.arc(x,by,12,0,Math.PI*2); ctx.fillStyle='#FFD23D'; ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle='#FFD23D'; ctx.strokeStyle='#7A5A10'; ctx.lineWidth=1.5;
+      roundRect(x-7,by-10,14,19,4,true,true);
+      ctx.fillStyle='#5A3F0A'; ctx.font='bold 15px monospace'; ctx.fillText('!', x, by+5);
+    } else if(ind==='active'){
+      ctx.fillStyle='#EAE6DE'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
+      roundRect(x-7,by-9,14,17,4,true,true);
+      ctx.fillStyle='#6A6055'; ctx.font='bold 12px monospace'; ctx.fillText('?', x, by+3);
+    } else {
+      ctx.fillStyle='#FFF8EF'; ctx.strokeStyle='#4A3F35'; ctx.lineWidth=1.5;
+      roundRect(x-8,by-9,16,16,4,true,true);
+      ctx.fillStyle='#4A3F35'; ctx.font='bold 12px monospace'; ctx.fillText('!', x, by+3);
+    }
+    ctx.restore();
   },
 
   onInteract(e, p){

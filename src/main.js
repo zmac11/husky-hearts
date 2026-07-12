@@ -34,7 +34,11 @@ function loop(now){
     // Dogs + registry entities (enemies/NPCs/graves) share one painter's-algorithm pass
     // by y. Fainted dogs aren't drawn — their grave (a spawned entity) stands in for them.
     const actors=activePlayers.filter(p=>!p.dead).map(p=>({y:p.y, d:()=>drawDog(p,now)}));
-    entities.forEach(e=>{ const def=Entities.def(e.kind); if(def&&def.draw) actors.push({y:e.y, d:()=>def.draw(e,now)}); });
+    entities.forEach(e=>{ const def=Entities.def(e.kind); if(!def||!def.draw) return;
+      actors.push({y:e.y, d:()=>{
+        if(e.swimming && !e.aquatic) drawSwimming(Math.round(e.x), Math.round(e.y), now, ()=>def.draw(e,now));  // land creature submerged like the dog
+        else { if(e.swimming) drawWaterRipple(e.x,e.y,now); def.draw(e,now); }                                 // aquatic bird floats with a light wake
+      }}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();
