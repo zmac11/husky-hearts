@@ -31,16 +31,16 @@ Entities.register('enemy', {
     if(target && dist<e.chaseR){
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*1.4*swim;
-      e.y+=Math.sin(ang)*e.speed*1.4*swim;
+      e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.4*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 

@@ -1,7 +1,10 @@
 // ====================== MAIN LOOP ======================
 let lastTime=performance.now();
 function loop(now){
-  const dt=now-lastTime;lastTime=now;
+  // Clamp dt so a background-tab stall (huge gap) can't teleport actors through
+  // colliders; also feeds the frame-rate-independent movement scale (see core/state.js).
+  const dt=Math.min(now-lastTime,50);lastTime=now;
+  dtScale=dt/FRAME_MS;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.

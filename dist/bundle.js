@@ -55,6 +55,14 @@ const RNG = {
 // The getter/setter bodies run at call time (well after world.js has initialised), so
 // referencing those globals here is safe despite load order.
 
+// Frame-rate-independent movement. Speeds are tuned for 60 fps, so each frame the
+// main loop sets `dtScale = clampedDt / FRAME_MS` (≈1 at 60 Hz, ≈0.42 at 144 Hz,
+// ≈2 at 30 Hz). Every *continuous* per-frame position delta is multiplied by it, so
+// the world moves the same real-world distance regardless of the display's refresh
+// rate. Position *corrections* (collision resolve, knockback) are NOT scaled.
+const FRAME_MS = 1000/60;
+let dtScale = 1;
+
 const SCENES = Object.freeze({
   MENU:      'menu',       // title / start screen
   CHARSELECT:'charselect', // choosing breed + colour
@@ -3103,16 +3111,16 @@ Entities.register('enemy', {
     if(target && dist<e.chaseR){
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*1.4*swim;
-      e.y+=Math.sin(ang)*e.speed*1.4*swim;
+      e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.4*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3197,16 +3205,16 @@ Entities.register('wolf', {
       if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*burst*swim;
-      e.y+=Math.sin(ang)*e.speed*burst*swim;
+      e.x+=Math.cos(ang)*e.speed*burst*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*burst*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3340,7 +3348,7 @@ Entities.register('critter', {
     e.swimming = inW;
     e.wanderT -= dt;
     if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
-    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim;
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim*dtScale, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim*dtScale;
     if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
     else { e.wanderT=0; }                       // turned back at the edge of its range
     e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);
@@ -4088,7 +4096,7 @@ const Abilities = {
     // Advance cannon animation
     if(cannon.firingT>0){
       cannon.firingT=Math.max(0, cannon.firingT-dt);
-      cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
+      cannon.smoke.forEach(s=>{ s.x+=s.vx*dtScale; s.y+=s.vy*dtScale; s.vy-=0.04*dtScale; s.life-=dt; s.r+=0.04*dtScale; });
       cannon.smoke=cannon.smoke.filter(s=>s.life>0);
     }
 
@@ -4364,7 +4372,7 @@ function updatePlayer(p,controls,t,dt){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
     const spd=p.swimming?p.speed*swimMul:p.speed;
-    p.x+=dx*spd; p.y+=dy*spd;
+    p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
@@ -4451,7 +4459,7 @@ function checkGroupHowl(){
 
 function updateSparkles(){
   sparkles=sparkles.filter(s=>s.life>0);
-  sparkles.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=0.06;s.life--;});
+  sparkles.forEach(s=>{s.x+=s.vx*dtScale;s.y+=s.vy*dtScale;s.vy+=0.06*dtScale;s.life-=dtScale;});
 }
 
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
@@ -5376,7 +5384,10 @@ const WorldMap = {
 // ====================== MAIN LOOP ======================
 let lastTime=performance.now();
 function loop(now){
-  const dt=now-lastTime;lastTime=now;
+  // Clamp dt so a background-tab stall (huge gap) can't teleport actors through
+  // colliders; also feeds the frame-rate-independent movement scale (see core/state.js).
+  const dt=Math.min(now-lastTime,50);lastTime=now;
+  dtScale=dt/FRAME_MS;
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.

@@ -8,7 +8,7 @@ function updatePlayer(p,controls,t,dt){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
     const spd=p.swimming?p.speed*swimMul:p.speed;
-    p.x+=dx*spd; p.y+=dy*spd;
+    p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
@@ -95,7 +95,7 @@ function checkGroupHowl(){
 
 function updateSparkles(){
   sparkles=sparkles.filter(s=>s.life>0);
-  sparkles.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=0.06;s.life--;});
+  sparkles.forEach(s=>{s.x+=s.vx*dtScale;s.y+=s.vy*dtScale;s.vy+=0.06*dtScale;s.life-=dtScale;});
 }
 
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
