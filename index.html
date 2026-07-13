@@ -29,6 +29,9 @@
       <canvas id="game" width="640" height="416"></canvas>
       <div id="toast"></div>
 
+      <!-- Always-on tracker: lists the quests you've accepted and their progress. -->
+      <div id="questTracker" style="display:none;"></div>
+
       <div id="startScreen">
         <h2>🐕 Welcome to Husky Hearts 🐕</h2>
         <p>Explore the big meadow, collect treats, and bring them to lonely animal friends. Use the minimap to find them!</p>
@@ -98,6 +101,14 @@
         </div>
       </div>
 
+      <div id="questScreen" style="display:none;">
+        <div id="questHeader">
+          <h2>📜 Quest Journal</h2>
+        </div>
+        <div id="questBody"></div>
+        <div class="overlay-hint">World keeps playing · J / Esc to close</div>
+      </div>
+
       <div id="hotbar" style="display:none;"></div>
 
       <div id="dialogScreen" class="game-overlay" style="display:none;">
@@ -130,7 +141,7 @@
     <div class="ctrl-card"><b>Player 1</b>WASD · SPACE to howl/deliver</div>
     <div class="ctrl-card" id="p2controls" style="display:none;"><b>Player 2</b>Arrow Keys · ENTER to howl/deliver</div>
   </div>
-  <footer>Tip: check the minimap (top-right) to find animals and treats! · <b>Esc</b> pause · <b>I</b> inventory</footer>
+  <footer>Tip: check the minimap (top-right) to find animals and treats! · <b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests</footer>
 </div>
 
 <!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->

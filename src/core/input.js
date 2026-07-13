@@ -11,6 +11,7 @@ window.addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+  if(e.code === 'KeyJ'){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
   if(e.code === 'Backquote'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
   // Number keys 1-9 → use the matching P1 hotbar slot (consumables/toys).
   const m = /^Digit([1-9])$/.exec(e.code);

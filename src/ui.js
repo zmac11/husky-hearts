@@ -7,6 +7,7 @@
 const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
+  journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -27,8 +28,105 @@ const UI = {
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     const h2=this.$('p2hearts'); if(h2 && typeof p2!=='undefined' && p2) h2.innerHTML=this._heartMarkup(p2);
     this.renderHotbar();
+    this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
     if(this.invOpen) this.renderInventory();
+    // Keep the open journal live as you collect/hand in items.
+    if(this.journalOpen) this.renderJournal();
+  },
+
+  // ---------- quest tracker (always-visible list of accepted quests) ----------
+  // A small HUD overlay in the top-left of the frame. Shows only quests you've accepted
+  // (state 'active'), with best-across-players progress and a "ready to hand in" flag.
+  renderQuestTracker(){
+    const box=this.$('questTracker'); if(!box) return;
+    const worldVisible = Game.state===SCENES.PLAYING || Game.state===SCENES.PAUSED || Game.state===SCENES.DIALOG;
+    const active = (typeof Quests!=='undefined') ? Quests.entriesInState('active') : [];
+    if(!worldVisible || active.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+    const rows = active.map(({giver,q})=>{
+      const ready=Quests.readyToTurnIn(q);
+      const pr=Quests.bestProgress(q);
+      const status = ready
+        ? `<span class="qt-ready">✓ Ready — see ${giver}</span>`
+        : `<span class="qt-prog">${pr.have}/${pr.need}</span>`;
+      return `<div class="qt-row${ready?' ready':''}">`
+        + `<span class="qt-goal">📜 ${Quests.summary(q)}</span>${status}</div>`;
+    }).join('');
+    box.innerHTML = `<div class="qt-title">Quests</div>${rows}`;
+    box.style.display='block';
+  },
+
+  // ---------- quest journal (J): every quest in the level, grouped by state ----------
+  toggleJournal(){
+    if(this.journalOpen){ this.closeJournal(); return; }
+    if(Game.state===SCENES.PLAYING) this.openJournal();
+  },
+  openJournal(){
+    this.closeInventory();            // never stack the two non-blocking overlays
+    this.journalOpen=true;
+    this.renderJournal();
+    this._show('questScreen', true);
+  },
+  closeJournal(){
+    this.journalOpen=false;
+    this._show('questScreen', false);
+  },
+
+  renderJournal(){
+    const body=this.$('questBody'); if(!body) return;
+    const Q=(typeof Quests!=='undefined') ? Quests : null;
+    let html='';
+
+    // The current level's completion objective (the "main quest").
+    const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
+    const lq=lvl && lvl.quest;
+    if(lq){
+      const done=(typeof lq.isComplete==='function') && lq.isComplete();
+      html += `<div class="q-sect">Level Objective</div>`
+        + `<div class="q-card${done?' done':''}">`
+        + `<div class="q-head"><span class="q-name">📍 ${lvl.name}</span>${done?'<span class="q-badge ok">✓ Done</span>':''}</div>`
+        + `<div class="q-desc">${lq.label || 'Reach the goal'}</div>`
+        + `<div class="q-meta">${typeof lq.describe==='function'?lq.describe():''}</div>`
+        + `</div>`;
+    }
+
+    if(Q){
+      const card=({giver,q}, opts)=>{
+        const reward=Q.rewardText(q);
+        return `<div class="q-card${opts.done?' done':''}">`
+          + `<div class="q-head"><span class="q-name">🐾 ${giver}</span>${opts.badge}</div>`
+          + `<div class="q-desc">Bring ${Q.summary(q)}</div>`
+          + (opts.meta?`<div class="q-meta">${opts.meta}</div>`:'')
+          + (reward?`<div class="q-reward">🎁 Reward: ${reward}</div>`:'')
+          + `</div>`;
+      };
+      const active=Q.entriesInState('active');
+      const avail =Q.entriesInState('available');
+      const done  =Q.entriesInState('done');
+
+      if(active.length){
+        html += `<div class="q-sect">Active (${active.length})</div>`;
+        html += active.map(e=>{
+          const ready=Q.readyToTurnIn(e.q), pr=Q.bestProgress(e.q);
+          return card(e, {
+            badge: ready?'<span class="q-badge ok">✓ Ready</span>':`<span class="q-badge">${pr.have}/${pr.need}</span>`,
+            meta: ready?'Head back to hand it in!':`You have ${pr.have} of ${pr.need}.`,
+          });
+        }).join('');
+      }
+      if(avail.length){
+        html += `<div class="q-sect">Available (${avail.length})</div>`;
+        html += avail.map(e=>card(e, { badge:'<span class="q-badge new">! New</span>', meta:'Talk to them to accept.' })).join('');
+      }
+      if(done.length){
+        html += `<div class="q-sect">Completed (${done.length})</div>`;
+        html += done.map(e=>card(e, { badge:'<span class="q-badge ok">✓</span>', done:true })).join('');
+      }
+      if(!active.length && !avail.length && !done.length && !lq){
+        html += `<div class="q-empty">No quests here yet — look for animal friends with a glowing <b>❗</b> and say hello!</div>`;
+      }
+    }
+    body.innerHTML=html;
   },
 
   // ---------- hearts ----------
@@ -59,16 +157,18 @@ const UI = {
     if(!frozen) Game.state=SCENES.PLAYING;
   },
 
-  // ESC: close whatever is open (blocking panel first, then inventory), else pause.
+  // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
   },
 
   openPause(){
     if(Game.state!==SCENES.PLAYING) return;
-    this.closeInventory();            // never stack pause on top of the inventory overlay
+    this.closeInventory();            // never stack pause on top of a non-blocking overlay
+    this.closeJournal();
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this._show('pauseScreen', true);
   },
@@ -82,6 +182,7 @@ const UI = {
   },
 
   openInventory(){
+    this.closeJournal();              // one non-blocking overlay at a time
     this.invOpen=true;
     this._invPlayer=0;
     this.renderInventory();
@@ -330,7 +431,8 @@ const UI = {
 
   // ---------- dialog / shop / quest ----------
   openDialog(npc, player){
-    this.closeInventory();            // dialog is blocking; don't stack it over inventory
+    this.closeInventory();            // dialog is blocking; don't stack it over an overlay
+    this.closeJournal();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
@@ -403,6 +505,7 @@ const UI = {
   gameOver(p){
     if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
     this.closeInventory();
+    this.closeJournal();
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
@@ -417,6 +520,7 @@ const UI = {
   // ---------- menu transitions ----------
   quitToMenu(){
     this.closeInventory();
+    this.closeJournal();
     this.closePanel();
     if(typeof WorldMap!=='undefined') WorldMap.hide();
     if(typeof stopMusic==='function') stopMusic();
