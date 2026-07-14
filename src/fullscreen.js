@@ -5,8 +5,16 @@ function resizeCanvas(){
   const isFS=isNativeFS||pseudoFS;
   const sw=window.innerWidth,sh=window.innerHeight;
   const scale=isFS?Math.min(sw/VIEW_W,sh/VIEW_H):Math.min((sw-32)/VIEW_W,1);
-  canvas.style.width=Math.round(VIEW_W*scale)+'px';
-  canvas.style.height=Math.round(VIEW_H*scale)+'px';
+  const cssW=Math.round(VIEW_W*scale), cssH=Math.round(VIEW_H*scale);
+  // CSS box stays the display size (same field of view on every screen); the backing
+  // store is bumped to device pixels so drawing is crisp on high-DPI displays.
+  const dpr=hiDPI();
+  canvas.style.width=cssW+'px';
+  canvas.style.height=cssH+'px';
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  ctx.imageSmoothingEnabled=false;      // resizing the canvas resets ctx state
+  renderScale=canvas.width/VIEW_W;      // device px per logical unit (= cssScale × dpr)
 }
 resizeCanvas();
 window.addEventListener('resize',resizeCanvas);

@@ -7,6 +7,11 @@
 // It renders to its own <canvas> with its own requestAnimationFrame (like the char-
 // select breed previews), so it animates independently of the frozen game loop.
 
+// Logical drawing size (the canvas's declared width/height in index.html). The backing
+// store is scaled up by devicePixelRatio for crispness, but all layout/hit-testing stays
+// in this logical space via a context transform.
+const WM_W = 600, WM_H = 250;
+
 const WorldMap = {
   _raf: null,
   canvas: null,
@@ -49,7 +54,7 @@ const WorldMap = {
   // ---------- layout ----------
   _layout(){
     if(!this.canvas) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
     const envs=Campaign.environments, n=envs.length;
     const cols=4, marginX=70, topY=56, rowGap=124;
     const usableW=W-marginX*2;
@@ -76,7 +81,15 @@ const WorldMap = {
 
   draw(t){
     const g=this.g; if(!g) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
+    // Size the backing store to device pixels and draw through a matching transform so
+    // the parchment map stays crisp on high-DPI screens (layout below is in logical space).
+    const dpr=(typeof hiDPI==='function')?hiDPI():1;
+    if(this.canvas.width!==Math.round(W*dpr)){
+      this.canvas.width=Math.round(W*dpr); this.canvas.height=Math.round(H*dpr);
+      this.canvas.style.width=W+'px'; this.canvas.style.height=H+'px';
+    }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
     g.clearRect(0,0,W,H);
     // parchment backdrop (canvas corners are rounded via CSS)
     g.fillStyle='#F4EAD4'; g.fillRect(0,0,W,H);
@@ -181,7 +194,8 @@ const WorldMap = {
   _onClick(ev){
     if(!this.canvas) return;
     const r=this.canvas.getBoundingClientRect();
-    const sx=this.canvas.width/r.width, sy=this.canvas.height/r.height;
+    // Map CSS click coords into logical (WM_W×WM_H) space, where the nodes live.
+    const sx=WM_W/r.width, sy=WM_H/r.height;
     const mx=(ev.clientX-r.left)*sx, my=(ev.clientY-r.top)*sy;
     const hit=this._nodes.find(n=>Math.hypot(n.x-mx,n.y-my)<26);
     if(hit) this._announce(hit.env);

@@ -270,11 +270,16 @@ const UI = {
   _drawDoll(p){
     const cv=this.$('dollCanvas'); if(!cv || typeof drawBreedPreviewInline!=='function') return;
     const g=cv.getContext('2d'); if(!g) return;
-    g.clearRect(0,0,cv.width,cv.height);
+    // Size the 92×100 doll to device pixels; keep the CSS box at 92×100 and use logical
+    // dims below so the dog stays crisp on HiDPI. Base transform = dpr; g.scale(S) composes.
+    const dpr=(typeof hiDPI==='function')?hiDPI():1, LW=92, LH=100;
+    if(cv.width!==Math.round(LW*dpr)){ cv.width=Math.round(LW*dpr); cv.height=Math.round(LH*dpr); cv.style.width=LW+'px'; cv.style.height=LH+'px'; }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+    g.clearRect(0,0,LW,LH);
     const S=1.28;                                 // scale the whole dog up for a bigger preview
     const t=(typeof performance!=='undefined')?performance.now():0;
     g.save(); g.scale(S,S);
-    const cx=(cv.width/S)/2, cy=(cv.height/S)/2+5;
+    const cx=(LW/S)/2, cy=(LH/S)/2+5;
     const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
     if(a) Wearables.drawBack(g, a);
     drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);

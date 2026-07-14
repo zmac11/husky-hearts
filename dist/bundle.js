@@ -4,6 +4,11 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+// Device pixels per logical (VIEW_W×VIEW_H) unit. Set by resizeCanvas() (fullscreen.js)
+// from the display size × devicePixelRatio; the main loop applies it as the base
+// transform so the world renders at native resolution (crisp on high-DPI screens).
+let renderScale = 1;
+
 // ===== src/core/rng.js =====
 // ====================== RNG ======================
 // Seeded, reproducible pseudo-random generator.
@@ -1829,6 +1834,12 @@ Levels.register({
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
+// Device-pixel-ratio for crisp rendering on high-DPI screens, capped at 2× (2× removes
+// virtually all blur; 3–4× costs a lot of fill for diminishing returns). Every canvas
+// sizes its backing store to logical×hiDPI() and scales its context by the same factor,
+// so draw code keeps working in logical coordinates. See fullscreen.js / world-map.js.
+function hiDPI(){ return Math.min(window.devicePixelRatio || 1, 2); }
+
 function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
 function shade(hex,p){
@@ -4868,11 +4879,16 @@ const UI = {
   _drawDoll(p){
     const cv=this.$('dollCanvas'); if(!cv || typeof drawBreedPreviewInline!=='function') return;
     const g=cv.getContext('2d'); if(!g) return;
-    g.clearRect(0,0,cv.width,cv.height);
+    // Size the 92×100 doll to device pixels; keep the CSS box at 92×100 and use logical
+    // dims below so the dog stays crisp on HiDPI. Base transform = dpr; g.scale(S) composes.
+    const dpr=(typeof hiDPI==='function')?hiDPI():1, LW=92, LH=100;
+    if(cv.width!==Math.round(LW*dpr)){ cv.width=Math.round(LW*dpr); cv.height=Math.round(LH*dpr); cv.style.width=LW+'px'; cv.style.height=LH+'px'; }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+    g.clearRect(0,0,LW,LH);
     const S=1.28;                                 // scale the whole dog up for a bigger preview
     const t=(typeof performance!=='undefined')?performance.now():0;
     g.save(); g.scale(S,S);
-    const cx=(cv.width/S)/2, cy=(cv.height/S)/2+5;
+    const cx=(LW/S)/2, cy=(LH/S)/2+5;
     const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
     if(a) Wearables.drawBack(g, a);
     drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);
@@ -5191,6 +5207,11 @@ UI.init();
 // It renders to its own <canvas> with its own requestAnimationFrame (like the char-
 // select breed previews), so it animates independently of the frozen game loop.
 
+// Logical drawing size (the canvas's declared width/height in index.html). The backing
+// store is scaled up by devicePixelRatio for crispness, but all layout/hit-testing stays
+// in this logical space via a context transform.
+const WM_W = 600, WM_H = 250;
+
 const WorldMap = {
   _raf: null,
   canvas: null,
@@ -5233,7 +5254,7 @@ const WorldMap = {
   // ---------- layout ----------
   _layout(){
     if(!this.canvas) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
     const envs=Campaign.environments, n=envs.length;
     const cols=4, marginX=70, topY=56, rowGap=124;
     const usableW=W-marginX*2;
@@ -5260,7 +5281,15 @@ const WorldMap = {
 
   draw(t){
     const g=this.g; if(!g) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
+    // Size the backing store to device pixels and draw through a matching transform so
+    // the parchment map stays crisp on high-DPI screens (layout below is in logical space).
+    const dpr=(typeof hiDPI==='function')?hiDPI():1;
+    if(this.canvas.width!==Math.round(W*dpr)){
+      this.canvas.width=Math.round(W*dpr); this.canvas.height=Math.round(H*dpr);
+      this.canvas.style.width=W+'px'; this.canvas.style.height=H+'px';
+    }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
     g.clearRect(0,0,W,H);
     // parchment backdrop (canvas corners are rounded via CSS)
     g.fillStyle='#F4EAD4'; g.fillRect(0,0,W,H);
@@ -5365,7 +5394,8 @@ const WorldMap = {
   _onClick(ev){
     if(!this.canvas) return;
     const r=this.canvas.getBoundingClientRect();
-    const sx=this.canvas.width/r.width, sy=this.canvas.height/r.height;
+    // Map CSS click coords into logical (WM_W×WM_H) space, where the nodes live.
+    const sx=WM_W/r.width, sy=WM_H/r.height;
     const mx=(ev.clientX-r.left)*sx, my=(ev.clientY-r.top)*sy;
     const hit=this._nodes.find(n=>Math.hypot(n.x-mx,n.y-my)<26);
     if(hit) this._announce(hit.env);
@@ -5388,6 +5418,9 @@ function loop(now){
   // colliders; also feeds the frame-rate-independent movement scale (see core/state.js).
   const dt=Math.min(now-lastTime,50);lastTime=now;
   dtScale=dt/FRAME_MS;
+  // Base transform: map logical VIEW_W×VIEW_H onto the device-resolution backing store
+  // so all downstream draws (which save/translate/scale relative to this) render crisply.
+  ctx.setTransform(renderScale,0,0,renderScale,0,0);
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
@@ -5447,8 +5480,16 @@ function resizeCanvas(){
   const isFS=isNativeFS||pseudoFS;
   const sw=window.innerWidth,sh=window.innerHeight;
   const scale=isFS?Math.min(sw/VIEW_W,sh/VIEW_H):Math.min((sw-32)/VIEW_W,1);
-  canvas.style.width=Math.round(VIEW_W*scale)+'px';
-  canvas.style.height=Math.round(VIEW_H*scale)+'px';
+  const cssW=Math.round(VIEW_W*scale), cssH=Math.round(VIEW_H*scale);
+  // CSS box stays the display size (same field of view on every screen); the backing
+  // store is bumped to device pixels so drawing is crisp on high-DPI displays.
+  const dpr=hiDPI();
+  canvas.style.width=cssW+'px';
+  canvas.style.height=cssH+'px';
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  ctx.imageSmoothingEnabled=false;      // resizing the canvas resets ctx state
+  renderScale=canvas.width/VIEW_W;      // device px per logical unit (= cssScale × dpr)
 }
 resizeCanvas();
 window.addEventListener('resize',resizeCanvas);
@@ -5810,10 +5851,18 @@ function renderBreedPreviews(playerNum){
   if(previewRAF) cancelAnimationFrame(previewRAF);
   const cfg = dogConfig[`p${playerNum}`];
   function frame(t){
+    const dpr=hiDPI();
     BREEDS.forEach(b=>{
       const el = document.getElementById(`bprev-${b.id}`);
       if(!el) return;
-      drawBreedPreviewInline(el.getContext('2d'), b.id, cfg.color.hex, 30, 42, t);
+      const g = el.getContext('2d');
+      // Size the backing store to 60×70 device pixels; keep the CSS box at 60×70 and
+      // scale the context so the dog (drawn at logical centre 30,42) stays crisp on HiDPI.
+      const bw=Math.round(60*dpr), bh=Math.round(70*dpr);
+      if(el.width!==bw){ el.width=bw; el.height=bh; el.style.width='60px'; el.style.height='70px'; }
+      g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+      g.clearRect(0,0,60,70);
+      drawBreedPreviewInline(g, b.id, cfg.color.hex, 30, 42, t);
     });
     previewRAF = requestAnimationFrame(frame);
   }

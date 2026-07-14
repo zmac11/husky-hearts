@@ -285,10 +285,18 @@ function renderBreedPreviews(playerNum){
   if(previewRAF) cancelAnimationFrame(previewRAF);
   const cfg = dogConfig[`p${playerNum}`];
   function frame(t){
+    const dpr=hiDPI();
     BREEDS.forEach(b=>{
       const el = document.getElementById(`bprev-${b.id}`);
       if(!el) return;
-      drawBreedPreviewInline(el.getContext('2d'), b.id, cfg.color.hex, 30, 42, t);
+      const g = el.getContext('2d');
+      // Size the backing store to 60×70 device pixels; keep the CSS box at 60×70 and
+      // scale the context so the dog (drawn at logical centre 30,42) stays crisp on HiDPI.
+      const bw=Math.round(60*dpr), bh=Math.round(70*dpr);
+      if(el.width!==bw){ el.width=bw; el.height=bh; el.style.width='60px'; el.style.height='70px'; }
+      g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+      g.clearRect(0,0,60,70);
+      drawBreedPreviewInline(g, b.id, cfg.color.hex, 30, 42, t);
     });
     previewRAF = requestAnimationFrame(frame);
   }
