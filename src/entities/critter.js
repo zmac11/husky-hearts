@@ -52,7 +52,7 @@ Entities.register('critter', {
     e.swimming = inW;
     e.wanderT -= dt;
     if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
-    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim;
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim*dtScale, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim*dtScale;
     if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
     else { e.wanderT=0; }                       // turned back at the edge of its range
     e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);

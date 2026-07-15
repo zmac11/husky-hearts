@@ -1,4 +1,10 @@
 // ====================== DRAW HELPERS ======================
+// Device-pixel-ratio for crisp rendering on high-DPI screens, capped at 2× (2× removes
+// virtually all blur; 3–4× costs a lot of fill for diminishing returns). Every canvas
+// sizes its backing store to logical×hiDPI() and scales its context by the same factor,
+// so draw code keeps working in logical coordinates. See fullscreen.js / world-map.js.
+function hiDPI(){ return Math.min(window.devicePixelRatio || 1, 2); }
+
 function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
 function shade(hex,p){

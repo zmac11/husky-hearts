@@ -46,7 +46,7 @@
     // Advance cannon animation
     if(cannon.firingT>0){
       cannon.firingT=Math.max(0, cannon.firingT-dt);
-      cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
+      cannon.smoke.forEach(s=>{ s.x+=s.vx*dtScale; s.y+=s.vy*dtScale; s.vy-=0.04*dtScale; s.life-=dt; s.r+=0.04*dtScale; });
       cannon.smoke=cannon.smoke.filter(s=>s.life>0);
     }
 

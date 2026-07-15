@@ -54,6 +54,42 @@ const Quests = {
     return `You still need ${rem} more — bring me ${this.summary(q)}.`;
   },
 
+  // Short reward description (e.g. "+6 🦴 treats") for a quest's reward, or '' if none.
+  rewardText(q){
+    const r=q&&q.reward; if(!r) return '';
+    if(r.treats) return `+${r.treats} 🦴 treats`;
+    if(r.item){ const n=r.count||1, d=Items.get(r.item); return `+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    return '';
+  },
+
+  // Best progress across all active players (for the HUD tracker / journal): {have, need}.
+  // Multiple dogs can carry the goal items, so we show whoever is furthest along.
+  bestProgress(q){
+    const t=this._t(q);
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    let have=0;
+    for(const p of players) have=Math.max(have, t.have(q,p));
+    const need=(q.give && q.give.count) || 0;
+    return { have:Math.min(have,need), need };
+  },
+
+  // True when some active player can hand the quest in right now.
+  readyToTurnIn(q){
+    if(this.stateOf(q)!=='active') return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>this._t(q).canComplete(q,p));
+  },
+
+  // Every NPC-borne quest in the current level, tagged with its giver's name. NPC quest
+  // state lives on the entity (rebuilt per level), so this reflects the level you're in.
+  entries(){
+    const list=[];
+    const es=(typeof Entities!=='undefined' && Entities.all) ? Entities.all() : [];
+    for(const e of es){ if(e && e.quest) list.push({ giver:e.name||'A friend', q:e.quest }); }
+    return list;
+  },
+  entriesInState(state){ return this.entries().filter(x=>this.stateOf(x.q)===state); },
+
   // Hand in the quest: consume the requirement, grant any reward, mark done. Returns a short
   // reward description (e.g. "+6 treats") for the thank-you line, or '' if none.
   complete(q,p){

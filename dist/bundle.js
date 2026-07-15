@@ -4,6 +4,11 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
+// Device pixels per logical (VIEW_W×VIEW_H) unit. Set by resizeCanvas() (fullscreen.js)
+// from the display size × devicePixelRatio; the main loop applies it as the base
+// transform so the world renders at native resolution (crisp on high-DPI screens).
+let renderScale = 1;
+
 // ===== src/core/rng.js =====
 // ====================== RNG ======================
 // Seeded, reproducible pseudo-random generator.
@@ -54,6 +59,14 @@ const RNG = {
 // so old code keeps working while new code reads/writes through these namespaces.
 // The getter/setter bodies run at call time (well after world.js has initialised), so
 // referencing those globals here is safe despite load order.
+
+// Frame-rate-independent movement. Speeds are tuned for 60 fps, so each frame the
+// main loop sets `dtScale = clampedDt / FRAME_MS` (≈1 at 60 Hz, ≈0.42 at 144 Hz,
+// ≈2 at 30 Hz). Every *continuous* per-frame position delta is multiplied by it, so
+// the world moves the same real-world distance regardless of the display's refresh
+// rate. Position *corrections* (collision resolve, knockback) are NOT scaled.
+const FRAME_MS = 1000/60;
+let dtScale = 1;
 
 const SCENES = Object.freeze({
   MENU:      'menu',       // title / start screen
@@ -108,6 +121,7 @@ window.addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+  if(e.code === 'KeyJ'){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
   if(e.code === 'Backquote'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
   // Number keys 1-9 → use the matching P1 hotbar slot (consumables/toys).
   const m = /^Digit([1-9])$/.exec(e.code);
@@ -468,6 +482,42 @@ const Quests = {
     if(q.progress) return q.progress.replace('{remaining}', rem);
     return `You still need ${rem} more — bring me ${this.summary(q)}.`;
   },
+
+  // Short reward description (e.g. "+6 🦴 treats") for a quest's reward, or '' if none.
+  rewardText(q){
+    const r=q&&q.reward; if(!r) return '';
+    if(r.treats) return `+${r.treats} 🦴 treats`;
+    if(r.item){ const n=r.count||1, d=Items.get(r.item); return `+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    return '';
+  },
+
+  // Best progress across all active players (for the HUD tracker / journal): {have, need}.
+  // Multiple dogs can carry the goal items, so we show whoever is furthest along.
+  bestProgress(q){
+    const t=this._t(q);
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    let have=0;
+    for(const p of players) have=Math.max(have, t.have(q,p));
+    const need=(q.give && q.give.count) || 0;
+    return { have:Math.min(have,need), need };
+  },
+
+  // True when some active player can hand the quest in right now.
+  readyToTurnIn(q){
+    if(this.stateOf(q)!=='active') return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>this._t(q).canComplete(q,p));
+  },
+
+  // Every NPC-borne quest in the current level, tagged with its giver's name. NPC quest
+  // state lives on the entity (rebuilt per level), so this reflects the level you're in.
+  entries(){
+    const list=[];
+    const es=(typeof Entities!=='undefined' && Entities.all) ? Entities.all() : [];
+    for(const e of es){ if(e && e.quest) list.push({ giver:e.name||'A friend', q:e.quest }); }
+    return list;
+  },
+  entriesInState(state){ return this.entries().filter(x=>this.stateOf(x.q)===state); },
 
   // Hand in the quest: consume the requirement, grant any reward, mark done. Returns a short
   // reward description (e.g. "+6 treats") for the thank-you line, or '' if none.
@@ -1784,6 +1834,12 @@ Levels.register({
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
+// Device-pixel-ratio for crisp rendering on high-DPI screens, capped at 2× (2× removes
+// virtually all blur; 3–4× costs a lot of fill for diminishing returns). Every canvas
+// sizes its backing store to logical×hiDPI() and scales its context by the same factor,
+// so draw code keeps working in logical coordinates. See fullscreen.js / world-map.js.
+function hiDPI(){ return Math.min(window.devicePixelRatio || 1, 2); }
+
 function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),w,h); }
 
 function shade(hex,p){
@@ -3066,16 +3122,16 @@ Entities.register('enemy', {
     if(target && dist<e.chaseR){
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*1.4*swim;
-      e.y+=Math.sin(ang)*e.speed*1.4*swim;
+      e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.4*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3160,16 +3216,16 @@ Entities.register('wolf', {
       if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*burst*swim;
-      e.y+=Math.sin(ang)*e.speed*burst*swim;
+      e.x+=Math.cos(ang)*e.speed*burst*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*burst*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
@@ -3303,7 +3359,7 @@ Entities.register('critter', {
     e.swimming = inW;
     e.wanderT -= dt;
     if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(1200,2800); }
-    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim;
+    const nx=e.x+Math.cos(e.wanderAng)*e.speed*swim*dtScale, ny=e.y+Math.sin(e.wanderAng)*e.speed*swim*dtScale;
     if(Math.hypot(nx-e.homeX, ny-e.homeY) < e.roam){ e.x=nx; e.y=ny; e.dir=Math.cos(e.wanderAng)>=0?1:-1; }
     else { e.wanderT=0; }                       // turned back at the edge of its range
     e.x=clamp(e.x,20,WORLD_W-20); e.y=clamp(e.y,26,WORLD_H-20);
@@ -4051,7 +4107,7 @@ const Abilities = {
     // Advance cannon animation
     if(cannon.firingT>0){
       cannon.firingT=Math.max(0, cannon.firingT-dt);
-      cannon.smoke.forEach(s=>{ s.x+=s.vx; s.y+=s.vy; s.vy-=0.04; s.life-=dt; s.r+=0.04; });
+      cannon.smoke.forEach(s=>{ s.x+=s.vx*dtScale; s.y+=s.vy*dtScale; s.vy-=0.04*dtScale; s.life-=dt; s.r+=0.04*dtScale; });
       cannon.smoke=cannon.smoke.filter(s=>s.life>0);
     }
 
@@ -4327,7 +4383,7 @@ function updatePlayer(p,controls,t,dt){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
     const spd=p.swimming?p.speed*swimMul:p.speed;
-    p.x+=dx*spd; p.y+=dy*spd;
+    p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
@@ -4414,7 +4470,7 @@ function checkGroupHowl(){
 
 function updateSparkles(){
   sparkles=sparkles.filter(s=>s.life>0);
-  sparkles.forEach(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=0.06;s.life--;});
+  sparkles.forEach(s=>{s.x+=s.vx*dtScale;s.y+=s.vy*dtScale;s.vy+=0.06*dtScale;s.life-=dtScale;});
 }
 
 // updateHUD() now lives in ui.js (UI.updateHUD) — kept as a global for existing callers.
@@ -4560,6 +4616,7 @@ const Save = {
 const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
+  journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -4580,8 +4637,105 @@ const UI = {
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     const h2=this.$('p2hearts'); if(h2 && typeof p2!=='undefined' && p2) h2.innerHTML=this._heartMarkup(p2);
     this.renderHotbar();
+    this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
     if(this.invOpen) this.renderInventory();
+    // Keep the open journal live as you collect/hand in items.
+    if(this.journalOpen) this.renderJournal();
+  },
+
+  // ---------- quest tracker (always-visible list of accepted quests) ----------
+  // A small HUD overlay in the top-left of the frame. Shows only quests you've accepted
+  // (state 'active'), with best-across-players progress and a "ready to hand in" flag.
+  renderQuestTracker(){
+    const box=this.$('questTracker'); if(!box) return;
+    const worldVisible = Game.state===SCENES.PLAYING || Game.state===SCENES.PAUSED || Game.state===SCENES.DIALOG;
+    const active = (typeof Quests!=='undefined') ? Quests.entriesInState('active') : [];
+    if(!worldVisible || active.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+    const rows = active.map(({giver,q})=>{
+      const ready=Quests.readyToTurnIn(q);
+      const pr=Quests.bestProgress(q);
+      const status = ready
+        ? `<span class="qt-ready">✓ Ready — see ${giver}</span>`
+        : `<span class="qt-prog">${pr.have}/${pr.need}</span>`;
+      return `<div class="qt-row${ready?' ready':''}">`
+        + `<span class="qt-goal">📜 ${Quests.summary(q)}</span>${status}</div>`;
+    }).join('');
+    box.innerHTML = `<div class="qt-title">Quests</div>${rows}`;
+    box.style.display='block';
+  },
+
+  // ---------- quest journal (J): every quest in the level, grouped by state ----------
+  toggleJournal(){
+    if(this.journalOpen){ this.closeJournal(); return; }
+    if(Game.state===SCENES.PLAYING) this.openJournal();
+  },
+  openJournal(){
+    this.closeInventory();            // never stack the two non-blocking overlays
+    this.journalOpen=true;
+    this.renderJournal();
+    this._show('questScreen', true);
+  },
+  closeJournal(){
+    this.journalOpen=false;
+    this._show('questScreen', false);
+  },
+
+  renderJournal(){
+    const body=this.$('questBody'); if(!body) return;
+    const Q=(typeof Quests!=='undefined') ? Quests : null;
+    let html='';
+
+    // The current level's completion objective (the "main quest").
+    const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
+    const lq=lvl && lvl.quest;
+    if(lq){
+      const done=(typeof lq.isComplete==='function') && lq.isComplete();
+      html += `<div class="q-sect">Level Objective</div>`
+        + `<div class="q-card${done?' done':''}">`
+        + `<div class="q-head"><span class="q-name">📍 ${lvl.name}</span>${done?'<span class="q-badge ok">✓ Done</span>':''}</div>`
+        + `<div class="q-desc">${lq.label || 'Reach the goal'}</div>`
+        + `<div class="q-meta">${typeof lq.describe==='function'?lq.describe():''}</div>`
+        + `</div>`;
+    }
+
+    if(Q){
+      const card=({giver,q}, opts)=>{
+        const reward=Q.rewardText(q);
+        return `<div class="q-card${opts.done?' done':''}">`
+          + `<div class="q-head"><span class="q-name">🐾 ${giver}</span>${opts.badge}</div>`
+          + `<div class="q-desc">Bring ${Q.summary(q)}</div>`
+          + (opts.meta?`<div class="q-meta">${opts.meta}</div>`:'')
+          + (reward?`<div class="q-reward">🎁 Reward: ${reward}</div>`:'')
+          + `</div>`;
+      };
+      const active=Q.entriesInState('active');
+      const avail =Q.entriesInState('available');
+      const done  =Q.entriesInState('done');
+
+      if(active.length){
+        html += `<div class="q-sect">Active (${active.length})</div>`;
+        html += active.map(e=>{
+          const ready=Q.readyToTurnIn(e.q), pr=Q.bestProgress(e.q);
+          return card(e, {
+            badge: ready?'<span class="q-badge ok">✓ Ready</span>':`<span class="q-badge">${pr.have}/${pr.need}</span>`,
+            meta: ready?'Head back to hand it in!':`You have ${pr.have} of ${pr.need}.`,
+          });
+        }).join('');
+      }
+      if(avail.length){
+        html += `<div class="q-sect">Available (${avail.length})</div>`;
+        html += avail.map(e=>card(e, { badge:'<span class="q-badge new">! New</span>', meta:'Talk to them to accept.' })).join('');
+      }
+      if(done.length){
+        html += `<div class="q-sect">Completed (${done.length})</div>`;
+        html += done.map(e=>card(e, { badge:'<span class="q-badge ok">✓</span>', done:true })).join('');
+      }
+      if(!active.length && !avail.length && !done.length && !lq){
+        html += `<div class="q-empty">No quests here yet — look for animal friends with a glowing <b>❗</b> and say hello!</div>`;
+      }
+    }
+    body.innerHTML=html;
   },
 
   // ---------- hearts ----------
@@ -4612,16 +4766,18 @@ const UI = {
     if(!frozen) Game.state=SCENES.PLAYING;
   },
 
-  // ESC: close whatever is open (blocking panel first, then inventory), else pause.
+  // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
   },
 
   openPause(){
     if(Game.state!==SCENES.PLAYING) return;
-    this.closeInventory();            // never stack pause on top of the inventory overlay
+    this.closeInventory();            // never stack pause on top of a non-blocking overlay
+    this.closeJournal();
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this._show('pauseScreen', true);
   },
@@ -4635,6 +4791,7 @@ const UI = {
   },
 
   openInventory(){
+    this.closeJournal();              // one non-blocking overlay at a time
     this.invOpen=true;
     this._invPlayer=0;
     this.renderInventory();
@@ -4722,11 +4879,16 @@ const UI = {
   _drawDoll(p){
     const cv=this.$('dollCanvas'); if(!cv || typeof drawBreedPreviewInline!=='function') return;
     const g=cv.getContext('2d'); if(!g) return;
-    g.clearRect(0,0,cv.width,cv.height);
+    // Size the 92×100 doll to device pixels; keep the CSS box at 92×100 and use logical
+    // dims below so the dog stays crisp on HiDPI. Base transform = dpr; g.scale(S) composes.
+    const dpr=(typeof hiDPI==='function')?hiDPI():1, LW=92, LH=100;
+    if(cv.width!==Math.round(LW*dpr)){ cv.width=Math.round(LW*dpr); cv.height=Math.round(LH*dpr); cv.style.width=LW+'px'; cv.style.height=LH+'px'; }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+    g.clearRect(0,0,LW,LH);
     const S=1.28;                                 // scale the whole dog up for a bigger preview
     const t=(typeof performance!=='undefined')?performance.now():0;
     g.save(); g.scale(S,S);
-    const cx=(cv.width/S)/2, cy=(cv.height/S)/2+5;
+    const cx=(LW/S)/2, cy=(LH/S)/2+5;
     const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
     if(a) Wearables.drawBack(g, a);
     drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);
@@ -4883,7 +5045,8 @@ const UI = {
 
   // ---------- dialog / shop / quest ----------
   openDialog(npc, player){
-    this.closeInventory();            // dialog is blocking; don't stack it over inventory
+    this.closeInventory();            // dialog is blocking; don't stack it over an overlay
+    this.closeJournal();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
@@ -4956,6 +5119,7 @@ const UI = {
   gameOver(p){
     if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
     this.closeInventory();
+    this.closeJournal();
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
@@ -4970,6 +5134,7 @@ const UI = {
   // ---------- menu transitions ----------
   quitToMenu(){
     this.closeInventory();
+    this.closeJournal();
     this.closePanel();
     if(typeof WorldMap!=='undefined') WorldMap.hide();
     if(typeof stopMusic==='function') stopMusic();
@@ -5042,6 +5207,11 @@ UI.init();
 // It renders to its own <canvas> with its own requestAnimationFrame (like the char-
 // select breed previews), so it animates independently of the frozen game loop.
 
+// Logical drawing size (the canvas's declared width/height in index.html). The backing
+// store is scaled up by devicePixelRatio for crispness, but all layout/hit-testing stays
+// in this logical space via a context transform.
+const WM_W = 600, WM_H = 250;
+
 const WorldMap = {
   _raf: null,
   canvas: null,
@@ -5084,7 +5254,7 @@ const WorldMap = {
   // ---------- layout ----------
   _layout(){
     if(!this.canvas) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
     const envs=Campaign.environments, n=envs.length;
     const cols=4, marginX=70, topY=56, rowGap=124;
     const usableW=W-marginX*2;
@@ -5111,7 +5281,15 @@ const WorldMap = {
 
   draw(t){
     const g=this.g; if(!g) return;
-    const W=this.canvas.width, H=this.canvas.height;
+    const W=WM_W, H=WM_H;
+    // Size the backing store to device pixels and draw through a matching transform so
+    // the parchment map stays crisp on high-DPI screens (layout below is in logical space).
+    const dpr=(typeof hiDPI==='function')?hiDPI():1;
+    if(this.canvas.width!==Math.round(W*dpr)){
+      this.canvas.width=Math.round(W*dpr); this.canvas.height=Math.round(H*dpr);
+      this.canvas.style.width=W+'px'; this.canvas.style.height=H+'px';
+    }
+    g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
     g.clearRect(0,0,W,H);
     // parchment backdrop (canvas corners are rounded via CSS)
     g.fillStyle='#F4EAD4'; g.fillRect(0,0,W,H);
@@ -5216,7 +5394,8 @@ const WorldMap = {
   _onClick(ev){
     if(!this.canvas) return;
     const r=this.canvas.getBoundingClientRect();
-    const sx=this.canvas.width/r.width, sy=this.canvas.height/r.height;
+    // Map CSS click coords into logical (WM_W×WM_H) space, where the nodes live.
+    const sx=WM_W/r.width, sy=WM_H/r.height;
     const mx=(ev.clientX-r.left)*sx, my=(ev.clientY-r.top)*sy;
     const hit=this._nodes.find(n=>Math.hypot(n.x-mx,n.y-my)<26);
     if(hit) this._announce(hit.env);
@@ -5235,7 +5414,13 @@ const WorldMap = {
 // ====================== MAIN LOOP ======================
 let lastTime=performance.now();
 function loop(now){
-  const dt=now-lastTime;lastTime=now;
+  // Clamp dt so a background-tab stall (huge gap) can't teleport actors through
+  // colliders; also feeds the frame-rate-independent movement scale (see core/state.js).
+  const dt=Math.min(now-lastTime,50);lastTime=now;
+  dtScale=dt/FRAME_MS;
+  // Base transform: map logical VIEW_W×VIEW_H onto the device-resolution backing store
+  // so all downstream draws (which save/translate/scale relative to this) render crisply.
+  ctx.setTransform(renderScale,0,0,renderScale,0,0);
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
@@ -5295,8 +5480,16 @@ function resizeCanvas(){
   const isFS=isNativeFS||pseudoFS;
   const sw=window.innerWidth,sh=window.innerHeight;
   const scale=isFS?Math.min(sw/VIEW_W,sh/VIEW_H):Math.min((sw-32)/VIEW_W,1);
-  canvas.style.width=Math.round(VIEW_W*scale)+'px';
-  canvas.style.height=Math.round(VIEW_H*scale)+'px';
+  const cssW=Math.round(VIEW_W*scale), cssH=Math.round(VIEW_H*scale);
+  // CSS box stays the display size (same field of view on every screen); the backing
+  // store is bumped to device pixels so drawing is crisp on high-DPI displays.
+  const dpr=hiDPI();
+  canvas.style.width=cssW+'px';
+  canvas.style.height=cssH+'px';
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  ctx.imageSmoothingEnabled=false;      // resizing the canvas resets ctx state
+  renderScale=canvas.width/VIEW_W;      // device px per logical unit (= cssScale × dpr)
 }
 resizeCanvas();
 window.addEventListener('resize',resizeCanvas);
@@ -5658,10 +5851,18 @@ function renderBreedPreviews(playerNum){
   if(previewRAF) cancelAnimationFrame(previewRAF);
   const cfg = dogConfig[`p${playerNum}`];
   function frame(t){
+    const dpr=hiDPI();
     BREEDS.forEach(b=>{
       const el = document.getElementById(`bprev-${b.id}`);
       if(!el) return;
-      drawBreedPreviewInline(el.getContext('2d'), b.id, cfg.color.hex, 30, 42, t);
+      const g = el.getContext('2d');
+      // Size the backing store to 60×70 device pixels; keep the CSS box at 60×70 and
+      // scale the context so the dog (drawn at logical centre 30,42) stays crisp on HiDPI.
+      const bw=Math.round(60*dpr), bh=Math.round(70*dpr);
+      if(el.width!==bw){ el.width=bw; el.height=bh; el.style.width='60px'; el.style.height='70px'; }
+      g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+      g.clearRect(0,0,60,70);
+      drawBreedPreviewInline(g, b.id, cfg.color.hex, 30, 42, t);
     });
     previewRAF = requestAnimationFrame(frame);
   }

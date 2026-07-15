@@ -37,16 +37,16 @@ Entities.register('wolf', {
       if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
-      e.x+=Math.cos(ang)*e.speed*burst*swim;
-      e.y+=Math.sin(ang)*e.speed*burst*swim;
+      e.x+=Math.cos(ang)*e.speed*burst*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*burst*swim*dtScale;
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
-      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim;
-      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim;
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.8*swim*dtScale;
+      e.y+=Math.sin(e.wanderAng)*e.speed*0.8*swim*dtScale;
       e.dir=Math.cos(e.wanderAng)>=0?1:-1;
     }
 
