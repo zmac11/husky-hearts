@@ -47,6 +47,7 @@ const WorldMap = {
     if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
       LevelManager.goTo(id);
       Game.state = SCENES.PLAYING;
+      if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
       if(typeof startMusic==='function') startMusic();
     }
   },

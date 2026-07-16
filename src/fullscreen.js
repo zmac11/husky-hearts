@@ -3,8 +3,28 @@ let pseudoFS=false;
 function resizeCanvas(){
   const isNativeFS=!!(document.fullscreenElement||document.webkitFullscreenElement);
   const isFS=isNativeFS||pseudoFS;
+  // body.fs hides the page chrome (title/subtitle/controls/footer) so only the HUD
+  // and the frame remain — toggle it BEFORE measuring, so the HUD height is final.
+  document.body.classList.toggle('fs',isFS);
   const sw=window.innerWidth,sh=window.innerHeight;
-  const scale=isFS?Math.min(sw/VIEW_W,sh/VIEW_H):Math.min((sw-32)/VIEW_W,1);
+  const hud=document.getElementById('hud');
+  let scale;
+  if(isFS){
+    // Scale the HUD up with the screen (capped so it stays a slim bar), then reserve
+    // its VISUAL height (getBoundingClientRect sees the zoom) so nothing is cut off.
+    const est=Math.min(sw/VIEW_W, sh/VIEW_H);
+    const hudZoom=Math.min(Math.max(est*0.75,1),1.6);
+    if(hud) hud.style.zoom=hudZoom;
+    const reserved=(hud?hud.getBoundingClientRect().height:0)+28;
+    scale=Math.min(sw/VIEW_W,(sh-reserved)/VIEW_H);
+    // Overlay screens (menu, char select, pause, hotbar, …) zoom to match the canvas,
+    // so fullscreen UI fills the screen instead of floating tiny in empty space.
+    document.documentElement.style.setProperty('--ui-scale', scale.toFixed(3));
+  } else {
+    if(hud) hud.style.zoom='';
+    document.documentElement.style.setProperty('--ui-scale', 1);
+    scale=Math.min((sw-32)/VIEW_W,1);
+  }
   const cssW=Math.round(VIEW_W*scale), cssH=Math.round(VIEW_H*scale);
   // CSS box stays the display size (same field of view on every screen); the backing
   // store is bumped to device pixels so drawing is crisp on high-DPI displays.

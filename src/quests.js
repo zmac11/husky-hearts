@@ -99,7 +99,12 @@ const Quests = {
     q.state='done';
     let rewardStr='';
     const r=q.reward;
-    if(r && r.treats){ p.treats=(p.treats||0)+r.treats; rewardStr=`+${r.treats} treats`; }
+    if(r && r.treats){
+      // Smart dogs squeeze a little extra out of every job (smarts bar → questBonus).
+      const bonus=(p.stats && p.stats.questBonus) || 0;
+      const treats=Math.round(r.treats * (1 + bonus));
+      p.treats=(p.treats||0)+treats; rewardStr=`+${treats} treats`;
+    }
     else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
     if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
     if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);

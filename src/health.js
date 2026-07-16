@@ -33,9 +33,9 @@ const Health = {
   isDown(p){ return p && (p.dead || p.hp<=0); },
 
   // Fainting: the dog goes down and STAYS down for the rest of the level — a grave marks
-  // the spot and a sad sound plays. In co-op the surviving dog plays on; fallen dogs are
-  // revived when the next level loads (LevelManager.goTo). Only once EVERY active dog is
-  // down does the run end on the Game Over screen (Play Again / Main Menu).
+  // the spot and a sad sound plays. Fallen dogs are revived when the next level loads
+  // (LevelManager.goTo). Once every active dog is down the run ends on the Game Over
+  // screen (Play Again / Main Menu).
   onDown(p){
     if(!p || p.dead) return;             // already fainted — don't grave twice
     p.dead = true;
@@ -45,10 +45,7 @@ const Health = {
       Entities.spawn('grave', { x:p.x, y:p.y, forPlayer:p.id });
     }
     if(typeof sfxDeath==='function') sfxDeath();
-    if(typeof showToast==='function'){
-      const who = (Game.twoPlayer) ? `P${p.id}'s dog` : 'Your dog';
-      showToast(`🪦 ${who} fainted...`, 1800);
-    }
+    if(typeof showToast==='function') showToast('🪦 Your dog fainted...', 1800);
     if(typeof updateHUD==='function') updateHUD();
 
     // Everyone down? Then it's game over.

@@ -45,19 +45,17 @@ const DevMode = {
     body.innerHTML=html;
   },
 
-  // Boot a solo run straight into `levelId` with the currently-selected dogs.
+  // Boot a run straight into `levelId` with the currently-selected dog.
   play(levelId){
     if(!(typeof Levels!=='undefined' && Levels.get(levelId))) return;
     this._pausedByDev=false;
     this.close();
-    twoPlayer=false;
-    const p2p=document.getElementById('p2panel'); if(p2p) p2p.style.display='none';
-    const p2c=document.getElementById('p2controls'); if(p2c) p2c.style.display='none';
     const ss=document.getElementById('startScreen'); if(ss) ss.style.display='none';
     if(typeof WorldMap!=='undefined') WorldMap.hide();
-    resetGame(dogConfig.p1, dogConfig.p2, levelId);
+    resetGame(dogConfig, levelId);
     if(typeof Abilities!=='undefined') Abilities.spawnAll();
     Game.state=SCENES.PLAYING;
+    if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
     if(typeof startMusic==='function') startMusic();
     if(typeof isTouchDevice==='function' && isTouchDevice() && typeof showMobileControls==='function') showMobileControls(true);
     if(typeof showToast==='function') showToast('🛠 Dev: '+Levels.get(levelId).name, 1600);

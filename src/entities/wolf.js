@@ -32,9 +32,12 @@ Entities.register('wolf', {
     const target=_wolfNearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
-    if(target && dist<e.chaseR){
+    // Keen ears: detection range scales with how loud the target dog is.
+    const hearR=e.chaseR*Entities.noiseFactor(target);
+    if(target && dist<hearR){
+      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // periodic lunge: a short burst of extra speed to close the gap
-      if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
+      if(e.lungeCd<=0 && dist>40 && dist<hearR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*burst*swim*dtScale;
@@ -42,6 +45,7 @@ Entities.register('wolf', {
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
+      e._chasing=false;
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
@@ -55,6 +59,7 @@ Entities.register('wolf', {
     if(e.cool>0)    e.cool=Math.max(0, e.cool-dt);
     if(e.lunge>0)   e.lunge=Math.max(0, e.lunge-dt);
     if(e.lungeCd>0) e.lungeCd=Math.max(0, e.lungeCd-dt);
+    if(e.alertT>0)  e.alertT=Math.max(0, e.alertT-dt);
     e.bob=t;
   },
 
@@ -81,6 +86,8 @@ Entities.register('wolf', {
     // glowing eyes + angry brow
     px(x+D*7-4,y-7,2,2,'#FFC400'); px(x+D*7+2,y-7,2,2,'#FFC400');
     px(x+D*7-5,y-8,10,1,'#22252B');
+    // startled "!" when it just heard a dog
+    Entities.drawAlert(e);
   },
 });
 

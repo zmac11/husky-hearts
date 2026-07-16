@@ -1,10 +1,11 @@
 // ====================== MOBILE CONTROLS ======================
 const isTouchDevice=()=>'ontouchstart' in window||navigator.maxTouchPoints>0;
-const mobileMap={'mb-up':'KeyW','mb-down':'KeyS','mb-left':'KeyA','mb-right':'KeyD','mobileHowlBtn':'Space'};
-function bindMobileBtn(id,code){
+// Buttons press *actions* (not key codes) so they keep working after rebinding.
+const mobileMap={'mb-up':'up','mb-down':'down','mb-left':'left','mb-right':'right','mobileHowlBtn':'action'};
+function bindMobileBtn(id,action){
   const el=document.getElementById(id);if(!el)return;
-  const press=e=>{e.preventDefault();keys[code]=true;el.classList.add('pressed');};
-  const release=e=>{e.preventDefault();keys[code]=false;el.classList.remove('pressed');};
+  const press=e=>{e.preventDefault();Input.setVirtual(action,true);el.classList.add('pressed');};
+  const release=e=>{e.preventDefault();Input.setVirtual(action,false);el.classList.remove('pressed');};
   el.addEventListener('touchstart',press,{passive:false});
   el.addEventListener('touchend',release,{passive:false});
   el.addEventListener('touchcancel',release,{passive:false});

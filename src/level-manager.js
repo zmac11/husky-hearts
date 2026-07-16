@@ -48,7 +48,7 @@ const LevelManager = {
     const lvl=this.load(id);
     if(!lvl) return null;
     const spawn=lvl.spawn || { x:200, y:200 };
-    const players=Game.twoPlayer ? [p1,p2] : [p1];
+    const players=Game.players;
     players.forEach((p,i)=>{
       if(!p) return;
       p.x=spawn.x+i*60; p.y=spawn.y;

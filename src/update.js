@@ -1,8 +1,13 @@
 // ====================== UPDATE ======================
-function updatePlayer(p,controls,t,dt){
+// A howl is LOUD: the noise boost (see Entities.noiseFactor) lasts this long from the
+// start of the howl — a little past the howl pose itself, like an echo. The expanding
+// sound rings (drawHowlRings) visualise exactly this window.
+const HOWL_NOISE_MS=1000;
+
+function updatePlayer(p,t,dt){
   let dx=0,dy=0;
-  if(keys[controls.up])dy--;  if(keys[controls.down])dy++;
-  if(keys[controls.left])dx--; if(keys[controls.right])dx++;
+  if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
+  if(Input.held('left'))dx--; if(Input.held('right'))dx++;
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
@@ -17,9 +22,13 @@ function updatePlayer(p,controls,t,dt){
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
-  Abilities.update(p,controls,dt);
-  if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
+  Abilities.update(p,dt);
+  if(Input.held('action')&&!p.howling){
+    p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-24,'#C9A6FF',6);
+  }
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
+  if(p.noiseT>0)p.noiseT=Math.max(0,p.noiseT-dt);
 }
 
 function tryCollect(p){
@@ -53,8 +62,8 @@ function dropItemOnGround(p, id, qty){
     dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
-function tryDeliver(p,controls){
-  if(!keys[controls.action])return;
+function tryDeliver(p){
+  if(!Input.held('action'))return;
   friends.forEach(f=>{
     if(f.cheered)return;
     if(Math.hypot(p.x-f.x,p.y-f.y)<44&&p.treats>0){
@@ -76,21 +85,10 @@ function tryDeliver(p,controls){
 
 // Interact with the nearest interactable entity (NPC) on an action-key press.
 // Edge-triggered per player so a held key fires once.
-function tryInteract(p,controls){
-  const pressed=!!keys[controls.action];
+function tryInteract(p){
+  const pressed=Input.held('action');
   if(pressed && !p._actionPrev) Entities.interact(p);
   p._actionPrev=pressed;
-}
-
-function checkGroupHowl(){
-  if(!twoPlayer)return;
-  if(Math.hypot(p1.x-p2.x,p1.y-p2.y)<55&&p1.howling&&p2.howling){
-    if(!checkGroupHowl.last||performance.now()-checkGroupHowl.last>1500){
-      checkGroupHowl.last=performance.now();
-      for(let i=0;i<4;i++)spawnSparkles(rand(80,WORLD_W-80),rand(80,WORLD_H-80),'#C9A6FF',14);
-      showToast('✨ A magical synchronized howl! ✨',2000);
-    }
-  }
 }
 
 function updateSparkles(){

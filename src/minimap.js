@@ -39,9 +39,8 @@ function drawMinimap(){
   // viewport
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
   ctx.strokeRect(MX+cam.x*sx,MY+cam.y*sy,VIEW_W*sx,VIEW_H*sy);
-  // players
+  // player
   ctx.fillStyle=p1.color; ctx.fillRect(MX+p1.x*sx-3,MY+p1.y*sy-3,7,7);
-  if(twoPlayer){ ctx.fillStyle=p2.color; ctx.fillRect(MX+p2.x*sx-3,MY+p2.y*sy-3,7,7); }
   ctx.restore();
 }
 
