@@ -1,13 +1,48 @@
 // ====================== AUDIO ENGINE ======================
-let audioCtx=null, bgGain=null, bgNodes=[], musicStarted=false;
+// Two master buses sit in front of the speakers: musicBus (background music +
+// soundtrack previews) and sfxBus (one-shot effects). The Options screen and the
+// in-game mute buttons drive them through AudioSettings (volume × mute per bus).
+let audioCtx=null, musicBus=null, sfxBus=null, bgGain=null, bgNodes=[], musicStarted=false;
 function getAudio(){
   if(!audioCtx){
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    musicBus=audioCtx.createGain(); musicBus.connect(audioCtx.destination);
+    sfxBus=audioCtx.createGain();   sfxBus.connect(audioCtx.destination);
     bgGain=audioCtx.createGain(); bgGain.gain.value=0.38;
-    bgGain.connect(audioCtx.destination);
+    bgGain.connect(musicBus);
+    AudioSettings.apply();
   }
   return audioCtx;
 }
+
+// Volume / mute settings, persisted to localStorage. Volumes are 0..1 sliders
+// multiplied on top of the engine's baked-in per-voice levels (1 = original mix).
+const AudioSettings={
+  KEY:'husky-hearts-audio-v1',
+  musicVol:1, sfxVol:1, musicMuted:false, sfxMuted:false,
+
+  load(){
+    try{
+      const s=JSON.parse(localStorage.getItem(this.KEY));
+      if(s){
+        if(typeof s.musicVol==='number') this.musicVol=Math.max(0,Math.min(1,s.musicVol));
+        if(typeof s.sfxVol==='number')   this.sfxVol=Math.max(0,Math.min(1,s.sfxVol));
+        this.musicMuted=!!s.musicMuted; this.sfxMuted=!!s.sfxMuted;
+      }
+    }catch(e){}
+  },
+  save(){
+    try{ localStorage.setItem(this.KEY, JSON.stringify({
+      musicVol:this.musicVol, sfxVol:this.sfxVol,
+      musicMuted:this.musicMuted, sfxMuted:this.sfxMuted })); }catch(e){}
+  },
+  apply(){
+    if(musicBus) musicBus.gain.value=this.musicMuted?0:this.musicVol;
+    if(sfxBus)   sfxBus.gain.value=this.sfxMuted?0:this.sfxVol;
+  },
+  set(key,val){ this[key]=val; this.apply(); this.save(); },
+};
+AudioSettings.load();
 function osc(ac,type,freq,gainVal,dest,startT,dur,fadeOut=true){
   const o=ac.createOscillator(),g=ac.createGain();
   o.type=type; o.frequency.setValueAtTime(freq,startT);
@@ -98,7 +133,7 @@ function previewSoundtrack(key){
   const trk=SOUNDTRACKS[key]; if(!trk)return;
   const ac=getAudio(); if(ac.state==='suspended')ac.resume();
   previewNodes.forEach(clearTimeout); previewNodes=[];
-  const pg=ac.createGain(); pg.gain.value=0.4; pg.connect(ac.destination);
+  const pg=ac.createGain(); pg.gain.value=0.4; pg.connect(musicBus);
   let t=ac.currentTime+0.05;
   trk.melody.slice(0,8).forEach(([note,beats])=>{
     const d=beats*trk.beat;
@@ -120,10 +155,10 @@ function cycleSoundtrack(){
 }
 function currentTrackName(){ return SOUNDTRACKS[currentTrack].name; }
 
-function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,ac.destination,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,ac.destination,t+0.07,0.1); }
-function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,ac.destination,t+i*0.1,0.18)); }
-function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,ac.destination,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,ac.destination,t+0.5,0.4); }
-function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.6); }
+function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,sfxBus,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,sfxBus,t+0.07,0.1); }
+function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.1,0.18)); }
+function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,sfxBus,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,sfxBus,t+0.5,0.4); }
+function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6); }
 // Sad "aww" when a dog faints — a downward trombone-ish slide with a low bell tail.
 // Does NOT stop the music (a co-op partner may still be playing).
 function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
@@ -134,7 +169,7 @@ function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspen
   g.gain.setValueAtTime(0.0001,t);
   g.gain.exponentialRampToValueAtTime(0.26,t+0.05);
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.8);
-  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.85);
-  osc(ac,'sine',noteHz(N.C3),0.16,ac.destination,t+0.1,0.7);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.85);
+  osc(ac,'sine',noteHz(N.C3),0.16,sfxBus,t+0.1,0.7);
 }
-function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,ac.destination,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,ac.destination,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,ac.destination,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,ac.destination,t+2.5,1.5)); }
+function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,sfxBus,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,sfxBus,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,sfxBus,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,sfxBus,t+2.5,1.5)); }

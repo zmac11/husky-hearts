@@ -13,7 +13,7 @@
     --sky:#FFE9D6; --sky-deep:#FFD6B8; --sunset:#FFB199;
     --meadow:#8FD4A8; --meadow-deep:#5C8D89;
     --brown:#4A3F35; --brown-soft:#7A6A58; --cream:#FFF8EF;
-    --gold:#FFD93D; --p1:#6FA8C9; --p2:#E0855B;
+    --gold:#FFD93D; --p1:#C07840;
     --shadow:rgba(74,63,53,0.25);
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -49,14 +49,17 @@
   }
   .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
   .hearts{ color:#e25c5c; }
-  #fsBtn{
+  #fsBtn,.hudbtn{
     font-family:inherit; font-size:12px; font-weight:bold;
     padding:5px 10px; border-radius:10px; border:2px solid var(--brown);
     background:var(--meadow-deep); color:var(--cream); cursor:pointer;
     box-shadow:0 3px 0 var(--shadow); touch-action:manipulation;
     white-space:nowrap;
   }
-  #fsBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
+  #fsBtn:active,.hudbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
+  .hudbtn{ padding:5px 8px; }
+  .hudbtn.muted{ opacity:.45; filter:grayscale(1); }
+  .hud-mutes{ display:flex; gap:6px; }
 
   /* ---- game frame ---- */
   #gameFrame{
@@ -124,6 +127,38 @@
   .dev-lvl.boss{ background:var(--gold); }
   .dev-lvl.soon{ background:rgba(255,255,255,0.07); color:#9aa39a; border:2px dashed rgba(255,255,255,0.15); cursor:default; box-shadow:none; }
   #devScreen .overlay-hint{ color:var(--cream); }
+
+  /* ---- options screen (key rebinding + sound) ---- */
+  #optionsScreen{
+    position:absolute; inset:0; border-radius:10px; z-index:29;
+    display:none; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:8px; text-align:center; padding:14px 12px; overflow-y:auto;
+    background:rgba(255,233,214,0.98);
+  }
+  #optionsScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.4vw,18px); }
+  .opt-section{
+    background:rgba(255,255,255,0.55); border:2px solid var(--brown-soft);
+    border-radius:12px; padding:8px 10px; width:100%; max-width:470px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .opt-h{ font-size:12px; font-weight:bold; color:var(--brown); text-align:left; }
+  .opt-hint{ font-weight:normal; color:var(--brown-soft); font-size:9px; }
+  .opt-row{ display:flex; align-items:center; gap:8px; }
+  .opt-label{ font-size:11px; color:var(--brown); font-weight:bold; width:118px; text-align:left; flex-shrink:0; }
+  .opt-row input[type=range]{ flex:1; min-width:60px; accent-color:var(--meadow-deep); }
+  .opt-val{ font-size:11px; color:var(--brown-soft); width:36px; text-align:right; flex-shrink:0; }
+  .opt-key,.opt-mute{
+    font-family:inherit; font-size:11px; font-weight:bold;
+    padding:4px 8px; border-radius:8px; border:2px solid var(--brown-soft);
+    background:var(--cream); color:var(--brown); cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation; white-space:nowrap;
+  }
+  .opt-key{ flex:1; min-width:64px; }
+  .opt-key:active,.opt-mute:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
+  .opt-key.empty{ color:var(--brown-soft); border-style:dashed; box-shadow:none; }
+  .opt-key.listening{ background:var(--gold); border-color:var(--brown); animation:optpulse .7s infinite alternate; }
+  .opt-mute.muted{ opacity:.45; filter:grayscale(1); }
+  @keyframes optpulse{ from{ transform:scale(1); } to{ transform:scale(1.06); } }
 
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
@@ -201,10 +236,6 @@
     font-size:clamp(14px,3.5vw,18px); font-weight:bold; color:var(--brown);
     display:flex; align-items:center; gap:8px; margin-bottom:2px;
   }
-  .cs-player-badge{ font-size:11px; font-weight:bold; border-radius:8px; padding:3px 8px; border:2px solid var(--brown); }
-  .p1-badge{ background:var(--p1); color:#fff; }
-  .p2-badge{ background:var(--p2); color:#fff; }
-  .cs-section-label{ font-size:11px; font-weight:bold; color:var(--brown-soft); text-transform:uppercase; letter-spacing:1px; align-self:flex-start; }
   .cs-breeds{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; width:100%; }
   .breed-card{
     display:flex; flex-direction:column; align-items:center; gap:3px;
@@ -217,15 +248,21 @@
   .breed-preview{ image-rendering:pixelated; image-rendering:crisp-edges; }
   .breed-name{ font-size:11px; font-weight:bold; color:var(--brown); }
   .breed-desc{ font-size:9px; color:var(--brown-soft); text-align:center; line-height:1.3; }
-  .cs-colors{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-  .color-swatch{
-    width:36px; height:36px; border-radius:10px; border:2px solid var(--brown-soft);
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:transform .1s; touch-action:manipulation;
+  /* stat bars panel for the selected dog */
+  .cs-stats{
+    background:var(--cream); border:2px solid var(--brown-soft); border-radius:12px;
+    padding:8px 12px; width:100%; max-width:320px;
+    display:flex; flex-direction:column; gap:4px;
   }
-  .color-swatch:hover{ transform:scale(1.12); }
-  .color-swatch.selected{ border:3px solid var(--brown); box-shadow:0 0 0 2px var(--gold); }
-  .swatch-check{ color:#fff; font-size:16px; text-shadow:0 0 3px rgba(0,0,0,0.6); font-weight:bold; }
+  .st-passive{ font-size:10px; color:var(--brown); font-weight:bold; text-align:center; margin-bottom:2px; line-height:1.3; }
+  .st-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .st-label{ font-size:11px; font-weight:bold; color:var(--brown); white-space:nowrap; }
+  .st-pips{ display:flex; gap:3px; }
+  .st-pip{
+    width:14px; height:9px; border-radius:3px;
+    background:#E8DECE; border:1px solid var(--brown-soft);
+  }
+  .st-pip.on{ background:var(--gold); border-color:var(--brown); }
   .cs-actions{ display:flex; gap:10px; margin-top:4px; justify-content:center; }
 
   /* ===== UI PANELS (pause / inventory / dialog) ===== */
@@ -370,6 +407,11 @@
     position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
     color:var(--brown); text-shadow:0 1px 0 #fff;
   }
+  /* ability slots (Q/E) — gold-tinted, left of the divider */
+  .hb-slot.hb-ability{ border-color:#8a6d1f; background:rgba(255,243,216,0.95); }
+  .hb-slot.hb-ability .hb-key{ color:#8a6d1f; }
+  .hb-slot.hb-ability.empty{ opacity:.55; border-style:dashed; }
+  .hb-sep{ width:2px; align-self:stretch; background:rgba(255,248,239,0.5); border-radius:2px; margin:0 2px; }
 
   /* ===== quest tracker (always-on HUD list of accepted quests, top-left of frame) ===== */
   #questTracker{
@@ -446,15 +488,18 @@
   .dialog-choice.disabled{ background:#ddd; color:#999; border-color:#bbb; cursor:not-allowed; box-shadow:none; }
 
   /* ===== FULLSCREEN ===== */
-  /* Canvas fills available space; resizeCanvas() handles the math */
+  /* Canvas fills available space; resizeCanvas() handles the math. body.fs is set by
+     resizeCanvas() for BOTH native and pseudo fullscreen: hide the page chrome so the
+     HUD + game frame are the only things on screen and nothing gets cut off. */
+  body.fs h1, body.fs #subtitle, body.fs #controls, body.fs footer{ display:none; }
+  body.fs #wrap{ justify-content:center; }
+  /* Every overlay inside the frame (menu, char select, options, pause, hotbar, toast,
+     quest tracker, dialogs) zooms to the canvas scale, so fullscreen UI fills the
+     screen instead of floating tiny in the middle. --ui-scale is set by resizeCanvas(). */
+  body.fs #gameFrame > *:not(canvas){ zoom:var(--ui-scale,1); }
   :fullscreen #gameFrame,
   :-webkit-full-screen #gameFrame {
     padding:0; border:none; border-radius:0; box-shadow:none; background:transparent;
-  }
-  :fullscreen body,
-  :-webkit-full-screen body {
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:linear-gradient(180deg,var(--sky) 0%,var(--sky-deep) 60%,var(--meadow) 100%);
   }
 </style>
 </head>
@@ -464,10 +509,13 @@
   <div id="subtitle">a cozy little walk to make some friends smile</div>
 
   <div id="hud">
-    <div class="panel"><span class="dot" style="background:var(--p1)"></span>P1: <span id="p1count">0</span> treats<span class="heartbar" id="p1hearts"></span></div>
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> treats<span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
-    <div class="panel" id="p2panel" style="display:none;"><span class="dot" style="background:var(--p2)"></span>P2: <span id="p2count">0</span> treats<span class="heartbar" id="p2hearts"></span></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
+    <span class="hud-mutes">
+      <button class="hudbtn" id="muteMusicBtn" title="Mute music">🎵</button>
+      <button class="hudbtn" id="muteSfxBtn" title="Mute sound effects">🔊</button>
+    </span>
     <button id="fsBtn">⛶ Fullscreen</button>
   </div>
 
@@ -483,9 +531,9 @@
       <div id="startScreen">
         <h2>🐕 Welcome to Husky Hearts 🐕</h2>
         <p>Explore the big meadow, collect treats, and bring them to lonely animal friends. Use the minimap to find them!</p>
-        <button class="modebtn" id="btn1p">🐾 Play Solo</button>
-        <button class="modebtn secondary" id="btn2p">🐾🐾 Play Together (2 Players)</button>
+        <button class="modebtn" id="btn1p">🐾 Play</button>
         <button class="modebtn secondary" id="btnContinue" style="display:none;">📂 Load Saved Game</button>
+        <button class="modebtn secondary" id="btnOptions">⚙️ Options</button>
         <button class="modebtn soundtrack" id="btnSoundtrack">🎵 Music: Cozy Meadow</button>
         <button class="modebtn soundtrack" id="btnDev">🛠 Dev Mode</button>
       </div>
@@ -511,8 +559,10 @@
         <h2>🛠 Dev Mode — Jump to Level</h2>
         <div id="devBody"></div>
         <button class="modebtn secondary" id="devClose">✕ Close</button>
-        <div class="overlay-hint">Press <b>`</b> (backtick) anytime to toggle</div>
+        <div class="overlay-hint">Press <b>`</b> (backtick) or <b>&lt;</b> anytime to toggle</div>
       </div>
+
+      <div id="optionsScreen" style="display:none;"></div>
 
       <div id="gameOverScreen" class="game-overlay" style="display:none;">
         <h2>💔 Game Over</h2>
@@ -526,6 +576,7 @@
         <button class="modebtn" id="btnResume">▶ Resume</button>
         <button class="modebtn secondary" id="btnSave">💾 Save Game</button>
         <button class="modebtn secondary" id="btnLoad">📂 Load Game</button>
+        <button class="modebtn secondary" id="btnPauseOptions">⚙️ Options</button>
         <button class="modebtn secondary" id="btnQuit">🏠 Quit to Menu</button>
         <div class="overlay-hint">Esc to resume</div>
       </div>
@@ -586,10 +637,9 @@
   </div>
 
   <div id="controls">
-    <div class="ctrl-card"><b>Player 1</b>WASD · SPACE to howl/deliver</div>
-    <div class="ctrl-card" id="p2controls" style="display:none;"><b>Player 2</b>Arrow Keys · ENTER to howl/deliver</div>
+    <div class="ctrl-card" id="ctrlCard"><b>Controls</b>WASD or ↑←↓→ · SPACE / ENTER to howl/deliver</div>
   </div>
-  <footer>Tip: check the minimap (top-right) to find animals and treats! · <b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests</footer>
+  <footer>Tip: check the minimap (top-right) to find animals and treats! · <span id="footKeys"><b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests</span></footer>
 </div>
 
 <!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->
@@ -650,7 +700,7 @@ const RNG = {
 // boolean flags, flow is a single scene value and all "current run" state hangs here.
 //
 // To keep this refactor low-risk, the canonical player/world globals still live where
-// they always have (p1/p2/twoPlayer/cheeredCount in world.js; worldObjects/colliders/
+// they always have (p1/cheeredCount in world.js; worldObjects/colliders/
 // cam/WORLD_* in world.js). `Game` and `World` are thin facades that delegate to them,
 // so old code keeps working while new code reads/writes through these namespaces.
 // The getter/setter bodies run at call time (well after world.js has initialised), so
@@ -685,11 +735,9 @@ const Game = {
   get running(){ return this.state === SCENES.PLAYING; }, // world actively simulating?
 
   // --- player access (delegates to canonical globals) ---
-  get players(){ return this.twoPlayer ? [p1, p2] : [p1]; },
+  // Single-player for now; a future multiplayer mode would widen this list.
+  get players(){ return [p1]; },
   get p1(){ return p1; },
-  get p2(){ return p2; },
-  get twoPlayer(){ return typeof twoPlayer !== 'undefined' ? twoPlayer : false; },
-  set twoPlayer(v){ twoPlayer = v; },
   get cheeredCount(){ return cheeredCount; },
   set cheeredCount(v){ cheeredCount = v; },
 };
@@ -705,84 +753,211 @@ const World = {
 
 // ===== src/core/input.js =====
 // ====================== INPUT ======================
-// Owns the raw key state and per-player control maps (previously the `keys` object
-// and inline listeners lived in world.js, and the c1/c2 maps were defined inside the
-// main loop). Centralising here gives one place to add rebinding, gamepad support,
-// and the global ESC → pause hook.
+// Owns the raw key state and the rebindable action→key bindings. Each gameplay
+// action can have up to two bound keys (defaults: WASD + arrow keys), editable on
+// the Options screen (options.js) and persisted to localStorage. Mobile buttons
+// press actions directly via setVirtual(), so they keep working after rebinds.
 
 const keys = {};
 
+const Input = {
+  keys,
+  BINDINGS_KEY: 'husky-hearts-bindings-v1',
+
+  // Gameplay actions shown on the Options screen, in display order.
+  ACTIONS: [
+    { id:'up',        label:'Move Up' },
+    { id:'down',      label:'Move Down' },
+    { id:'left',      label:'Move Left' },
+    { id:'right',     label:'Move Right' },
+    { id:'action',    label:'Howl / Deliver' },
+    { id:'ability1',  label:'Ability 1' },
+    { id:'ability2',  label:'Ability 2' },
+    { id:'inventory', label:'Inventory' },
+    { id:'journal',   label:'Quest Journal' },
+  ],
+
+  DEFAULTS: {
+    up:        ['KeyW','ArrowUp'],
+    down:      ['KeyS','ArrowDown'],
+    left:      ['KeyA','ArrowLeft'],
+    right:     ['KeyD','ArrowRight'],
+    action:    ['Space','Enter'],
+    ability1:  ['KeyQ', null],
+    ability2:  ['KeyE', null],
+    inventory: ['KeyI', null],
+    journal:   ['KeyJ', null],
+  },
+
+  bindings: {},   // action id → [primaryCode|null, altCode|null]
+  _virtual: {},   // action id → bool (touch d-pad / howl button)
+
+  load(){
+    let saved=null;
+    try{ saved=JSON.parse(localStorage.getItem(this.BINDINGS_KEY)); }catch(e){ saved=null; }
+    this.bindings={};
+    const used=new Set();
+    // Saved bindings first — they own their keys.
+    this.ACTIONS.forEach(a=>{
+      if(saved && Array.isArray(saved[a.id])){
+        const s=saved[a.id];
+        this.bindings[a.id]=[s[0]||null, s[1]||null];
+        this.bindings[a.id].forEach(c=>{ if(c) used.add(c); });
+      }
+    });
+    // Then defaults for new/unsaved actions, skipping keys a saved binding already took.
+    this.ACTIONS.forEach(a=>{
+      if(this.bindings[a.id]) return;
+      const d=this.DEFAULTS[a.id];
+      this.bindings[a.id]=[ (d[0]&&!used.has(d[0]))?d[0]:null, (d[1]&&!used.has(d[1]))?d[1]:null ];
+      this.bindings[a.id].forEach(c=>{ if(c) used.add(c); });
+    });
+  },
+  save(){ try{ localStorage.setItem(this.BINDINGS_KEY, JSON.stringify(this.bindings)); }catch(e){} },
+  resetBindings(){
+    this.ACTIONS.forEach(a=>{ const d=this.DEFAULTS[a.id]; this.bindings[a.id]=[d[0]||null, d[1]||null]; });
+    this.save();
+  },
+
+  // Is this action currently held (any of its keys, or a touch button)?
+  held(action){
+    if(this._virtual[action]) return true;
+    const b=this.bindings[action];
+    return !!(b && ((b[0]&&keys[b[0]]) || (b[1]&&keys[b[1]])));
+  },
+  setVirtual(action,on){ this._virtual[action]=!!on; },
+
+  // Which action (if any) is `code` bound to?
+  boundAction(code){
+    for(const id in this.bindings){ if(this.bindings[id].indexOf(code)!==-1) return id; }
+    return null;
+  },
+
+  // Bind `code` to an action slot, stealing it from any other slot it occupied.
+  setBinding(actionId, slot, code){
+    for(const id in this.bindings){
+      const b=this.bindings[id];
+      for(let i=0;i<2;i++) if(b[i]===code && !(id===actionId && i===slot)) b[i]=null;
+    }
+    this.bindings[actionId][slot]=code;
+    this.save();
+  },
+  clearBinding(actionId, slot){ this.bindings[actionId][slot]=null; this.save(); },
+
+  // Human-readable key label for the Options screen / hints.
+  keyName(code){
+    if(!code) return '—';
+    const nice={ Space:'SPACE', Enter:'ENTER', Tab:'TAB', Backspace:'BKSP', CapsLock:'CAPS',
+      Period:'.', Comma:',', Slash:'/', Semicolon:';', Quote:"'", Backslash:'\\',
+      BracketLeft:'[', BracketRight:']', Minus:'-', Equal:'=', Backquote:'`',
+      ShiftLeft:'L-SHIFT', ShiftRight:'R-SHIFT', ControlLeft:'L-CTRL', ControlRight:'R-CTRL',
+      AltLeft:'L-ALT', AltRight:'R-ALT', MetaLeft:'CMD', MetaRight:'CMD',
+      ArrowUp:'↑', ArrowDown:'↓', ArrowLeft:'←', ArrowRight:'→' };
+    if(nice[code]) return nice[code];
+    let m;
+    if((m=/^Key([A-Z])$/.exec(code))) return m[1];
+    if((m=/^Digit(\d)$/.exec(code))) return m[1];
+    if((m=/^Numpad(.+)$/.exec(code))) return 'NUM '+m[1];
+    return code.toUpperCase();
+  },
+
+  down(code){ return !!keys[code]; },
+
+  // ESC hook: Options screen first, then whatever panel UI has open.
+  onEscape(){
+    if(typeof Options!=='undefined' && Options.isOpen && Options.isOpen()){ Options.close(); return; }
+    if(typeof UI !== 'undefined' && UI.togglePause) UI.togglePause();
+  },
+};
+Input.load();
+
 window.addEventListener('keydown', e=>{
   keys[e.code] = true;
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault();
+  // Don't let bound gameplay keys (or the usual suspects) scroll the page.
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code) || Input.boundAction(e.code)) e.preventDefault();
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
-  if(e.code === 'KeyI'){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
-  if(e.code === 'KeyJ'){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
-  if(e.code === 'Backquote'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
-  // Number keys 1-9 → use the matching P1 hotbar slot (consumables/toys).
+  if(Input.bindings.inventory.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
+  if(Input.bindings.journal.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
+  // Dev mode: backtick, or the "<" key (IntlBackslash = the key next to left Shift on
+  // ISO/European keyboards, which types "<" — e.key covers any other layout too).
+  if(e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '<'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
+  // Number keys 1-9 → use the matching hotbar slot (consumables/toys).
   const m = /^Digit([1-9])$/.exec(e.code);
   if(m){ if(typeof UI!=='undefined' && UI.useHotbar) UI.useHotbar(+m[1]); }
 });
 window.addEventListener('keyup', e=>{ keys[e.code] = false; });
 
-const Input = {
-  keys,
-
-  // Per-player control maps. `ability` is the active-ability trigger (Phase 1);
-  // it matches the keys Lolla's ball cannon already used (Q / period).
-  CONTROLS: {
-    p1: { up:'KeyW',    down:'KeyS',      left:'KeyA',       right:'KeyD',        action:'Space', ability:'KeyQ'   },
-    p2: { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft',  right:'ArrowRight',  action:'Enter', ability:'Period' },
-  },
-
-  down(code){ return !!keys[code]; },
-
-  // ESC hook. Real pause-menu wiring lands in Phase 5 (UI.togglePause); until then
-  // this is a guarded no-op so ESC is harmless.
-  onEscape(){ if(typeof UI !== 'undefined' && UI.togglePause) UI.togglePause(); },
-};
-
 // ===== src/data/breeds.js =====
 // ====================== BREEDS (data) ======================
-// Single source of truth for breed identity + stats + which active ability the breed
-// carries. charselect.js builds its cards from Breeds.list(); makePlayer() (world.js)
-// reads stats/abilityId. This is the seam for "each dog has unique + passive abilities
-// and different stats": tune numbers here, and add an entry in abilities/ for a new
-// active ability, then point a breed's abilityId at it.
+// Single source of truth for breed identity + stats + which active abilities the breed
+// carries. charselect.js builds its cards (and the 1–5 stat bars panel) from
+// Breeds.list(); makePlayer() (world.js) reads hp/stats/abilities. This is the seam for
+// "each dog has unique + passive abilities and different stats": tune the bars here,
+// and add an entry in abilities/ for a new active ability, then point one of the
+// breed's ability slots at it.
 //
-// stats:
-//   speed — base walking speed (px/frame). Was hardcoded 2.6 for everyone.
-//   swim  — multiplier applied to speed while swimming (was hardcoded 0.5).
-// hp — starting (and max) health total. 1 heart icon = 2 hp, so these are all even:
-//   e.g. 20 hp → 10 hearts. Each breed has a different total (small dogs are frailer,
-//   the alpha is tankier). makePlayer() seeds player.hp/maxHp from this.
-// passive — human-readable description of the stat-based perk (shown in UI later).
-// abilityId — key into the Abilities registry for an active ability (null = none yet).
+// bars — the CANONICAL 1–5 ratings shown on the character-select screen. All real
+//   gameplay numbers are DERIVED from them (see _derive below), so the display can
+//   never drift from what the game actually does:
+//     health — hp = 14 + 2×bar            (1 heart = 2 hp; bar 5 → 24 hp)
+//     speed  — walk speed = 2.55 + 0.05×bar (px/frame at 60 fps)
+//     swim   — swim multiplier = 0.35 + 0.05×bar (applied to speed in water)
+//     noise  — noiseMul = 0.7 + 0.15×(bar−1): scales every enemy's OWN detection
+//              range for this dog (bar 5 → heard from 1.3× as far; bar 1 → 0.7×).
+//              Howling multiplies this further (see Entities.noiseFactor).
+//     smarts — priceMul = 1.15 − 0.05×bar (shop prices) and
+//              questBonus = 0.05×(bar−3) (extra treats from quest rewards)
+// passive — human-readable description of the dog's standout trait (shown in UI).
+// abilities — two active-ability slots, [slot1, slot2], each a key into the Abilities
+//   registry (null = empty slot). Slot 1 fires on the "Ability 1" key (default Q),
+//   slot 2 on "Ability 2" (default E). Each dog can carry a different pair.
+// color — the breed's signature colour (HUD dot / minimap marker); the dogs draw
+//   their real coat colours in-sprite, so this is just their accent hue.
 
 const BREEDS_DATA = {
-  dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️', hp:24,
-               stats:{ speed:2.8, swim:0.55 }, passive:'Alpha — a step faster than the pack', abilityId:null },
-  lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟', hp:20,
-               stats:{ speed:2.6, swim:0.5  }, passive:'Playful — loves a good game of fetch', abilityId:'ballCannon' },
-  husky:     { name:'Husky',     desc:'Energetic & loyal',    emoji:'🐕', hp:20,
-               stats:{ speed:2.7, swim:0.5  }, passive:'Tireless runner',                       abilityId:null },
-  shiba:     { name:'Shiba',     desc:'Bold & fox-like',      emoji:'🦊', hp:18,
-               stats:{ speed:2.6, swim:0.5  }, passive:'Sure-footed',                           abilityId:null },
-  corgi:     { name:'Corgi',     desc:'Tiny legs, big heart', emoji:'🐾', hp:16,
-               stats:{ speed:2.3, swim:0.45 }, passive:'Short legs — steady but slower',        abilityId:null },
-  poodle:    { name:'Poodle',    desc:'Fluffy & fabulous',    emoji:'✨', hp:18,
-               stats:{ speed:2.6, swim:0.75 }, passive:'Natural swimmer — glides through water', abilityId:null },
-  dalmatian: { name:'Dalmatian', desc:'Spotty & spirited',    emoji:'⚫', hp:22,
-               stats:{ speed:2.9, swim:0.5  }, passive:'Spirited sprinter',                     abilityId:null },
+  dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️', color:'#C07840',
+               bars:{ health:5, speed:5, swim:4, noise:3, smarts:3 },
+               passive:'Alpha — tough and a step faster than the pack', abilities:[null,null] },
+  lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟', color:'#6FA8C9',
+               bars:{ health:3, speed:2, swim:3, noise:5, smarts:5 },
+               passive:'Clever & loud — haggles well, but enemies hear her coming', abilities:['ballCannon',null] },
+  tapka:     { name:'Ťapka',     desc:'Tiny Prague Ratter',   emoji:'🐭', color:'#B5854F',
+               bars:{ health:1, speed:4, swim:2, noise:1, smarts:4 },
+               passive:'Featherweight — frail but swift, and almost silent', abilities:[null,null] },
 };
 
 // Display order for the character-select screen.
-const BREED_ORDER = ['dinno','lolla','husky','shiba','corgi','poodle','dalmatian'];
+const BREED_ORDER = ['dinno','lolla','tapka'];
+
+// Stat metadata for the character-select bars, in display order.
+const BREED_STATS = [
+  { key:'health', label:'Health',   icon:'❤️', hint:'how many hearts you start with' },
+  { key:'speed',  label:'Speed',    icon:'⚡', hint:'how fast you run' },
+  { key:'swim',   label:'Swimming', icon:'🏊', hint:'how well you move in water' },
+  { key:'noise',  label:'Noise',    icon:'🔊', hint:'how far enemies hear you — quiet dogs sneak past' },
+  { key:'smarts', label:'Smarts',   icon:'🧠', hint:'better shop prices & bigger quest rewards' },
+];
+
+// Turn the 1–5 bars into the real gameplay numbers (done once, at load).
+function _derive(b){
+  const bars=b.bars;
+  b.hp   = 14 + 2*bars.health;
+  b.stats = {
+    speed:      +(2.55 + 0.05*bars.speed).toFixed(2),
+    swim:       +(0.35 + 0.05*bars.swim).toFixed(2),
+    noiseMul:   +(0.7  + 0.15*(bars.noise-1)).toFixed(2),
+    priceMul:   +(1.15 - 0.05*bars.smarts).toFixed(2),
+    questBonus: +(0.05*(bars.smarts-3)).toFixed(2),
+  };
+  return b;
+}
+Object.values(BREEDS_DATA).forEach(_derive);
 
 const Breeds = {
   all: BREEDS_DATA,
-  get(id){ return BREEDS_DATA[id] || BREEDS_DATA.husky; },
-  // {id, name, desc, emoji, stats, passive, abilityId} for each breed, in display order.
+  STATS: BREED_STATS,
+  get(id){ return BREEDS_DATA[id] || BREEDS_DATA.dinno; },
+  // {id, name, desc, emoji, bars, stats, passive, abilities} for each breed, in display order.
   list(){ return BREED_ORDER.map(id => Object.assign({ id }, BREEDS_DATA[id])); },
 };
 
@@ -1124,7 +1299,12 @@ const Quests = {
     q.state='done';
     let rewardStr='';
     const r=q.reward;
-    if(r && r.treats){ p.treats=(p.treats||0)+r.treats; rewardStr=`+${r.treats} treats`; }
+    if(r && r.treats){
+      // Smart dogs squeeze a little extra out of every job (smarts bar → questBonus).
+      const bonus=(p.stats && p.stats.questBonus) || 0;
+      const treats=Math.round(r.treats * (1 + bonus));
+      p.treats=(p.treats||0)+treats; rewardStr=`+${treats} treats`;
+    }
     else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
     if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
     if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);
@@ -1168,9 +1348,9 @@ const Health = {
   isDown(p){ return p && (p.dead || p.hp<=0); },
 
   // Fainting: the dog goes down and STAYS down for the rest of the level — a grave marks
-  // the spot and a sad sound plays. In co-op the surviving dog plays on; fallen dogs are
-  // revived when the next level loads (LevelManager.goTo). Only once EVERY active dog is
-  // down does the run end on the Game Over screen (Play Again / Main Menu).
+  // the spot and a sad sound plays. Fallen dogs are revived when the next level loads
+  // (LevelManager.goTo). Once every active dog is down the run ends on the Game Over
+  // screen (Play Again / Main Menu).
   onDown(p){
     if(!p || p.dead) return;             // already fainted — don't grave twice
     p.dead = true;
@@ -1180,10 +1360,7 @@ const Health = {
       Entities.spawn('grave', { x:p.x, y:p.y, forPlayer:p.id });
     }
     if(typeof sfxDeath==='function') sfxDeath();
-    if(typeof showToast==='function'){
-      const who = (Game.twoPlayer) ? `P${p.id}'s dog` : 'Your dog';
-      showToast(`🪦 ${who} fainted...`, 1800);
-    }
+    if(typeof showToast==='function') showToast('🪦 Your dog fainted...', 1800);
     if(typeof updateHUD==='function') updateHUD();
 
     // Everyone down? Then it's game over.
@@ -1278,17 +1455,27 @@ const Wearables = {
   // ---- rendering ----
   // Build the anchor used by both the world dog and the paper-doll. `x` is the dog's
   // horizontal centre; `foot` is its baseline (`by` in drawDog). Head/face/neck/body
-  // offsets are tuned to the shared breed silhouette.
-  anchor(x, foot, dir, equipment, t){
-    return { x, headY:foot-18, faceY:foot-11, neckY:foot-2, bodyY:foot+1, dir, t, equipment };
+  // offsets are tuned per silhouette: the standard frame fits Dinno/Lolla; tiny breeds
+  // (Ťapka) have a lower head, eyes at foot-8 and a shorter body, so clothing shifts
+  // down and the render table shrinks pieces via `a.small`.
+  anchor(x, foot, dir, equipment, t, breed){
+    const small = breed==='tapka';
+    return small
+      ? { x, headY:foot-14, faceY:foot-8,  neckY:foot,   bodyY:foot+3, dir, t, equipment, small:true }
+      : { x, headY:foot-18, faceY:foot-11, neckY:foot-2, bodyY:foot+1, dir, t, equipment, small:false };
   },
 
+  // Layering is direction-aware: back-slot items (capes) hang on the dog's BACK, so
+  // facing down/left/right they sit behind the sprite — but facing up (away from the
+  // camera) the back is what you see, so they draw OVER the sprite instead. This lives
+  // in the shared pass, so it applies to every wearable and every breed automatically.
   drawBack(g, a){
     const eq=a.equipment; if(!eq) return;
-    if(eq.back) this._paint(g, eq.back, a);   // capes sit behind the dog
+    if(eq.back && a.dir!=='up') this._paint(g, eq.back, a);
   },
   drawFront(g, a){
     const eq=a.equipment; if(!eq) return;
+    if(eq.back && a.dir==='up') this._paint(g, eq.back, a);   // cape covers the back you're looking at
     ['body','neck','head','face'].forEach(slot=>{ if(eq[slot]) this._paint(g, eq[slot], a); });
   },
   _paint(g, id, a){
@@ -1313,10 +1500,10 @@ const Wearables = {
       _wpx(g, x-6, y-2, 12, 6, '#C0392B');   // dome
       _wpx(g, x-6, y-4, 12, 3, '#D9503E');   // crown top
       _wpx(g, x-2, y-5, 5, 2, '#D9503E');
-      // brim points the way the dog faces
+      // brim points the way the dog faces (facing up it's hidden behind the head)
       if(a.dir==='right')      _wpx(g, x+5, y+3, 8, 2, '#9E2A1E');
       else if(a.dir==='left')  _wpx(g, x-13, y+3, 8, 2, '#9E2A1E');
-      else                     _wpx(g, x-4, y+4, 8, 2, '#9E2A1E');
+      else if(a.dir==='down')  _wpx(g, x-4, y+4, 8, 2, '#9E2A1E');
     },
     ribbon(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY+2;
@@ -1328,33 +1515,56 @@ const Wearables = {
     shades(g,a){
       if(a.dir==='up') return;               // eyes hidden facing away
       const y=a.faceY;
+      if(a.small){                           // narrow face → smaller lenses over the eyes
+        if(a.dir==='right'){ _wpx(g, a.x+2, y, 5, 3, '#111'); _wpx(g, a.x+6, y+1, 1, 1, '#111'); }
+        else if(a.dir==='left'){ _wpx(g, a.x-7, y, 5, 3, '#111'); _wpx(g, a.x-7, y+1, 1, 1, '#111'); }
+        else { _wpx(g, a.x-5, y, 4, 3, '#111'); _wpx(g, a.x+1, y, 4, 3, '#111'); _wpx(g, a.x-1, y+1, 2, 1, '#111'); }
+        return;
+      }
       if(a.dir==='right'){ _wpx(g, a.x+3, y, 6, 3, '#111'); _wpx(g, a.x+8, y+1, 1, 1, '#111'); }
       else if(a.dir==='left'){ _wpx(g, a.x-9, y, 6, 3, '#111'); _wpx(g, a.x-9, y+1, 1, 1, '#111'); }
       else { _wpx(g, a.x-6, y, 5, 3, '#111'); _wpx(g, a.x+1, y, 5, 3, '#111'); _wpx(g, a.x-1, y+1, 2, 1, '#111'); }
     },
     scarf(g,a){
-      const y=a.neckY;
-      _wpx(g, a.x-8, y, 16, 4, '#2E7D5B');   // wrap
-      _wpx(g, a.x-8, y+1, 16, 1, '#F0E6C8'); // knit stripe
-      const dx = a.dir==='left'? -9 : 5;     // dangling tail
-      _wpx(g, a.x+dx, y+2, 3, 7, '#2E7D5B');
-      _wpx(g, a.x+dx, y+5, 3, 1, '#F0E6C8');
+      const y=a.neckY, w=a.small?12:16, hw=w/2;
+      _wpx(g, a.x-hw, y, w, 4, '#2E7D5B');   // wrap
+      _wpx(g, a.x-hw, y+1, w, 1, '#F0E6C8'); // knit stripe
+      const dx = a.dir==='left'? -(hw+1) : hw-3;  // dangling tail
+      _wpx(g, a.x+dx, y+2, 3, a.small?5:7, '#2E7D5B');
+      _wpx(g, a.x+dx, y+4, 3, 1, '#F0E6C8');
     },
     raincoat(g,a){
-      const y=a.bodyY;
-      _wpx(g, a.x-10, y, 20, 11, '#F2C94C'); // coat body
-      _wpx(g, a.x-10, y, 20, 2, '#E0B23C');  // collar shade
+      const y=a.bodyY, w=a.small?14:20, h=a.small?8:11, hw=w/2;
+      _wpx(g, a.x-hw, y, w, h, '#F2C94C');   // coat body
+      _wpx(g, a.x-hw, y, w, 2, '#E0B23C');   // collar shade
       _wpx(g, a.x-1, y+2, 2, 2, '#8A6D1A');  // buttons
-      _wpx(g, a.x-1, y+6, 2, 2, '#8A6D1A');
-      _wpx(g, a.x-10, y+9, 20, 2, '#D9A82E');// hem
+      _wpx(g, a.x-1, y+(a.small?5:6), 2, 2, '#8A6D1A');
+      _wpx(g, a.x-hw, y+h-2, w, 2, '#D9A82E');// hem
     },
     cape(g,a){
-      const y=a.bodyY;
-      _wpx(g, a.x-9, y-2, 18, 12, '#B03040'); // cloth
-      _wpx(g, a.x-9, y-2, 18, 3, '#D04A5A');  // shoulder collar
-      _wpx(g, a.x-9, y+10, 5, 3, '#8C2434');  // ragged hem
-      _wpx(g, a.x-1, y+10, 5, 3, '#8C2434');
-      _wpx(g, a.x+6, y+10, 3, 3, '#8C2434');
+      // Direction-aware so the cape is actually visible: facing down/up it drapes
+      // WIDER than the body (edges + hem peek out); facing left/right it trails
+      // behind the dog and flutters as they run.
+      const y=a.bodyY, t=a.t||0;
+      const C='#B03040', Cd='#8C2434', Cl='#D04A5A';
+      if(a.dir==='down'||a.dir==='up'){
+        const w=a.small?18:24, h=a.small?11:14, hw=w/2;
+        _wpx(g, a.x-hw, y-2, w, h, C);
+        _wpx(g, a.x-hw, y-2, w, 3, Cl);                 // shoulder collar
+        _wpx(g, a.x-hw, y-2+h-3, 4, 3, Cd);             // ragged hem
+        _wpx(g, a.x-2, y-2+h-3, 4, 3, Cd);
+        _wpx(g, a.x+hw-3, y-2+h-3, 3, 3, Cd);
+      } else {
+        const trailLeft=a.dir==='right';                // trails opposite the facing
+        const bw=a.small?7:10;                          // clears the body silhouette
+        const len=a.small?7:9, h=a.small?9:12;
+        const flut=Math.sin(t/170)*1.5;                 // gentle run flutter
+        const x0=trailLeft ? a.x-bw-len : a.x+bw;
+        _wpx(g, x0, y-2+flut*0.5, len, h, C);           // trailing cloth
+        _wpx(g, trailLeft?x0:x0+len-3, y-2+flut, 3, h, Cd); // fluttering outer edge
+        _wpx(g, a.x-bw, y-3, bw*2, 3, C);               // draped over the shoulders
+        _wpx(g, trailLeft?a.x-bw-3:a.x+bw-1, y-3, 4, 3, Cl); // clasp at the shoulder
+      }
     },
     beanie(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY;
@@ -1367,6 +1577,16 @@ const Wearables = {
       if(a.dir==='up') return;               // eyes hidden facing away
       const y=a.faceY;
       const lens='#3AA0C8', frame='#2A2E36', strap='#C0463C';
+      if(a.small){                           // narrow face → slimmer goggles
+        if(a.dir==='right'){ _wpx(g, a.x+1, y-1, 6, 4, frame); _wpx(g, a.x+2, y, 4, 2, lens); }
+        else if(a.dir==='left'){ _wpx(g, a.x-7, y-1, 6, 4, frame); _wpx(g, a.x-6, y, 4, 2, lens); }
+        else {
+          _wpx(g, a.x-6, y-1, 12, 4, frame);
+          _wpx(g, a.x-5, y, 4, 2, lens); _wpx(g, a.x+1, y, 4, 2, lens);
+        }
+        _wpx(g, a.x-7, y, 2, 2, strap); _wpx(g, a.x+5, y, 2, 2, strap);
+        return;
+      }
       if(a.dir==='right'){ _wpx(g, a.x+3, y-1, 7, 4, frame); _wpx(g, a.x+4, y, 5, 2, lens); }
       else if(a.dir==='left'){ _wpx(g, a.x-10, y-1, 7, 4, frame); _wpx(g, a.x-9, y, 5, 2, lens); }
       else {
@@ -1380,15 +1600,50 @@ const Wearables = {
 
 // ===== src/audio.js =====
 // ====================== AUDIO ENGINE ======================
-let audioCtx=null, bgGain=null, bgNodes=[], musicStarted=false;
+// Two master buses sit in front of the speakers: musicBus (background music +
+// soundtrack previews) and sfxBus (one-shot effects). The Options screen and the
+// in-game mute buttons drive them through AudioSettings (volume × mute per bus).
+let audioCtx=null, musicBus=null, sfxBus=null, bgGain=null, bgNodes=[], musicStarted=false;
 function getAudio(){
   if(!audioCtx){
     audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    musicBus=audioCtx.createGain(); musicBus.connect(audioCtx.destination);
+    sfxBus=audioCtx.createGain();   sfxBus.connect(audioCtx.destination);
     bgGain=audioCtx.createGain(); bgGain.gain.value=0.38;
-    bgGain.connect(audioCtx.destination);
+    bgGain.connect(musicBus);
+    AudioSettings.apply();
   }
   return audioCtx;
 }
+
+// Volume / mute settings, persisted to localStorage. Volumes are 0..1 sliders
+// multiplied on top of the engine's baked-in per-voice levels (1 = original mix).
+const AudioSettings={
+  KEY:'husky-hearts-audio-v1',
+  musicVol:1, sfxVol:1, musicMuted:false, sfxMuted:false,
+
+  load(){
+    try{
+      const s=JSON.parse(localStorage.getItem(this.KEY));
+      if(s){
+        if(typeof s.musicVol==='number') this.musicVol=Math.max(0,Math.min(1,s.musicVol));
+        if(typeof s.sfxVol==='number')   this.sfxVol=Math.max(0,Math.min(1,s.sfxVol));
+        this.musicMuted=!!s.musicMuted; this.sfxMuted=!!s.sfxMuted;
+      }
+    }catch(e){}
+  },
+  save(){
+    try{ localStorage.setItem(this.KEY, JSON.stringify({
+      musicVol:this.musicVol, sfxVol:this.sfxVol,
+      musicMuted:this.musicMuted, sfxMuted:this.sfxMuted })); }catch(e){}
+  },
+  apply(){
+    if(musicBus) musicBus.gain.value=this.musicMuted?0:this.musicVol;
+    if(sfxBus)   sfxBus.gain.value=this.sfxMuted?0:this.sfxVol;
+  },
+  set(key,val){ this[key]=val; this.apply(); this.save(); },
+};
+AudioSettings.load();
 function osc(ac,type,freq,gainVal,dest,startT,dur,fadeOut=true){
   const o=ac.createOscillator(),g=ac.createGain();
   o.type=type; o.frequency.setValueAtTime(freq,startT);
@@ -1479,7 +1734,7 @@ function previewSoundtrack(key){
   const trk=SOUNDTRACKS[key]; if(!trk)return;
   const ac=getAudio(); if(ac.state==='suspended')ac.resume();
   previewNodes.forEach(clearTimeout); previewNodes=[];
-  const pg=ac.createGain(); pg.gain.value=0.4; pg.connect(ac.destination);
+  const pg=ac.createGain(); pg.gain.value=0.4; pg.connect(musicBus);
   let t=ac.currentTime+0.05;
   trk.melody.slice(0,8).forEach(([note,beats])=>{
     const d=beats*trk.beat;
@@ -1501,10 +1756,10 @@ function cycleSoundtrack(){
 }
 function currentTrackName(){ return SOUNDTRACKS[currentTrack].name; }
 
-function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,ac.destination,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,ac.destination,t+0.07,0.1); }
-function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,ac.destination,t+i*0.1,0.18)); }
-function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,ac.destination,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,ac.destination,t+0.5,0.4); }
-function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.6); }
+function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,sfxBus,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,sfxBus,t+0.07,0.1); }
+function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.1,0.18)); }
+function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,sfxBus,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,sfxBus,t+0.5,0.4); }
+function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6); }
 // Sad "aww" when a dog faints — a downward trombone-ish slide with a low bell tail.
 // Does NOT stop the music (a co-op partner may still be playing).
 function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
@@ -1515,10 +1770,10 @@ function sfxDeath(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspen
   g.gain.setValueAtTime(0.0001,t);
   g.gain.exponentialRampToValueAtTime(0.26,t+0.05);
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.8);
-  o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+0.85);
-  osc(ac,'sine',noteHz(N.C3),0.16,ac.destination,t+0.1,0.7);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.85);
+  osc(ac,'sine',noteHz(N.C3),0.16,sfxBus,t+0.1,0.7);
 }
-function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,ac.destination,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,ac.destination,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,ac.destination,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,ac.destination,t+2.5,1.5)); }
+function sfxWin(){ stopMusic(); const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [[N.C4,0,.25],[N.E4,.2,.25],[N.G4,.4,.25],[N.C5,.6,.5],[N.E5,.9,.5],[N.G5,1.15,.5],[N.C5+12,1.5,.9]].forEach(([n,d,du])=>{ osc(ac,'triangle',noteHz(n),.45,sfxBus,t+d,du); osc(ac,'sine',noteHz(n)*2,.15,sfxBus,t+d,du*.6); }); [0,.15,.3,.45,.65,.85].forEach((d,i)=>osc(ac,'sine',noteHz(N.C5+12+i*2),.12,sfxBus,t+1.8+d,.18)); [N.C4,N.E4,N.G4,N.C5].forEach(n=>osc(ac,'sine',noteHz(n),.3,sfxBus,t+2.5,1.5)); }
 
 // ===== src/world.js =====
 // ====================== WORLD ======================
@@ -1528,21 +1783,14 @@ let WORLD_W=1920, WORLD_H=1280;
 const VIEW_W=640, VIEW_H=416;
 const cam={x:0,y:0};
 function updateCamera(){
-  // Follow the living dogs so the view doesn't sit on a grave while a co-op partner is
-  // still exploring. If everyone is down, keep the framing on p1 (the death frame).
-  const active=twoPlayer?[p1,p2]:[p1];
-  const alive=active.filter(p=>!p.dead);
-  const focus=alive.length?alive:active;
-  let tx,ty;
-  if(focus.length>1){ tx=(focus[0].x+focus[1].x)/2; ty=(focus[0].y+focus[1].y)/2; }
-  else { tx=focus[0].x; ty=focus[0].y; }
-  cam.x=Math.max(0,Math.min(WORLD_W-VIEW_W,tx-VIEW_W/2));
-  cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,ty-VIEW_H/2));
+  // Follow the dog (a fainted dog keeps the framing on its death frame).
+  cam.x=Math.max(0,Math.min(WORLD_W-VIEW_W,p1.x-VIEW_W/2));
+  cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,p1.y-VIEW_H/2));
 }
 
-// Scene flow now lives in Game.state (see core/state.js); twoPlayer & cheeredCount
-// remain the canonical globals that Game delegates to.
-let twoPlayer=false,cheeredCount=0;
+// Scene flow now lives in Game.state (see core/state.js); cheeredCount remains the
+// canonical global that Game delegates to.
+let cheeredCount=0;
 const CHEER_TOTAL=5;
 
 // Raw key state (`keys`) and listeners moved to core/input.js.
@@ -1927,16 +2175,15 @@ function nudgeOutOfWater(obj, margin=10){
   }
 }
 
-function makePlayer(id,color,x,y,breed='husky',markings='classic'){
+function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
-    speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
-    howling:false,howlTimer:0,breed,markings,swimming:false};
+    speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
+    howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
 }
-let p1=makePlayer(1,'#6FA8C9',200,200);
-let p2=makePlayer(2,'#E0855B',260,200);
+let p1=makePlayer(1,'#C07840',200,200);
 
 let sparkles=[];
 function spawnSparkles(x,y,color,count=14){
@@ -3665,6 +3912,32 @@ const Entities = {
 
   updateAll(t, dt){ for(const e of entities){ const d=this.def(e.kind); if(d && d.update) d.update(e, t, dt); } },
 
+  // How "loud" this dog currently is: scales every enemy's own detection range.
+  // Base comes from the breed's noise bar (data/breeds.js → stats.noiseMul); howling
+  // is extra noise — for HOWL_NOISE_MS after a howl starts (p.noiseT echo window,
+  // see update.js) the dog is heard from 1.5× as far, so howls near enemies are risky.
+  noiseFactor(p){
+    const boosted = p && (p.howling || p.noiseT>0);
+    return ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+  },
+
+  // "!" pop above an entity that just noticed a dog. Set `e.alertT=700` on the
+  // wander→chase transition; call this from the entity's draw() while it counts down.
+  drawAlert(e){
+    if(!e.alertT || e.alertT<=0) return;
+    const age=700-e.alertT;
+    const pop=Math.min(1, age/140);              // pop-in scale
+    const fade=Math.min(1, e.alertT/180);        // fade-out at the end
+    const y=e.y-26-pop*5+Math.sin(age/90)*1.5;   // little startled bounce
+    ctx.save();
+    ctx.globalAlpha=fade;
+    ctx.translate(e.x, y); ctx.scale(pop||0.01, pop||0.01);
+    ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineWidth=3; ctx.strokeStyle='#FFF8EF'; ctx.strokeText('!',0,0);
+    ctx.fillStyle='#E03030'; ctx.fillText('!',0,0);
+    ctx.restore();
+  },
+
   // Nearest interactable entity to player p within range.
   interactableNear(p){
     let best=null, bestD=Infinity;
@@ -3715,7 +3988,9 @@ Entities.register('enemy', {
     const target=_nearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
-    if(target && dist<e.chaseR){
+    // Detection range scales with how loud the target dog is (breed noise + howling).
+    if(target && dist<e.chaseR*Entities.noiseFactor(target)){
+      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
@@ -3723,6 +3998,7 @@ Entities.register('enemy', {
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
+      e._chasing=false;
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
@@ -3734,6 +4010,7 @@ Entities.register('enemy', {
     e.x=clamp(e.x, 20, WORLD_W-20);
     e.y=clamp(e.y, 26, WORLD_H-20);
     if(e.cool>0) e.cool=Math.max(0, e.cool-dt);
+    if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
     e.bob=t;
   },
 
@@ -3757,6 +4034,8 @@ Entities.register('enemy', {
     px(x+D*6-4,y-6,2,2,'#FF3030'); px(x+D*6+2,y-6,2,2,'#FF3030');
     // grumpy brow
     px(x+D*6-5,y-7,10,1,'#1A1616');
+    // startled "!" when it just heard a dog
+    Entities.drawAlert(e);
   },
 });
 
@@ -3807,9 +4086,12 @@ Entities.register('wolf', {
     const target=_wolfNearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
-    if(target && dist<e.chaseR){
+    // Keen ears: detection range scales with how loud the target dog is.
+    const hearR=e.chaseR*Entities.noiseFactor(target);
+    if(target && dist<hearR){
+      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // periodic lunge: a short burst of extra speed to close the gap
-      if(e.lungeCd<=0 && dist>40 && dist<e.chaseR*0.8){ e.lunge=380; e.lungeCd=2200; }
+      if(e.lungeCd<=0 && dist>40 && dist<hearR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*burst*swim*dtScale;
@@ -3817,6 +4099,7 @@ Entities.register('wolf', {
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<22 && e.cool<=0){ _wolfBite(e, target); e.cool=850; }
     } else {
+      e._chasing=false;
       // loping wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(500,1400); }
@@ -3830,6 +4113,7 @@ Entities.register('wolf', {
     if(e.cool>0)    e.cool=Math.max(0, e.cool-dt);
     if(e.lunge>0)   e.lunge=Math.max(0, e.lunge-dt);
     if(e.lungeCd>0) e.lungeCd=Math.max(0, e.lungeCd-dt);
+    if(e.alertT>0)  e.alertT=Math.max(0, e.alertT-dt);
     e.bob=t;
   },
 
@@ -3856,6 +4140,8 @@ Entities.register('wolf', {
     // glowing eyes + angry brow
     px(x+D*7-4,y-7,2,2,'#FFC400'); px(x+D*7+2,y-7,2,2,'#FFC400');
     px(x+D*7-5,y-8,10,1,'#22252B');
+    // startled "!" when it just heard a dog
+    Entities.drawAlert(e);
   },
 });
 
@@ -4158,10 +4444,11 @@ function drawDog(p,t){
 
   const bounce=p.moving?Math.sin(t/90)*2.5:Math.sin(t/400);
   const by=y+bounce;
-  const breed=p.breed||'husky';
+  const breed=p.breed||'dinno';
+  const small=breed==='tapka';   // tiny breeds get a smaller shadow + lower name tag
 
   if(!p.swimming){
-    ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x,y+16,14,5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
+    ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x,y+16,small?10:14,small?4:5,0,0,Math.PI*2); ctx.fillStyle='#1A3A1A'; ctx.fill(); ctx.globalAlpha=1;
   }
 
   if(p.swimming){
@@ -4173,19 +4460,29 @@ function drawDog(p,t){
   }
 
   // Worn back-layer items (capes) sit behind the breed sprite.
-  const _wa = (typeof Wearables!=='undefined' && p.equipment) ? Wearables.anchor(x, by, p.dir, p.equipment, t) : null;
+  const _wa = (typeof Wearables!=='undefined' && p.equipment) ? Wearables.anchor(x, by, p.dir, p.equipment, t, breed) : null;
   if(_wa) Wearables.drawBack(ctx, _wa);
 
-  if(breed==='dinno') _drawDinno(x,by,t,C,D,L,W,K,p);
-  else if(breed==='lolla') _drawLolla(x,by,t,C,D,L,W,K,p);
-  else if(breed==='corgi') _drawCorgi(x,by,t,C,D,L,W,K,p);
-  else if(breed==='shiba') _drawShiba(x,by,t,C,D,L,W,K,p);
-  else if(breed==='poodle') _drawPoodle(x,by,t,C,D,L,W,K,p);
-  else if(breed==='dalmatian') _drawDalmatian(x,by,t,C,D,L,W,K,p);
-  else _drawHusky(x,by,t,C,D,L,W,K,p);
+  if(breed==='lolla') _drawLolla(x,by,t,C,D,L,W,K,p);
+  else if(breed==='tapka') _drawTapka(x,by,t,C,D,L,W,K,p);
+  else _drawDinno(x,by,t,C,D,L,W,K,p);
 
   // Worn front-layer items (hat, scarf, coat, shades) sit on top of the breed sprite.
   if(_wa) Wearables.drawFront(ctx, _wa);
+
+  // Howling: sound-wave arcs rippling up from the muzzle (the pose points skyward).
+  if(p.howling){
+    const prog=1-(p.howlTimer/400);
+    ctx.save();
+    ctx.lineWidth=1.5; ctx.strokeStyle='#FFF3D8'; ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      const ph=(prog*1.4+i/3)%1;
+      ctx.globalAlpha=0.85*(1-ph);
+      ctx.beginPath(); ctx.arc(x, by-(small?20:26), 5+ph*13, -Math.PI*0.78, -Math.PI*0.22);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
   Abilities.drawOnDog(p,x,by);
@@ -4220,226 +4517,10 @@ function drawDog(p,t){
     ctx.globalAlpha=1;
   }
 
-  ctx.fillStyle='rgba(255,248,239,0.88)'; roundRect(x-11,by-34,22,11,3,true,false);
+  ctx.fillStyle='rgba(255,248,239,0.88)'; roundRect(x-11,by-(small?32:34),22,11,3,true,false);
   ctx.fillStyle='#4A3F35'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
-  ctx.fillText(`P${p.id}`,x,by-25);
+  ctx.fillText(`P${p.id}`,x,by-(small?23:25));
   ctx.restore();
-}
-
-function _drawHusky(x,by,t,C,D,L,W,K,p){
-  if(p.howling){
-    px(x-10,by-2,20,14,C); px(x-6,by+4,12,8,L);
-    px(x-7,by-16,14,16,C); px(x-5,by-13,10,10,L);
-    px(x-10,by-22,7,10,D); px(x-8,by-20,4,7,L);
-    px(x+3,by-22,7,10,D); px(x+5,by-20,4,7,L);
-    px(x-4,by-8,8,5,W); px(x-3,by-6,6,3,C); px(x-2,by-5,4,2,'#AA2244');
-    px(x-2,by-9,5,4,K); px(x-1,by-8,2,2,'#555');
-    px(x-5,by-13,4,2,K); px(x+1,by-13,4,2,K);
-    const tw=Math.sin(t/80)*6;
-    px(x+8,by-8+tw,6,16,D); px(x+10,by-6+tw,4,10,C);
-    px(x-8,by+10,6,8,D); px(x+2,by+10,6,8,D);
-    return;
-  }
-  px(x-10,by,20,14,C); px(x-7,by+4,14,8,L); px(x-10,by+2,4,10,D);
-  const la=p.moving?Math.sin(t/130)*5:0,la2=p.moving?Math.sin(t/130+Math.PI)*5:0;
-  px(x-7,by+11+la,5,9,D); px(x-6,by+18+la,4,4,shade(D,-10));
-  px(x+2,by+11+la2,5,9,D); px(x+3,by+18+la2,4,4,shade(D,-10));
-  px(x-7,by+19+la,5,3,'#9A7060'); px(x+2,by+19+la2,5,3,'#9A7060');
-  const tw=Math.sin(t/160)*5;
-  if(p.dir==='right'){ px(x-14,by+2+tw*0.5,5,12,D); px(x-15,by+tw,4,8,C); px(x-15,by-2+tw,3,6,W); }
-  else { px(x+9,by+2+tw*0.5,5,12,D); px(x+11,by+tw,4,8,C); px(x+12,by-2+tw,3,6,W); }
-  if(p.dir==='down'||p.dir==='up'){
-    const facing=p.dir==='down';
-    px(x-8,by-14,16,14,C);
-    if(facing){ px(x-5,by-12,10,6,W); px(x-7,by-14,5,8,D); px(x+2,by-14,5,8,D); }
-    px(x-9,by-22,7,10,D); px(x-7,by-20,4,7,L);
-    px(x+2,by-22,7,10,D); px(x+4,by-20,4,7,L);
-    px(x-6,by-19,3,5,'#FFBBAA'); px(x+3,by-19,3,5,'#FFBBAA');
-    if(facing){
-      px(x-5,by-11,4,4,K); px(x-4,by-11,2,2,'#4A3A2A'); px(x-3,by-10,1,1,'#FFFFFF');
-      px(x+1,by-11,4,4,K); px(x+2,by-11,2,2,'#4A3A2A'); px(x+3,by-10,1,1,'#FFFFFF');
-      px(x-4,by-6,8,5,W); px(x-2,by-4,5,3,L);
-      px(x-2,by-7,5,4,K); px(x-1,by-6,2,2,'#444'); px(x,by-5,2,1,'#CC6688');
-    } else { px(x-7,by-14,14,12,D); px(x-5,by-16,10,6,C); }
-  } else if(p.dir==='right'){
-    px(x-2,by-14,14,13,C); px(x-2,by-12,8,7,W); px(x+2,by-14,10,8,D);
-    px(x+5,by-22,7,10,D); px(x+7,by-20,4,7,L); px(x+8,by-19,3,5,'#FFBBAA');
-    px(x+6,by-11,4,4,K); px(x+7,by-11,2,2,'#4A3A2A'); px(x+8,by-10,1,1,'#FFF');
-    px(x+8,by-7,8,5,W); px(x+14,by-7,4,4,K); px(x+15,by-6,2,2,'#444');
-  } else {
-    px(x-12,by-14,14,13,C); px(x-6,by-12,8,7,W); px(x-12,by-14,10,8,D);
-    px(x-12,by-22,7,10,D); px(x-11,by-20,4,7,L); px(x-11,by-19,3,5,'#FFBBAA');
-    px(x-11,by-11,4,4,K); px(x-10,by-11,2,2,'#4A3A2A'); px(x-9,by-10,1,1,'#FFF');
-    px(x-20,by-7,8,5,W); px(x-20,by-7,4,4,K); px(x-19,by-6,2,2,'#444');
-  }
-}
-
-function _drawShiba(x,by,t,C,D,L,W,K,p){
-  if(p.howling){
-    px(x-9,by-1,18,12,C); px(x-5,by+3,10,7,W);
-    px(x-6,by-15,12,15,C);
-    px(x-8,by-22,5,10,D); px(x-6,by-20,3,7,W);
-    px(x+3,by-22,5,10,D); px(x+4,by-20,3,7,W);
-    px(x-3,by-7,7,5,W); px(x-2,by-9,4,3,K);
-    const tw=Math.sin(t/70)*5;
-    px(x+8,by-4+tw,5,5,D); px(x+9,by-8+tw,4,4,C); px(x+8,by-11+tw,5,4,C);
-    return;
-  }
-  px(x-9,by,18,12,C); px(x-5,by+3,10,7,W);
-  const la=p.moving?Math.sin(t/120)*4:0,la2=p.moving?Math.sin(t/120+Math.PI)*4:0;
-  px(x-6,by+11+la,4,8,D); px(x+2,by+11+la2,4,8,D);
-  px(x-6,by+18+la,4,3,'#9A7060'); px(x+2,by+18+la2,4,3,'#9A7060');
-  const tw=Math.sin(t/150)*3;
-  if(p.dir==='right'){ px(x-13,by-1,5,8,D); px(x-14,by-5+tw,4,6,C); px(x-14,by-8+tw,5,4,C); px(x-11,by-7+tw,4,3,C); }
-  else { px(x+8,by-1,5,8,D); px(x+10,by-5+tw,4,6,C); px(x+9,by-8+tw,5,4,C); px(x+7,by-7+tw,4,3,C); }
-  if(p.dir==='down'||p.dir==='up'){
-    const facing=p.dir==='down';
-    px(x-7,by-14,14,13,C);
-    if(facing){ px(x-4,by-11,8,6,W); }
-    px(x-8,by-23,5,11,D); px(x-6,by-21,3,8,W);
-    px(x+3,by-23,5,11,D); px(x+4,by-21,3,8,W);
-    if(facing){
-      px(x-4,by-10,3,3,K); px(x-3,by-10,1,1,'#fff');
-      px(x+1,by-10,3,3,K); px(x+2,by-10,1,1,'#fff');
-      px(x-3,by-6,7,4,W); px(x-2,by-8,4,3,K);
-    } else { px(x-6,by-14,14,11,D); }
-  } else if(p.dir==='right'){
-    px(x-1,by-14,13,12,C); px(x-1,by-11,7,7,W);
-    px(x+4,by-23,5,11,D); px(x+5,by-21,3,8,W);
-    px(x+5,by-10,3,3,K); px(x+6,by-10,1,1,'#fff');
-    px(x+7,by-7,8,4,W); px(x+13,by-7,3,3,K);
-  } else {
-    px(x-12,by-14,13,12,C); px(x-6,by-11,7,7,W);
-    px(x-9,by-23,5,11,D); px(x-8,by-21,3,8,W);
-    px(x-9,by-10,3,3,K); px(x-8,by-10,1,1,'#fff');
-    px(x-19,by-7,8,4,W); px(x-19,by-7,3,3,K);
-  }
-}
-
-function _drawCorgi(x,by,t,C,D,L,W,K,p){
-  if(p.howling){
-    px(x-11,by,22,11,C); px(x-7,by+3,14,7,W);
-    px(x-7,by-14,14,15,C);
-    px(x-9,by-23,7,11,D); px(x-7,by-21,4,8,'#FFBBAA');
-    px(x+2,by-23,7,11,D); px(x+3,by-21,4,8,'#FFBBAA');
-    px(x-3,by-6,7,5,W); px(x-2,by-8,4,3,K);
-    const tw=Math.sin(t/80)*3;
-    px(x+10,by+1+tw,5,6,W); px(x+11,by-1+tw,4,4,C);
-    return;
-  }
-  px(x-11,by+1,22,10,C); px(x-7,by+4,14,6,W);
-  const la=p.moving?Math.sin(t/140)*3:0,la2=p.moving?Math.sin(t/140+Math.PI)*3:0;
-  px(x-7,by+11+la,5,6,D); px(x+2,by+11+la2,5,6,D);
-  px(x-7,by+16+la,5,3,'#9A7060'); px(x+2,by+16+la2,5,3,'#9A7060');
-  const tw=Math.sin(t/200)*2;
-  if(p.dir==='right'){ px(x-15,by+1+tw,6,8,W); px(x-15,by-1+tw,5,6,L); }
-  else { px(x+9,by+1+tw,6,8,W); px(x+10,by-1+tw,5,6,L); }
-  if(p.dir==='down'||p.dir==='up'){
-    const facing=p.dir==='down';
-    px(x-8,by-13,16,13,C);
-    if(facing){ px(x-5,by-10,10,7,W); }
-    px(x-9,by-24,7,13,D); px(x-7,by-22,4,10,'#FFBBAA');
-    px(x+2,by-24,7,13,D); px(x+3,by-22,4,10,'#FFBBAA');
-    if(facing){
-      px(x-5,by-9,4,4,K); px(x-4,by-9,2,2,'#fff');
-      px(x+1,by-9,4,4,K); px(x+2,by-9,2,2,'#fff');
-      px(x-4,by-4,9,5,W); px(x-1,by-6,4,3,K);
-    } else { px(x-7,by-13,15,11,D); }
-  } else if(p.dir==='right'){
-    px(x-1,by-13,13,12,C); px(x-1,by-10,9,7,W);
-    px(x+3,by-24,7,13,D); px(x+4,by-22,4,10,'#FFBBAA');
-    px(x+6,by-9,4,4,K); px(x+7,by-9,2,2,'#fff');
-    px(x+7,by-5,9,5,W); px(x+14,by-5,4,3,K);
-  } else {
-    px(x-12,by-13,13,12,C); px(x-8,by-10,9,7,W);
-    px(x-10,by-24,7,13,D); px(x-8,by-22,4,10,'#FFBBAA');
-    px(x-10,by-9,4,4,K); px(x-9,by-9,2,2,'#fff');
-    px(x-20,by-5,9,5,W); px(x-20,by-5,4,3,K);
-  }
-}
-
-function _drawPoodle(x,by,t,C,D,L,W,K,p){
-  const arc=(ax,ay,r,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.arc(ax,ay,r,0,Math.PI*2);ctx.fill();};
-  if(p.howling){
-    arc(x,by+4,9,C);arc(x-5,by+7,5,C);arc(x+5,by+7,5,C);
-    arc(x,by-13,7,C);arc(x-5,by-16,5,C);arc(x+5,by-16,5,C);
-    arc(x-8,by-14,4,D);arc(x+8,by-14,4,D);
-    px(x-2,by-8,5,3,K);px(x-1,by-10,3,3,K);
-    const tw=Math.sin(t/70)*5;
-    arc(x+10,by-2+tw,3,D);arc(x+12,by-4+tw,4,C);
-    return;
-  }
-  arc(x,by+3,9,C);arc(x-5,by+6,5,C);arc(x+5,by+6,5,C);
-  const la=p.moving?Math.sin(t/130)*4:0,la2=p.moving?Math.sin(t/130+Math.PI)*4:0;
-  px(x-6,by+12+la,3,8,D);px(x+3,by+12+la2,3,8,D);
-  arc(x-4,by+20+la,4,C);arc(x+5,by+20+la2,4,C);
-  const tw=Math.sin(t/150)*4;
-  if(p.dir==='right'){ arc(x-10,by-1+tw*0.5,3,D);arc(x-12,by-3+tw,4,C); }
-  else { arc(x+10,by-1+tw*0.5,3,D);arc(x+12,by-3+tw,4,C); }
-  arc(x,by-14,7,C);arc(x-5,by-17,5,C);arc(x+5,by-17,5,C);
-  if(p.dir==='down'||p.dir==='up'){
-    const facing=p.dir==='down';
-    arc(x-8,by-15,4,D);arc(x+8,by-15,4,D);
-    if(facing){
-      px(x-4,by-11,3,3,K);px(x-3,by-11,1,1,'#fff');
-      px(x+1,by-11,3,3,K);px(x+2,by-11,1,1,'#fff');
-      px(x-2,by-8,5,3,W);px(x-1,by-10,3,3,K);
-    }
-  } else if(p.dir==='right'){
-    arc(x+8,by-15,4,D);
-    px(x+5,by-11,3,3,K);px(x+6,by-11,1,1,'#fff');
-    px(x+7,by-8,5,3,W);px(x+10,by-8,3,3,K);
-  } else {
-    arc(x-8,by-15,4,D);
-    px(x-8,by-11,3,3,K);px(x-7,by-11,1,1,'#fff');
-    px(x-12,by-8,5,3,W);px(x-12,by-8,3,3,K);
-  }
-}
-
-function _drawDalmatian(x,by,t,C,D,L,W,K,p){
-  const BASE='#F2EEE8',BSH='#D8D4CC';
-  if(p.howling){
-    px(x-10,by-2,20,14,BASE);px(x-6,by+4,12,8,W);
-    px(x-7,by-16,14,16,BASE);
-    px(x-10,by-22,7,10,BSH);px(x-8,by-20,4,7,W);
-    px(x+3,by-22,7,10,BSH);px(x+5,by-20,4,7,W);
-    px(x-4,by-8,8,5,W);px(x-2,by-5,4,2,'#AA2244');px(x-2,by-9,4,3,K);
-    const tw=Math.sin(t/80)*6;
-    px(x+8,by-8+tw,6,16,BSH);px(x+10,by-6+tw,4,10,BASE);
-    _dalSpots(x,by,C,true);return;
-  }
-  px(x-10,by,20,14,BASE);px(x-7,by+4,14,8,W);px(x-10,by+2,4,10,BSH);
-  const la=p.moving?Math.sin(t/130)*5:0,la2=p.moving?Math.sin(t/130+Math.PI)*5:0;
-  px(x-7,by+11+la,5,9,BSH);px(x-6,by+18+la,4,4,shade(BSH,-10));
-  px(x+2,by+11+la2,5,9,BSH);px(x+3,by+18+la2,4,4,shade(BSH,-10));
-  px(x-7,by+19+la,5,3,'#9A7060');px(x+2,by+19+la2,5,3,'#9A7060');
-  const tw=Math.sin(t/160)*5;
-  if(p.dir==='right'){ px(x-14,by+2+tw*0.5,5,12,BSH);px(x-15,by+tw,4,8,BASE);px(x-15,by-2+tw,3,6,W); }
-  else { px(x+9,by+2+tw*0.5,5,12,BSH);px(x+11,by+tw,4,8,BASE);px(x+12,by-2+tw,3,6,W); }
-  if(p.dir==='down'||p.dir==='up'){
-    const facing=p.dir==='down';
-    px(x-8,by-14,16,14,BASE);
-    if(facing){px(x-5,by-12,10,6,W);}
-    px(x-9,by-22,7,10,BSH);px(x-7,by-20,4,7,W);
-    px(x+2,by-22,7,10,BSH);px(x+4,by-20,4,7,W);
-    px(x-6,by-19,3,5,'#FFBBAA');px(x+3,by-19,3,5,'#FFBBAA');
-    if(facing){
-      px(x-5,by-11,4,4,K);px(x-4,by-11,2,2,'#4A3A2A');px(x-3,by-10,1,1,'#FFF');
-      px(x+1,by-11,4,4,K);px(x+2,by-11,2,2,'#4A3A2A');px(x+3,by-10,1,1,'#FFF');
-      px(x-4,by-6,8,5,W);px(x-2,by-7,5,4,K);
-    } else {px(x-7,by-14,14,12,BSH);}
-  } else if(p.dir==='right'){
-    px(x-2,by-14,14,13,BASE);px(x-2,by-12,8,7,W);px(x+2,by-14,10,8,BSH);
-    px(x+5,by-22,7,10,BSH);px(x+7,by-20,4,7,W);px(x+8,by-19,3,5,'#FFBBAA');
-    px(x+6,by-11,4,4,K);px(x+7,by-11,2,2,'#4A3A2A');px(x+8,by-10,1,1,'#FFF');
-    px(x+8,by-7,8,5,W);px(x+14,by-7,4,4,K);
-  } else {
-    px(x-12,by-14,14,13,BASE);px(x-6,by-12,8,7,W);px(x-12,by-14,10,8,BSH);
-    px(x-12,by-22,7,10,BSH);px(x-11,by-20,4,7,W);px(x-11,by-19,3,5,'#FFBBAA');
-    px(x-11,by-11,4,4,K);px(x-10,by-11,2,2,'#4A3A2A');px(x-9,by-10,1,1,'#FFF');
-    px(x-20,by-7,8,5,W);px(x-20,by-7,4,4,K);
-  }
-  _dalSpots(x,by,C,false);
 }
 
 function _drawDinno(x,by,t,C,D,L,W,K,p){
@@ -4491,6 +4572,81 @@ function _drawDinno(x,by,t,C,D,L,W,K,p){
     px(x-12,by-22,7,10,RD); px(x-11,by-20,4,7,L); px(x-11,by-19,3,5,'#FFBBAA');
     px(x-11,by-11,4,4,K); px(x-10,by-11,2,2,'#4A3A2A'); px(x-9,by-10,1,1,'#FFF');
     px(x-20,by-7,8,5,RW); px(x-20,by-7,4,4,K); px(x-19,by-6,2,2,'#444');
+  }
+}
+
+// Expanding "sound rings" on the ground for the whole howl-echo window (p.noiseT,
+// set to HOWL_NOISE_MS at howl start) — visualises exactly how long enemies hear the
+// dog from 1.5× as far. Ring reach scales with the dog's current loudness, so Lolla's
+// howl visibly rings wider than Ťapka's. Drawn under everything (see main.js).
+function drawHowlRings(p,t){
+  if(!p || p.dead || !(p.noiseT>0)) return;
+  const prog=1-(p.noiseT/HOWL_NOISE_MS);   // 0→1 over the echo window
+  const loud=(typeof Entities!=='undefined'&&Entities.noiseFactor)?Entities.noiseFactor(p):1;
+  const maxR=60*loud;
+  ctx.save();
+  ctx.lineWidth=2;
+  for(let i=0;i<3;i++){
+    const ph=(prog*1.6+i/3)%1;
+    ctx.globalAlpha=0.38*(1-ph)*(p.noiseT<200?p.noiseT/200:1);   // fade the tail end
+    ctx.beginPath(); ctx.ellipse(p.x, p.y+10, 8+ph*maxR, (8+ph*maxR)*0.45, 0, 0, Math.PI*2);
+    ctx.strokeStyle='#C9A6FF'; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function _drawTapka(x,by,t,C,D,L,W,K,p){
+  // Prague Ratter: tiny fawn dog, oversized upright ears, big dark eyes and a
+  // greying muzzle — fixed real-dog colors, ignores player color. Drawn smaller
+  // than every other breed (she's a featherweight).
+  const TC='#B5854F', TD=shade(TC,-32), TL=shade(TC,38);
+  const TG='#D9CFC0';   // greying muzzle / light chest
+  const PK='#D8A090';   // ear inner
+  if(p.howling){
+    // tiny sit-back howl, muzzle to the sky
+    px(x-7,by+1,14,10,TC); px(x-4,by+4,8,6,TG);
+    px(x-5,by-11,10,13,TC);
+    px(x-9,by-20,6,11,TD); px(x-8,by-18,4,7,PK);
+    px(x+3,by-20,6,11,TD); px(x+4,by-18,4,7,PK);
+    px(x-3,by-5,6,4,TG); px(x-2,by-8,4,3,K);
+    const tw=Math.sin(t/70)*4;
+    px(x+6,by-1+tw,4,8,TD); px(x+7,by-4+tw,3,6,TC);
+    px(x-6,by+9,3,6,TD); px(x+3,by+9,3,6,TD);
+    return;
+  }
+  // body — small and slim
+  px(x-7,by+2,14,9,TC); px(x-4,by+5,8,5,TG);
+  const la=p.moving?Math.sin(t/110)*3:0,la2=p.moving?Math.sin(t/110+Math.PI)*3:0;
+  px(x-5,by+10+la,3,6,TD); px(x+2,by+10+la2,3,6,TD);   // thin little legs
+  px(x-5,by+15+la,3,2,'#9A7060'); px(x+2,by+15+la2,3,2,'#9A7060');
+  // thin whippy tail
+  const tw=Math.sin(t/140)*3;
+  if(p.dir==='right'){ px(x-10,by+2,4,7,TD); px(x-12,by-2+tw,3,6,TC); }
+  else { px(x+6,by+2,4,7,TD); px(x+9,by-2+tw,3,6,TC); }
+  if(p.dir==='down'||p.dir==='up'){
+    const facing=p.dir==='down';
+    px(x-6,by-10,12,12,TC);                              // small head
+    // oversized upright ears, set wide
+    px(x-9,by-21,6,12,TD); px(x-8,by-19,4,8,PK);
+    px(x+3,by-21,6,12,TD); px(x+4,by-19,4,8,PK);
+    if(facing){
+      px(x-4,by-4,8,5,TG);                               // greying muzzle
+      px(x-4,by-8,3,3,K); px(x-3,by-8,1,1,'#fff');       // big dark eyes
+      px(x+1,by-8,3,3,K); px(x+2,by-8,1,1,'#fff');
+      px(x-1,by-4,3,3,K);                                // dark button nose
+    } else { px(x-5,by-10,10,10,TD); }
+  } else if(p.dir==='right'){
+    px(x-2,by-10,11,11,TC);
+    px(x-1,by-20,5,11,TD);                               // back ear
+    px(x+3,by-21,6,12,TD); px(x+4,by-19,4,8,PK);         // front ear
+    px(x+3,by-8,3,3,K); px(x+4,by-8,1,1,'#fff');
+    px(x+5,by-5,6,4,TG); px(x+9,by-5,3,3,K);
+  } else {
+    px(x-9,by-10,11,11,TC);
+    px(x-4,by-20,5,11,TD);
+    px(x-9,by-21,6,12,TD); px(x-8,by-19,4,8,PK);
+    px(x-6,by-8,3,3,K); px(x-5,by-8,1,1,'#fff');
+    px(x-11,by-5,6,4,TG); px(x-12,by-5,3,3,K);
   }
 }
 
@@ -4554,14 +4710,7 @@ function _drawLolla(x,by,t,C,D,L,W,K,p){
   }
 }
 
-function _dalSpots(x,by,C,howling){
-  const spots=howling
-    ?[[-3,0,4,4],[4,2,3,4],[-7,4,3,3],[5,-2,3,3],[-5,-12,3,3],[3,-11,4,3]]
-    :[[-4,1,4,4],[3,3,3,4],[-7,4,3,3],[5,0,3,3],[-1,6,4,3],
-      [-5,-13,3,3],[3,-12,4,3],[-6,-5,3,3],[2,-5,3,3],[-8,2,3,3]];
-  ctx.fillStyle=C;
-  spots.forEach(([rx,ry,rw,rh])=>ctx.fillRect(Math.round(x+rx),Math.round(by+ry),rw,rh));
-}
+
 
 
 // ===== src/sparkles.js =====
@@ -4617,23 +4766,25 @@ function drawMinimap(){
   // viewport
   ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
   ctx.strokeRect(MX+cam.x*sx,MY+cam.y*sy,VIEW_W*sx,VIEW_H*sy);
-  // players
+  // player
   ctx.fillStyle=p1.color; ctx.fillRect(MX+p1.x*sx-3,MY+p1.y*sy-3,7,7);
-  if(twoPlayer){ ctx.fillStyle=p2.color; ctx.fillRect(MX+p2.x*sx-3,MY+p2.y*sy-3,7,7); }
   ctx.restore();
 }
 
 
 // ===== src/abilities/registry.js =====
 // ====================== ABILITY REGISTRY ======================
-// Active abilities are plugins keyed by id. A breed opts in via its `abilityId`
-// (see data/breeds.js). Each ability def may implement any of:
+// Active abilities are plugins keyed by id. A breed opts in via its `abilities`
+// slots (see data/breeds.js): slot 0 fires on the "Ability 1" key (default Q),
+// slot 1 on "Ability 2" (default E). Each ability def may implement any of:
 //
-//   spawn()               — create world state at game/level start (all abilities polled)
-//   reset()               — clear world state on reset
-//   update(p, controls, dt) — per-player, per-frame logic (only for the owning player)
-//   drawWorld(t)          — world-space visuals, drawn once per frame
-//   drawOnDog(p, x, by)   — overlay drawn on top of a specific dog sprite
+//   spawn()                 — create world state at game/level start (all abilities polled)
+//   reset()                 — clear world state on reset
+//   update(p, dt, trigger)  — per-player, per-frame logic (only for the owning player);
+//                             `trigger` is the input action that fires this slot
+//                             ('ability1' | 'ability2') — check it via Input.held(trigger)
+//   drawWorld(t)            — world-space visuals, drawn once per frame
+//   drawOnDog(p, x, by)     — overlay drawn on top of a specific dog sprite
 //
 // This replaces the bespoke Lolla globals: the ball-cannon is now just the first
 // registered ability (abilities/ballCannon.js).
@@ -4643,21 +4794,30 @@ const Abilities = {
 
   register(id, def){ this._defs[id] = def; return def; },
   get(id){ return id ? (this._defs[id] || null) : null; },
-  forPlayer(p){ return this.get(p && p.abilityId); },
+  // Does this player carry the given ability in either slot?
+  playerHas(p, id){ return !!(p && p.abilities && p.abilities.indexOf(id)!==-1); },
 
   // Poll every registered ability; each guards internally on whether its owner exists.
   spawnAll(){ for(const id in this._defs){ const d=this._defs[id]; if(d.spawn) d.spawn(); } },
   reset(){ for(const id in this._defs){ const d=this._defs[id]; if(d.reset) d.reset(); } },
 
-  update(p, controls, dt){ const d=this.forPlayer(p); if(d && d.update) d.update(p, controls, dt); },
+  update(p, dt){
+    (p.abilities||[]).forEach((id,slot)=>{
+      const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
+    });
+  },
   drawWorld(t){ for(const id in this._defs){ const d=this._defs[id]; if(d.drawWorld) d.drawWorld(t); } },
-  drawOnDog(p, x, by){ const d=this.forPlayer(p); if(d && d.drawOnDog) d.drawOnDog(p, x, by); },
+  drawOnDog(p, x, by){
+    (p.abilities||[]).forEach(id=>{
+      const d=this.get(id); if(d && d.drawOnDog) d.drawOnDog(p, x, by);
+    });
+  },
 };
 
 // ===== src/abilities/ballCannon.js =====
 // ====================== ABILITY: BALL CANNON ======================
 // Formerly src/lolla.js. The tennis-ball + cannon fetch mini-game, now registered
-// as an ability so ANY breed with abilityId:'ballCannon' gets it (currently Lolla).
+// as an ability so ANY breed with 'ballCannon' in an ability slot gets it (currently Lolla).
 // State (ball, cannon, dropHeld) is private to this module instead of being global.
 
 (function(){
@@ -4667,7 +4827,7 @@ const Abilities = {
 
   // The active player carrying this ability (replaces getLollaPlayer()).
   function owner(){
-    for(const p of Game.players){ if(p && p.abilityId==='ballCannon') return p; }
+    for(const p of Game.players){ if(Abilities.playerHas(p,'ballCannon')) return p; }
     return null;
   }
 
@@ -4693,12 +4853,10 @@ const Abilities = {
 
   function reset(){ ball=null; cannon=null; dropHeld=false; }
 
-  function update(p, controls, dt){
+  function update(p, dt, trigger){
     if(!ball || !cannon) return;
     const dog=owner();
     if(!dog || dog.id!==p.id) return;
-
-    const dropKey = controls.ability;
 
     // Advance cannon animation
     if(cannon.firingT>0){
@@ -4710,14 +4868,14 @@ const Abilities = {
     if(ball.state==='idle'){
       if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
         ball.state='held'; ball.carrier=p.id;
-        showToast('🎾 Ball! [ability key] near cannon to fire · elsewhere to drop',2800);
+        showToast(`🎾 Ball! [${Input.keyName(Input.bindings[trigger][0]||Input.bindings[trigger][1])}] near cannon to fire · elsewhere to drop`,2800);
       }
     }
 
     if(ball.state==='held' && ball.carrier===p.id){
       ball.x=p.x; ball.y=p.y;
 
-      if(keys[dropKey] && !dropHeld){
+      if(Input.held(trigger) && !dropHeld){
         dropHeld=true;
         const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
         if(nearCannon){
@@ -4732,7 +4890,7 @@ const Abilities = {
           ball.state='idle'; ball.carrier=null;
         }
       }
-      if(!keys[dropKey]) dropHeld=false;
+      if(!Input.held(trigger)) dropHeld=false;
     }
 
     if(ball.state==='flying'){
@@ -4898,7 +5056,7 @@ const Abilities = {
     ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
   }
 
-  Abilities.register('ballCannon', { spawn, reset, update, drawWorld, drawOnDog });
+  Abilities.register('ballCannon', { name:'Ball Cannon', icon:'🎾', spawn, reset, update, drawWorld, drawOnDog });
 })();
 
 // ===== src/level-manager.js =====
@@ -4952,7 +5110,7 @@ const LevelManager = {
     const lvl=this.load(id);
     if(!lvl) return null;
     const spawn=lvl.spawn || { x:200, y:200 };
-    const players=Game.twoPlayer ? [p1,p2] : [p1];
+    const players=Game.players;
     players.forEach((p,i)=>{
       if(!p) return;
       p.x=spawn.x+i*60; p.y=spawn.y;
@@ -4970,10 +5128,15 @@ const LevelManager = {
 
 // ===== src/update.js =====
 // ====================== UPDATE ======================
-function updatePlayer(p,controls,t,dt){
+// A howl is LOUD: the noise boost (see Entities.noiseFactor) lasts this long from the
+// start of the howl — a little past the howl pose itself, like an echo. The expanding
+// sound rings (drawHowlRings) visualise exactly this window.
+const HOWL_NOISE_MS=1000;
+
+function updatePlayer(p,t,dt){
   let dx=0,dy=0;
-  if(keys[controls.up])dy--;  if(keys[controls.down])dy++;
-  if(keys[controls.left])dx--; if(keys[controls.right])dx++;
+  if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
+  if(Input.held('left'))dx--; if(Input.held('right'))dx++;
   p.moving=dx!==0||dy!==0;
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
@@ -4988,9 +5151,13 @@ function updatePlayer(p,controls,t,dt){
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
-  Abilities.update(p,controls,dt);
-  if(keys[controls.action]&&!p.howling){p.howling=true;p.howlTimer=400;sfxHowl();}
+  Abilities.update(p,dt);
+  if(Input.held('action')&&!p.howling){
+    p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-24,'#C9A6FF',6);
+  }
   if(p.howling){p.howlTimer-=dt;if(p.howlTimer<=0)p.howling=false;}
+  if(p.noiseT>0)p.noiseT=Math.max(0,p.noiseT-dt);
 }
 
 function tryCollect(p){
@@ -5024,8 +5191,8 @@ function dropItemOnGround(p, id, qty){
     dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
-function tryDeliver(p,controls){
-  if(!keys[controls.action])return;
+function tryDeliver(p){
+  if(!Input.held('action'))return;
   friends.forEach(f=>{
     if(f.cheered)return;
     if(Math.hypot(p.x-f.x,p.y-f.y)<44&&p.treats>0){
@@ -5047,21 +5214,10 @@ function tryDeliver(p,controls){
 
 // Interact with the nearest interactable entity (NPC) on an action-key press.
 // Edge-triggered per player so a held key fires once.
-function tryInteract(p,controls){
-  const pressed=!!keys[controls.action];
+function tryInteract(p){
+  const pressed=Input.held('action');
   if(pressed && !p._actionPrev) Entities.interact(p);
   p._actionPrev=pressed;
-}
-
-function checkGroupHowl(){
-  if(!twoPlayer)return;
-  if(Math.hypot(p1.x-p2.x,p1.y-p2.y)<55&&p1.howling&&p2.howling){
-    if(!checkGroupHowl.last||performance.now()-checkGroupHowl.last>1500){
-      checkGroupHowl.last=performance.now();
-      for(let i=0;i<4;i++)spawnSparkles(rand(80,WORLD_W-80),rand(80,WORLD_H-80),'#C9A6FF',14);
-      showToast('✨ A magical synchronized howl! ✨',2000);
-    }
-  }
 }
 
 function updateSparkles(){
@@ -5125,7 +5281,6 @@ const Save = {
       version: 1,
       levelId: LevelManager.current ? LevelManager.current.id : null,
       worldW: WORLD_W, worldH: WORLD_H,
-      twoPlayer: Game.twoPlayer,
       cheeredCount: Game.cheeredCount,
       progress: (typeof Progress!=='undefined') ? Progress.completed : {},
       players: Game.players.map(p=>this._serializePlayer(p)),
@@ -5164,8 +5319,7 @@ const Save = {
     friends = data.friends || [];
     entities = data.entities || [];
 
-    // --- players ---
-    twoPlayer = !!data.twoPlayer;
+    // --- player ---
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
       pl.dir = sp.dir; pl.treats = sp.treats;
@@ -5177,7 +5331,6 @@ const Save = {
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);
-    if(data.players[1]) p2 = restore(data.players[1]);
 
     Game.cheeredCount = data.cheeredCount || 0;
     if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
@@ -5191,8 +5344,6 @@ const Save = {
     if(typeof UI !== 'undefined' && UI.closePanel) UI.closePanel();
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
-    document.getElementById('p2panel').style.display = twoPlayer ? 'flex' : 'none';
-    const p2c = document.getElementById('p2controls'); if(p2c) p2c.style.display = twoPlayer ? 'block' : 'none';
     sparkles = [];
     Game.state = SCENES.PLAYING;
     updateHUD();
@@ -5223,15 +5374,13 @@ const UI = {
   updateHUD(){
     const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
     set('p1count', p1 ? p1.treats : 0);
-    set('p2count', (typeof p2!=='undefined' && p2) ? p2.treats : 0);
     set('cheerCount', Game.cheeredCount);
     set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
-    // Heart bars (per active player) + P1 hotbar.
+    // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
-    const h2=this.$('p2hearts'); if(h2 && typeof p2!=='undefined' && p2) h2.innerHTML=this._heartMarkup(p2);
     this.renderHotbar();
     this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
@@ -5485,23 +5634,37 @@ const UI = {
     const t=(typeof performance!=='undefined')?performance.now():0;
     g.save(); g.scale(S,S);
     const cx=(LW/S)/2, cy=(LH/S)/2+5;
-    const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
+    const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t, p.breed) : null;
     if(a) Wearables.drawBack(g, a);
-    drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);
+    drawBreedPreviewInline(g, p.breed, cx, cy, t);
     if(a) Wearables.drawFront(g, a);
     g.restore();
   },
 
   // ---------- hotbar (always-visible, mirrors the inventory's first row) ----------
-  // Keys 1..N map to the first HOTBAR inventory slots. Anything can sit here; only some
-  // item types actually do something when used (see useHotbar).
+  // Two ability slots (the dog's active abilities, fired with the Ability 1/2 keys)
+  // sit left of a divider; keys 1..N map to the first HOTBAR inventory slots. Anything
+  // can sit in the number slots; only some item types do something when used (useHotbar).
   renderHotbar(){
     const bar=this.$('hotbar'); if(!bar) return;
     const show = Game.state===SCENES.PLAYING||Game.state===SCENES.PAUSED||Game.state===SCENES.DIALOG||this.invOpen;
     bar.style.display = show ? 'flex' : 'none';
     if(!show){ bar.innerHTML=''; return; }
-    const cells=p1?Inventory.cells(p1):[];
     let html='';
+    // Ability slots — filled from the breed's abilities (data/breeds.js); empty slots
+    // stay visible (dashed) so every dog shows where future abilities will live.
+    const abilities=(p1&&p1.abilities)||[];
+    for(let i=0;i<2;i++){
+      const def=Abilities.get(abilities[i]);
+      const b=Input.bindings['ability'+(i+1)];
+      const key=Input.keyName(b[0]||b[1]);
+      html+=`<button class="hb-slot hb-ability${def?'':' empty'}" title="${def?`${def.name||'Ability'} — press ${key}`:'No ability yet'}">`
+        + `<span class="hb-key">${key}</span>`
+        + (def?`<span class="hb-icon">${def.icon||'✨'}</span>`:'')
+        + `</button>`;
+    }
+    html+='<span class="hb-sep"></span>';
+    const cells=p1?Inventory.cells(p1):[];
     for(let i=0;i<Inventory.HOTBAR;i++){
       const c=cells[i], def=c?Items.get(c.id):null;
       html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${def?`title="${def.name} — press ${i+1}"`:''}>`
@@ -5686,14 +5849,16 @@ const UI = {
     const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : (d.npc.quest ? [] : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}]);
     wares.forEach(w=>{
       const def=Items.get(w.id); if(!def) return;
-      const afford=d.player.treats>=w.cost;
+      // Smart dogs haggle: the smarts bar (data/breeds.js) discounts the NPC's price.
+      const price=Math.max(1, Math.round(w.cost * ((d.player.stats && d.player.stats.priceMul) || 1)));
+      const afford=d.player.treats>=price;
       const btn=document.createElement('button');
       btn.className='dialog-choice'+(afford?'':' disabled');
-      btn.textContent=`${def.icon} Buy ${def.name} — ${w.cost} 🦴`;
+      btn.textContent=`${def.icon} Buy ${def.name} — ${price} 🦴`;
       btn.addEventListener('click',()=>{
-        if(d.player.treats<w.cost){ this.renderDialog("You don't have enough treats for that."); return; }
+        if(d.player.treats<price){ this.renderDialog("You don't have enough treats for that."); return; }
         if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
-        d.player.treats-=w.cost; Inventory.add(d.player, w.id, 1); this.updateHUD();
+        d.player.treats-=price; Inventory.add(d.player, w.id, 1); this.updateHUD();
         if(typeof sfxCollect==='function') sfxCollect();
         const tail = def.type==='wearable' ? ' Open your inventory (I) to wear it!' : ' Anything else?';
         this.renderDialog(`Enjoy your ${def.name}!${tail}`);
@@ -5721,8 +5886,7 @@ const UI = {
     this.panel=null; this._dialog=null;
     Game.state=SCENES.GAMEOVER;
     if(typeof stopMusic==='function') stopMusic();   // the sad faint sound already played
-    const who = (Game.twoPlayer && p) ? `P${p.id}'s dog` : 'Your dog';
-    const t=this.$('gameOverText'); if(t) t.textContent=`${who} fainted... but every good dog gets another chance.`;
+    const t=this.$('gameOverText'); if(t) t.textContent=`Your dog fainted... but every good dog gets another chance.`;
     this._show('gameOverScreen', true);
     this.renderHotbar();              // hide the hotbar
   },
@@ -5843,6 +6007,7 @@ const WorldMap = {
     if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
       LevelManager.goTo(id);
       Game.state = SCENES.PLAYING;
+      if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
       if(typeof startMusic==='function') startMusic();
     }
   },
@@ -6026,20 +6191,19 @@ function loop(now){
   const s=Game.state;
   const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
   if(playing){
-    const c1=Input.CONTROLS.p1, c2=Input.CONTROLS.p2;
     updateCollectibles(now);
     Entities.updateAll(now,dt);
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
-    if(!p1.dead){updatePlayer(p1,c1,now,dt);tryCollect(p1);tryDeliver(p1,c1);tryInteract(p1,c1);}
-    if(twoPlayer&&!p2.dead){updatePlayer(p2,c2,now,dt);tryCollect(p2);tryDeliver(p2,c2);tryInteract(p2,c2);}
-    if(twoPlayer&&!p1.dead&&!p2.dead)checkGroupHowl();
+    if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
     updateSparkles();updateCamera();
   }
   if(showWorld){
     ctx.save();ctx.translate(-cam.x,-cam.y);
     drawWorld(now);
+    // howl sound-rings sit flat on the ground, under every actor
+    if(!p1.dead) drawHowlRings(p1,now);
     // river bridges draw above swimmers passing underneath, but below anyone walking across the deck
-    const activePlayers=twoPlayer?[p1,p2]:[p1];
+    const activePlayers=[p1];
     const riverBridges=worldObjects.filter(o=>o.kind==='riverbridge');
     const deckBridges=riverBridges.filter(o=>activePlayers.some(p=>!p.swimming&&isOnSpecificBridge(o,p.x,p.y)));
     deckBridges.forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
@@ -6074,8 +6238,28 @@ let pseudoFS=false;
 function resizeCanvas(){
   const isNativeFS=!!(document.fullscreenElement||document.webkitFullscreenElement);
   const isFS=isNativeFS||pseudoFS;
+  // body.fs hides the page chrome (title/subtitle/controls/footer) so only the HUD
+  // and the frame remain — toggle it BEFORE measuring, so the HUD height is final.
+  document.body.classList.toggle('fs',isFS);
   const sw=window.innerWidth,sh=window.innerHeight;
-  const scale=isFS?Math.min(sw/VIEW_W,sh/VIEW_H):Math.min((sw-32)/VIEW_W,1);
+  const hud=document.getElementById('hud');
+  let scale;
+  if(isFS){
+    // Scale the HUD up with the screen (capped so it stays a slim bar), then reserve
+    // its VISUAL height (getBoundingClientRect sees the zoom) so nothing is cut off.
+    const est=Math.min(sw/VIEW_W, sh/VIEW_H);
+    const hudZoom=Math.min(Math.max(est*0.75,1),1.6);
+    if(hud) hud.style.zoom=hudZoom;
+    const reserved=(hud?hud.getBoundingClientRect().height:0)+28;
+    scale=Math.min(sw/VIEW_W,(sh-reserved)/VIEW_H);
+    // Overlay screens (menu, char select, pause, hotbar, …) zoom to match the canvas,
+    // so fullscreen UI fills the screen instead of floating tiny in empty space.
+    document.documentElement.style.setProperty('--ui-scale', scale.toFixed(3));
+  } else {
+    if(hud) hud.style.zoom='';
+    document.documentElement.style.setProperty('--ui-scale', 1);
+    scale=Math.min((sw-32)/VIEW_W,1);
+  }
   const cssW=Math.round(VIEW_W*scale), cssH=Math.round(VIEW_H*scale);
   // CSS box stays the display size (same field of view on every screen); the backing
   // store is bumped to device pixels so drawing is crisp on high-DPI displays.
@@ -6128,11 +6312,12 @@ document.addEventListener('webkitfullscreenchange',onFSChange);
 // ===== src/mobile-controls.js =====
 // ====================== MOBILE CONTROLS ======================
 const isTouchDevice=()=>'ontouchstart' in window||navigator.maxTouchPoints>0;
-const mobileMap={'mb-up':'KeyW','mb-down':'KeyS','mb-left':'KeyA','mb-right':'KeyD','mobileHowlBtn':'Space'};
-function bindMobileBtn(id,code){
+// Buttons press *actions* (not key codes) so they keep working after rebinding.
+const mobileMap={'mb-up':'up','mb-down':'down','mb-left':'left','mb-right':'right','mobileHowlBtn':'action'};
+function bindMobileBtn(id,action){
   const el=document.getElementById(id);if(!el)return;
-  const press=e=>{e.preventDefault();keys[code]=true;el.classList.add('pressed');};
-  const release=e=>{e.preventDefault();keys[code]=false;el.classList.remove('pressed');};
+  const press=e=>{e.preventDefault();Input.setVirtual(action,true);el.classList.add('pressed');};
+  const release=e=>{e.preventDefault();Input.setVirtual(action,false);el.classList.remove('pressed');};
   el.addEventListener('touchstart',press,{passive:false});
   el.addEventListener('touchend',release,{passive:false});
   el.addEventListener('touchcancel',release,{passive:false});
@@ -6147,64 +6332,32 @@ function showMobileControls(show){
 
 // ===== src/start.js =====
 // ====================== START / RESET (overridden by charselect.js) ======================
-function resetGame(cfg1, cfg2){
+function resetGame(cfg){
   stopMusic();
   collectibles=makeCollectibles(); friends=makeFriends(); cheeredCount=0;
-  const c1=cfg1||dogConfig&&dogConfig.p1||{color:{hex:'#6FA8C9'},breed:'husky'};
-  const c2=cfg2||dogConfig&&dogConfig.p2||{color:{hex:'#E0855B'},breed:'shiba'};
-  p1=makePlayer(1, c1.color.hex, 200, 200, c1.breed);
-  p2=makePlayer(2, c2.color.hex, 260, 200, c2.breed);
+  const c=cfg||(typeof dogConfig!=='undefined'&&dogConfig)||{breed:'dinno'};
+  p1=makePlayer(1, Breeds.get(c.breed).color, 200, 200, c.breed);
   sparkles=[]; updateHUD();
   document.getElementById('winScreen').style.display='none';
 }
-
 
 // ===== src/charselect.js =====
 // ====================== CHARACTER SELECTION ======================
 
 // Breed metadata now comes from the shared registry (data/breeds.js) so charselect
-// and gameplay share one source. Shape: {id,name,desc,emoji,stats,passive,abilityId}.
+// and gameplay share one source. Shape: {id,name,desc,emoji,stats,passive,abilities,color}.
+// Only Dinno and Lolla are playable; both draw their real coat colours in-sprite,
+// so there is no colour picker — each breed carries a fixed accent colour.
 const BREEDS = Breeds.list();
 
-const COLORS = [
-  { id:'blue',    hex:'#6FA8C9', label:'Ice Blue'   },
-  { id:'copper',  hex:'#C07840', label:'Copper'     },
-  { id:'lavender',hex:'#9B7EC8', label:'Lavender'   },
-  { id:'mint',    hex:'#4FAD8A', label:'Mint'       },
-  { id:'rose',    hex:'#D4607A', label:'Rose'       },
-  { id:'sand',    hex:'#C8A855', label:'Sand'       },
-  { id:'slate',   hex:'#607890', label:'Slate'      },
-  { id:'peach',   hex:'#D48060', label:'Peach'      },
-];
+// Current selection (default). Single player for now — a future multiplayer mode
+// would reintroduce per-player configs here.
+const dogConfig = { breed:'dinno' };
 
-// Current selections (defaults)
-const dogConfig = {
-  p1: { breed:'dinno',    color: COLORS[1] },  // copper — matches Dinno's real coat
-  p2: { breed:'lolla',    color: COLORS[0] },  // ice blue for Lolla
-};
-
-// Which player we're currently configuring (null = showing mode select)
-let selectingPlayer = null;
-let pendingMode = null; // 'solo' | '2p'
-
-// ---- Preview canvas (draws a mini dog for each breed card) ----
-function drawBreedPreview(canvasEl, breed, colorHex, t){
-  const c = canvasEl.getContext('2d');
-  c.imageSmoothingEnabled = false;
-  c.clearRect(0,0,canvasEl.width,canvasEl.height);
-  const cx=canvasEl.width/2, cy=canvasEl.height/2+6;
-  // draw a small static dog using the main renderer
-  const fakePlayer={x:cx,y:cy,color:colorHex,breed,dir:'down',moving:false,howling:false,animFrame:0,animTimer:0};
-  // We redirect ctx temporarily to c
-  const savedCtx=ctx;
-  // We can't swap ctx (it's const), so we draw a simpler inline preview
-  drawBreedPreviewInline(c, breed, colorHex, cx, cy, t||0);
-}
-
-function drawBreedPreviewInline(c, breed, colorHex, x, y, t){
+// ---- Preview drawing (draws a mini dog for each breed card) ----
+function drawBreedPreviewInline(c, breed, x, y, t){
   function f(rx,ry,rw,rh,col){ c.fillStyle=col; c.fillRect(Math.round(x+rx),Math.round(y+ry),rw,rh); }
-  const C=colorHex;
-  const D=shade(C,-30), L=shade(C,40), W='#F5EEE0', K='#1A1A1A';
+  const K='#1A1A1A';
   const bob=Math.sin(t/350)*1.5;
   const by=y+bob;
 
@@ -6228,9 +6381,26 @@ function drawBreedPreviewInline(c, breed, colorHex, x, y, t){
     f(-4,-10,3,3,K); f(2,-10,3,3,K);
     f(-3,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
     f(-4,-6,8,5,RW); f(-2,-8,4,3,K);
-  } else if(breed==='lolla'){
-    // Sheltie / collie: tricolor brown+black+white, long mane
-    const BC='#C07838', BD=shade(BC,-35), BL='#D8A060';
+  } else if(breed==='tapka'){
+    // Ťapka — tiny Prague Ratter: fawn, huge upright ears, greying muzzle
+    const TC='#B5854F', TD=shade(TC,-32), TG='#D9CFC0', PK='#D8A090';
+    // small slim body
+    f(-7,2,14,9,TC); f(-4,5,8,5,TG);
+    f(-5,10,3,6,TD); f(2,10,3,6,TD);
+    // thin whippy tail
+    const tw=Math.sin(t/140)*3;
+    f(6,2+tw*0.4,4,7,TD); f(9,tw-1,3,6,TC);
+    // small head + oversized ears
+    f(-6,-10,12,12,TC);
+    f(-9,-21,6,12,TD); f(-8,-19,4,8,PK);
+    f(3,-21,6,12,TD); f(4,-19,4,8,PK);
+    // big dark eyes + greying muzzle + button nose
+    f(-4,-8,3,3,K); f(-3,-8,1,1,'#fff');
+    f(1,-8,3,3,K); f(2,-8,1,1,'#fff');
+    f(-4,-4,8,5,TG); f(-1,-4,3,3,K);
+  } else {
+    // Lolla — sheltie / collie: tricolor brown+black+white, long mane
+    const BC='#C07838', BD=shade(BC,-35);
     const BLK='#2A2A2A', BWH='#F4EEE2';
     // body
     f(-8,-2,16,12,BC); f(-5,2,10,6,BWH); // white chest
@@ -6254,115 +6424,34 @@ function drawBreedPreviewInline(c, breed, colorHex, x, y, t){
     f(-2,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
     // pointy muzzle
     f(-2,-7,5,5,BWH); f(-1,-9,3,3,K);
-  } else if(breed==='husky'){
-    // body
-    f(-9,-2,18,13,C); f(-6,2,12,7,L);
-    // legs
-    f(-6,10,4,7,D); f(2,10,4,7,D);
-    // tail
-    const tw=Math.sin(t/160)*4;
-    f(8,0+tw*0.4,4,10,D); f(10,tw-2,3,7,C); f(11,tw-4,2,5,W);
-    // head
-    f(-7,-14,14,13,C); f(-4,-12,9,5,W); f(-6,-14,4,7,D); f(2,-14,4,7,D);
-    // ears
-    f(-8,-20,6,8,D); f(2,-20,6,8,D);
-    f(-6,-18,3,5,L); f(3,-18,3,5,L);
-    // eyes
-    f(-4,-10,3,3,K); f(2,-10,3,3,K);
-    f(-3,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
-    // muzzle
-    f(-3,-6,7,4,W); f(-2,-8,4,3,K);
-  } else if(breed==='shiba'){
-    // compact sturdy body
-    f(-8,-2,16,12,C); f(-5,2,10,7,W);
-    f(-5,10,4,7,D); f(1,10,4,7,D);
-    // curled tail (curl shape with multiple rects)
-    const tw=Math.sin(t/180)*2;
-    f(7,-2,5,8,D); f(9,-6+tw,4,6,C); f(10,-9+tw,3,4,C); f(8,-9+tw,4,3,C);
-    // head — squarish, bold
-    f(-7,-15,14,13,C); f(-4,-12,8,6,W);
-    // ears — pointed, upright
-    f(-7,-24,5,11,D); f(-5,-22,3,8,L);
-    f(2,-24,5,11,D); f(3,-22,3,8,L);
-    // eyes — almond shaped
-    f(-4,-10,4,3,K); f(1,-10,4,3,K);
-    f(-3,-10,1,1,'#fff'); f(2,-10,1,1,'#fff');
-    f(-3,-6,7,4,W); f(-2,-8,4,3,K);
-  } else if(breed==='corgi'){
-    // WIDE low body
-    f(-11,-1,22,10,C); f(-8,3,16,6,W);
-    // SHORT stumpy legs
-    f(-7,9,5,5,D); f(2,9,5,5,D);
-    // fluffy butt / tail stub
-    f(9,0,6,8,W); f(10,-1,5,6,L);
-    // big square head
-    f(-8,-14,16,14,C); f(-5,-10,10,7,W);
-    // large upright ears
-    f(-9,-24,7,12,D); f(-7,-22,4,9,L); f(-6,-21,2,6,'#FFBBAA');
-    f(2,-24,7,12,D); f(3,-22,4,9,L); f(4,-21,2,6,'#FFBBAA');
-    // wide eyes
-    f(-5,-9,4,4,K); f(1,-9,4,4,K);
-    f(-4,-9,2,2,'#fff'); f(2,-9,2,2,'#fff');
-    f(-3,-5,7,4,W); f(-1,-7,4,3,K);
-  } else if(breed==='poodle'){
-    // pom-pom body (round fluffy patches)
-    c.fillStyle=C;
-    c.beginPath(); c.arc(x,by+2,9,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x-5,by+5,5,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x+5,by+5,5,0,Math.PI*2); c.fill();
-    // legs (thin with pom ankles)
-    f(-6,11,3,7,D); f(3,11,3,7,D);
-    c.fillStyle=C; c.beginPath(); c.arc(x-4,by+19,4,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x+5,by+19,4,0,Math.PI*2); c.fill();
-    // tail pom
-    const tw=Math.sin(t/150)*4;
-    c.fillStyle=D; c.beginPath(); c.arc(x+10,by-2+tw*0.5,3,0,Math.PI*2); c.fill();
-    c.fillStyle=C; c.beginPath(); c.arc(x+12,by-4+tw,4,0,Math.PI*2); c.fill();
-    // head pom
-    c.fillStyle=C; c.beginPath(); c.arc(x,by-15,7,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x-5,by-18,5,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x+5,by-18,5,0,Math.PI*2); c.fill();
-    // ear poms
-    c.fillStyle=D; c.beginPath(); c.arc(x-8,by-16,4,0,Math.PI*2); c.fill();
-    c.beginPath(); c.arc(x+8,by-16,4,0,Math.PI*2); c.fill();
-    // face
-    f(-3,-10,3,3,K); f(1,-10,3,3,K);
-    f(-2,-10,1,1,'#fff'); f(2,-10,1,1,'#fff');
-    f(-2,-7,5,3,W); f(-1,-9,3,3,K);
-  } else if(breed==='dalmatian'){
-    // white base coat with spots
-    f(-9,-2,18,13,'#F5F0E8'); f(-6,2,12,7,W);
-    f(-6,10,4,7,'#D8D4CC'); f(2,10,4,7,'#D8D4CC');
-    const tw=Math.sin(t/160)*4;
-    f(8,0+tw*0.4,4,10,'#D8D4CC'); f(10,tw-2,3,7,'#F5F0E8');
-    f(-7,-14,14,13,'#F5F0E8'); f(-4,-12,8,4,'#F5F0E8');
-    f(-8,-20,6,8,'#D8D4CC'); f(2,-20,6,8,'#D8D4CC');
-    f(-6,-18,3,4,W); f(3,-18,3,4,W);
-    f(-4,-10,3,3,K); f(2,-10,3,3,K);
-    f(-3,-10,1,1,'#fff'); f(3,-10,1,1,'#fff');
-    f(-3,-6,7,4,W); f(-2,-8,4,3,K);
-    // spots using main color
-    const spots=[[-4,1,4,4],[ 3,3,3,4],[-7,4,3,3],[5,0,3,3],[-1,6,4,3],
-                 [-5,-13,3,3],[3,-12,4,3],[-6,-5,3,3],[2,-5,3,3]];
-    c.fillStyle=C;
-    spots.forEach(([rx,ry,rw,rh])=>{ c.fillRect(Math.round(x+rx),Math.round(by+ry),rw,rh); });
   }
 }
 
+// ---- Stat bars panel for the currently selected breed ----
+function buildStatsPanel(){
+  const b=Breeds.get(dogConfig.breed);
+  return `
+  <div class="cs-stats">
+    <div class="st-passive">${b.emoji} ${b.passive}</div>
+    ${Breeds.STATS.map(s=>{
+      const v=b.bars[s.key];
+      return `<div class="st-row" title="${s.hint}">
+        <span class="st-label">${s.icon} ${s.label}</span>
+        <span class="st-pips">${[1,2,3,4,5].map(i=>`<span class="st-pip${i<=v?' on':''}"></span>`).join('')}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 // ---- Build the HTML for the selection screen ----
-function buildSelectScreen(playerNum){
-  const cfg = dogConfig[`p${playerNum}`];
+function buildSelectScreen(){
   return `
 <div id="charSelect" class="overlay-screen">
-  <div class="cs-title">
-    <span class="cs-player-badge p${playerNum}-badge">P${playerNum}</span>
-    Choose Your Dog
-  </div>
+  <div class="cs-title">Choose Your Dog</div>
 
-  <div class="cs-section-label">Breed</div>
   <div class="cs-breeds" id="csBreeds">
     ${BREEDS.map(b=>`
-      <div class="breed-card ${cfg.breed===b.id?'selected':''}" data-breed="${b.id}">
+      <div class="breed-card ${dogConfig.breed===b.id?'selected':''}" data-breed="${b.id}">
         <canvas class="breed-preview" id="bprev-${b.id}" width="60" height="70"></canvas>
         <div class="breed-name">${b.name}</div>
         <div class="breed-desc">${b.desc}</div>
@@ -6370,82 +6459,52 @@ function buildSelectScreen(playerNum){
     `).join('')}
   </div>
 
-  ${cfg.breed==='dinno'||cfg.breed==='lolla' ? `
-  <div class="cs-section-label">Colour</div>
-  <div style="text-align:center;font-size:12px;color:#888;padding:8px 0;">
-    ${cfg.breed==='dinno'?'Dinno':'Lolla'} keeps their real colours!
-  </div>` : `
-  <div class="cs-section-label">Colour</div>
-  <div class="cs-colors" id="csColors">
-    ${COLORS.map(col=>`
-      <div class="color-swatch ${cfg.color.id===col.id?'selected':''}"
-           data-colorid="${col.id}"
-           style="background:${col.hex}"
-           title="${col.label}">
-        ${cfg.color.id===col.id?'<span class="swatch-check">✓</span>':''}
-      </div>
-    `).join('')}
-  </div>`}
+  ${buildStatsPanel()}
 
   <div class="cs-actions">
-    ${playerNum===2 && pendingMode==='2p'
-      ? `<button class="modebtn secondary" id="csBack">← Back</button>` : ''}
-    <button class="modebtn" id="csNext">
-      ${pendingMode==='2p' && playerNum===1 ? 'Next: P2 →' : '▶ Play!'}
-    </button>
+    <button class="modebtn secondary" id="csBack">← Back</button>
+    <button class="modebtn" id="csNext">▶ Play!</button>
   </div>
 </div>`;
 }
 
-function showCharSelect(playerNum){
-  selectingPlayer = playerNum;
+function showCharSelect(){
+  if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
   const frame = document.getElementById('gameFrame');
   let el = document.getElementById('charSelect');
   if(el) el.remove();
-  frame.insertAdjacentHTML('beforeend', buildSelectScreen(playerNum));
+  frame.insertAdjacentHTML('beforeend', buildSelectScreen());
 
   // Wire breed cards
   document.querySelectorAll('.breed-card').forEach(card=>{
     card.addEventListener('click',()=>{
-      dogConfig[`p${playerNum}`].breed = card.dataset.breed;
-      // re-render just the cards + previews
-      refreshSelectScreen(playerNum);
+      dogConfig.breed = card.dataset.breed;
+      // re-render the cards so the selection highlight moves
+      showCharSelect();
     });
   });
 
-  // Wire color swatches
-  document.querySelectorAll('.color-swatch').forEach(sw=>{
-    sw.addEventListener('click',()=>{
-      dogConfig[`p${playerNum}`].color = COLORS.find(c=>c.id===sw.dataset.colorid);
-      refreshSelectScreen(playerNum);
-    });
-  });
-
-  // Next button
+  // Play button
   document.getElementById('csNext').addEventListener('click',()=>{
     document.getElementById('charSelect').remove();
-    if(pendingMode==='2p' && playerNum===1){
-      showCharSelect(2);
-    } else {
-      launchGame();
-    }
+    launchGame();
   });
 
-  // Back button (P2 screen → back to P1)
-  const backBtn = document.getElementById('csBack');
-  if(backBtn) backBtn.addEventListener('click',()=>{
+  // Back to the main menu
+  document.getElementById('csBack').addEventListener('click',()=>{
+    if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
     document.getElementById('charSelect').remove();
-    showCharSelect(1);
+    document.getElementById('startScreen').style.display='flex';
+    Game.state=SCENES.MENU;
   });
 
   // Draw breed previews (animated via RAF)
-  renderBreedPreviews(playerNum);
+  renderBreedPreviews();
 }
 
 let previewRAF = null;
-function renderBreedPreviews(playerNum){
+function renderBreedPreviews(){
   if(previewRAF) cancelAnimationFrame(previewRAF);
-  const cfg = dogConfig[`p${playerNum}`];
   function frame(t){
     const dpr=hiDPI();
     BREEDS.forEach(b=>{
@@ -6458,86 +6517,42 @@ function renderBreedPreviews(playerNum){
       if(el.width!==bw){ el.width=bw; el.height=bh; el.style.width='60px'; el.style.height='70px'; }
       g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
       g.clearRect(0,0,60,70);
-      drawBreedPreviewInline(g, b.id, cfg.color.hex, 30, 42, t);
+      drawBreedPreviewInline(g, b.id, 30, 42, t);
     });
     previewRAF = requestAnimationFrame(frame);
   }
   previewRAF = requestAnimationFrame(frame);
 }
 
-function refreshSelectScreen(playerNum){
-  if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
-  const el = document.getElementById('charSelect');
-  if(el) el.remove();
-  const frame = document.getElementById('gameFrame');
-  frame.insertAdjacentHTML('beforeend', buildSelectScreen(playerNum));
-
-  document.querySelectorAll('.breed-card').forEach(card=>{
-    card.addEventListener('click',()=>{
-      dogConfig[`p${playerNum}`].breed = card.dataset.breed;
-      refreshSelectScreen(playerNum);
-    });
-  });
-  document.querySelectorAll('.color-swatch').forEach(sw=>{
-    sw.addEventListener('click',()=>{
-      dogConfig[`p${playerNum}`].color = COLORS.find(c=>c.id===sw.dataset.colorid);
-      refreshSelectScreen(playerNum);
-    });
-  });
-  document.getElementById('csNext').addEventListener('click',()=>{
-    document.getElementById('charSelect').remove();
-    if(pendingMode==='2p' && playerNum===1) showCharSelect(2);
-    else launchGame();
-  });
-  const backBtn = document.getElementById('csBack');
-  if(backBtn) backBtn.addEventListener('click',()=>{
-    document.getElementById('charSelect').remove();
-    showCharSelect(1);
-  });
-  renderBreedPreviews(playerNum);
-}
-
 function launchGame(){
   if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
-  const cfg1 = dogConfig.p1, cfg2 = dogConfig.p2;
-  if(pendingMode==='2p'){
-    twoPlayer=true;
-    document.getElementById('p2panel').style.display='flex';
-    document.getElementById('p2controls').style.display='block';
-  } else {
-    twoPlayer=false;
-    document.getElementById('p2panel').style.display='none';
-    document.getElementById('p2controls').style.display='none';
-  }
-  // Update HUD dot colors safely (some browsers' querySelector returns NodeList that needs guarding)
-  const dots = document.querySelectorAll('#hud .dot');
-  if(dots[0]) dots[0].style.background = cfg1.color.hex;
-  if(dots[1]) dots[1].style.background = cfg2.color.hex;
+  // HUD dot takes the chosen breed's accent colour
+  const dot = document.querySelector('#hud .dot');
+  if(dot) dot.style.background = Breeds.get(dogConfig.breed).color;
 
   document.getElementById('startScreen').style.display='none';
   // A brand-new game always starts at the first level (the current level may be a
   // later one if a previous run progressed before quitting).
-  resetGame(cfg1, cfg2, Levels.first().id);
+  resetGame(dogConfig, Levels.first().id);
   Abilities.spawnAll();
   Game.state=SCENES.PLAYING;
+  updateHUD();               // now that we're PLAYING, the hotbar shows itself
   startMusic();
-  if(!twoPlayer && isTouchDevice()) showMobileControls(true);
+  if(isTouchDevice()) showMobileControls(true);
 }
 
-// Override resetGame to accept configs. `levelId` picks which level to build; omit it
+// Override resetGame to accept a config. `levelId` picks which level to build; omit it
 // to rebuild whatever level is current (used by Play Again after a game over).
-function resetGame(cfg1, cfg2, levelId){
+function resetGame(cfg, levelId){
   stopMusic();
   // A brand-new game (levelId given = starting at level 1) wipes campaign progress.
   if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id) Progress.reset();
   if(levelId) LevelManager.load(levelId);   // regenerate a specific level
   else LevelManager.reload();               // rebuild the current level
   Abilities.reset();
-  const c1 = cfg1 || dogConfig.p1;
-  const c2 = cfg2 || dogConfig.p2;
+  const c = cfg || dogConfig;
   const spawn = (LevelManager.current && LevelManager.current.spawn) || { x:200, y:200 };
-  p1=makePlayer(1, c1.color.hex, spawn.x, spawn.y, c1.breed);
-  p2=makePlayer(2, c2.color.hex, spawn.x+60, spawn.y, c2.breed);
+  p1=makePlayer(1, Breeds.get(c.breed).color, spawn.x, spawn.y, c.breed);
   sparkles=[]; updateHUD();
   document.getElementById('winScreen').style.display='none';
   document.getElementById('gameOverScreen').style.display='none';
@@ -6545,28 +6560,22 @@ function resetGame(cfg1, cfg2, levelId){
 }
 
 // Play Again after a game over: rebuild the level the run ended on (keeping the same
-// dogs) and drop straight back into play — no trip through the menu / char-select.
+// dog) and drop straight back into play — no trip through the menu / char-select.
 function replayRun(){
   if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
-  resetGame(dogConfig.p1, dogConfig.p2);   // no levelId → current level
+  resetGame(dogConfig);   // no levelId → current level
   Abilities.spawnAll();
   Game.state=SCENES.PLAYING;
+  updateHUD();               // now that we're PLAYING, the hotbar shows itself
   startMusic();
-  if(!twoPlayer && isTouchDevice()) showMobileControls(true);
+  if(isTouchDevice()) showMobileControls(true);
 }
 
 // Wire main menu buttons → char select flow
 document.getElementById('btn1p').addEventListener('click',()=>{
-  pendingMode='solo';
   Game.state=SCENES.CHARSELECT;
   document.getElementById('startScreen').style.display='none';
-  showCharSelect(1);
-});
-document.getElementById('btn2p').addEventListener('click',()=>{
-  pendingMode='2p';
-  Game.state=SCENES.CHARSELECT;
-  document.getElementById('startScreen').style.display='none';
-  showCharSelect(1);
+  showCharSelect();
 });
 document.getElementById('btnReplay').addEventListener('click',()=>{
   stopMusic();
@@ -6585,6 +6594,176 @@ if(soundtrackBtn){
     refreshSoundtrackBtn();
   });
 }
+
+// ===== src/options.js =====
+// ====================== OPTIONS SCREEN ======================
+// Key rebinding (Input.bindings) + sound volume/mute (AudioSettings). Opened from
+// the start menu (⚙️ Options) or the pause menu; also owns the two always-visible
+// HUD quick-mute buttons (music / effects) and keeps the on-page control hints
+// (ctrl-card + footer) in sync with the current bindings.
+
+const Options = {
+  _returnTo: null,   // 'menu' | 'pause' — which screen to restore on close
+  _capture:  null,   // {action, slot} while waiting for the user to press a key
+
+  isOpen(){ const el=document.getElementById('optionsScreen'); return !!el && el.style.display==='flex'; },
+
+  open(returnTo){
+    this._returnTo=returnTo||'menu';
+    if(this._returnTo==='pause' && typeof UI!=='undefined') UI._show('pauseScreen', false);
+    this.render();
+    document.getElementById('optionsScreen').style.display='flex';
+  },
+
+  close(){
+    this._capture=null;
+    const el=document.getElementById('optionsScreen'); if(el) el.style.display='none';
+    if(this._returnTo==='pause' && typeof UI!=='undefined') UI._show('pauseScreen', true);
+    this._returnTo=null;
+    this.refreshControlHints();
+    this.refreshMuteButtons();
+  },
+
+  render(){
+    const el=document.getElementById('optionsScreen'); if(!el) return;
+    const A=AudioSettings;
+    const pct=v=>Math.round(v*100);
+    el.innerHTML=`
+      <h2>⚙️ Options</h2>
+      <div class="opt-section">
+        <div class="opt-h">🔊 Sound</div>
+        <div class="opt-row">
+          <span class="opt-label">🎵 Music</span>
+          <input type="range" id="optMusicVol" min="0" max="100" value="${pct(A.musicVol)}">
+          <span class="opt-val" id="optMusicPct">${pct(A.musicVol)}%</span>
+          <button class="opt-mute ${A.musicMuted?'muted':''}" id="optMusicMute" title="Mute music">${A.musicMuted?'🔇':'🔊'}</button>
+        </div>
+        <div class="opt-row">
+          <span class="opt-label">✨ Effects</span>
+          <input type="range" id="optSfxVol" min="0" max="100" value="${pct(A.sfxVol)}">
+          <span class="opt-val" id="optSfxPct">${pct(A.sfxVol)}%</span>
+          <button class="opt-mute ${A.sfxMuted?'muted':''}" id="optSfxMute" title="Mute sound effects">${A.sfxMuted?'🔇':'🔊'}</button>
+        </div>
+      </div>
+      <div class="opt-section">
+        <div class="opt-h">🎮 Controls <span class="opt-hint">· click a key, then press the new one · right-click a key to clear it</span></div>
+        <div id="optBindings"></div>
+        <div class="opt-row" style="justify-content:center;">
+          <button class="modebtn secondary" id="optReset">↺ Reset to Defaults</button>
+        </div>
+      </div>
+      <button class="modebtn" id="optClose">✓ Done</button>`;
+    this.renderBindings();
+
+    const musicVol=document.getElementById('optMusicVol');
+    musicVol.addEventListener('input',()=>{
+      AudioSettings.set('musicVol', musicVol.value/100);
+      document.getElementById('optMusicPct').textContent=musicVol.value+'%';
+    });
+    const sfxVol=document.getElementById('optSfxVol');
+    sfxVol.addEventListener('input',()=>{
+      AudioSettings.set('sfxVol', sfxVol.value/100);
+      document.getElementById('optSfxPct').textContent=sfxVol.value+'%';
+    });
+    sfxVol.addEventListener('change',()=>{ if(typeof sfxCollect==='function') sfxCollect(); }); // audible feedback
+    document.getElementById('optMusicMute').addEventListener('click',()=>this.toggleMute('musicMuted'));
+    document.getElementById('optSfxMute').addEventListener('click',()=>this.toggleMute('sfxMuted'));
+    document.getElementById('optReset').addEventListener('click',()=>{
+      Input.resetBindings(); this._capture=null;
+      this.renderBindings(); this.refreshControlHints();
+      showToast('↺ Controls reset to defaults',1500);
+    });
+    document.getElementById('optClose').addEventListener('click',()=>this.close());
+  },
+
+  renderBindings(){
+    const box=document.getElementById('optBindings'); if(!box) return;
+    box.innerHTML=Input.ACTIONS.map(a=>{
+      const b=Input.bindings[a.id];
+      return `<div class="opt-row">
+        <span class="opt-label">${a.label}</span>
+        ${[0,1].map(slot=>{
+          const listening=this._capture && this._capture.action===a.id && this._capture.slot===slot;
+          return `<button class="opt-key ${listening?'listening':''} ${b[slot]?'':'empty'}"
+                          data-action="${a.id}" data-slot="${slot}">
+                    ${listening?'press a key…':Input.keyName(b[slot])}
+                  </button>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+    box.querySelectorAll('.opt-key').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        this._capture={action:btn.dataset.action, slot:+btn.dataset.slot};
+        this.renderBindings();
+      });
+      btn.addEventListener('contextmenu',e=>{   // right-click clears the slot
+        e.preventDefault();
+        Input.clearBinding(btn.dataset.action, +btn.dataset.slot);
+        this._capture=null;
+        this.renderBindings(); this.refreshControlHints();
+      });
+    });
+  },
+
+  toggleMute(key){
+    AudioSettings.set(key, !AudioSettings[key]);
+    if(key==='sfxMuted' && !AudioSettings.sfxMuted && typeof sfxCollect==='function') sfxCollect();
+    this.refreshMuteButtons();
+    if(this.isOpen()) this.render();   // keep the Options rows in sync
+  },
+
+  // HUD quick-mute buttons (always visible in the top bar).
+  refreshMuteButtons(){
+    const A=AudioSettings;
+    const m=document.getElementById('muteMusicBtn');
+    if(m){ m.classList.toggle('muted',A.musicMuted); m.title=A.musicMuted?'Unmute music':'Mute music'; }
+    const s=document.getElementById('muteSfxBtn');
+    if(s){ s.textContent=A.sfxMuted?'🔇':'🔊'; s.classList.toggle('muted',A.sfxMuted); s.title=A.sfxMuted?'Unmute sound effects':'Mute sound effects'; }
+  },
+
+  // Keep the controls card + footer hints matching the current bindings.
+  refreshControlHints(){
+    const kn=c=>Input.keyName(c);
+    const b=Input.bindings;
+    const card=document.getElementById('ctrlCard');
+    if(card){
+      const mv=slot=>['up','left','down','right'].map(a=>b[a][slot]).filter(Boolean).map(kn).join('');
+      const prim=mv(0), alt=mv(1);
+      const act=[b.action[0],b.action[1]].filter(Boolean).map(kn).join(' / ');
+      card.innerHTML=`<b>Controls</b>${prim||'—'}${alt?' or '+alt:''} · ${act||'—'} to howl/deliver`;
+    }
+    const foot=document.getElementById('footKeys');
+    if(foot){
+      foot.innerHTML=`<b>Esc</b> pause · <b>${kn(b.inventory[0]||b.inventory[1])}</b> inventory · <b>${kn(b.journal[0]||b.journal[1])}</b> quests`;
+    }
+    // Hotbar ability slots show their bound keys — keep them in sync too.
+    if(typeof UI!=='undefined' && UI.renderHotbar) UI.renderHotbar();
+  },
+
+  init(){
+    const on=(id,fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',fn); };
+    on('btnOptions',      ()=>this.open('menu'));
+    on('btnPauseOptions', ()=>this.open('pause'));
+    on('muteMusicBtn',    ()=>this.toggleMute('musicMuted'));
+    on('muteSfxBtn',      ()=>this.toggleMute('sfxMuted'));
+
+    // Capture-phase listener grabs the next keypress while rebinding, before the
+    // game's own keydown handler can react to it. Escape cancels the rebind.
+    window.addEventListener('keydown', e=>{
+      if(!this._capture) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if(e.code!=='Escape') Input.setBinding(this._capture.action, this._capture.slot, e.code);
+      this._capture=null;
+      this.renderBindings();
+      this.refreshControlHints();
+    }, true);
+
+    this.refreshMuteButtons();
+    this.refreshControlHints();
+  },
+};
+
+Options.init();
 
 // ===== src/dev.js =====
 // ====================== DEV MODE ======================
@@ -6634,19 +6813,17 @@ const DevMode = {
     body.innerHTML=html;
   },
 
-  // Boot a solo run straight into `levelId` with the currently-selected dogs.
+  // Boot a run straight into `levelId` with the currently-selected dog.
   play(levelId){
     if(!(typeof Levels!=='undefined' && Levels.get(levelId))) return;
     this._pausedByDev=false;
     this.close();
-    twoPlayer=false;
-    const p2p=document.getElementById('p2panel'); if(p2p) p2p.style.display='none';
-    const p2c=document.getElementById('p2controls'); if(p2c) p2c.style.display='none';
     const ss=document.getElementById('startScreen'); if(ss) ss.style.display='none';
     if(typeof WorldMap!=='undefined') WorldMap.hide();
-    resetGame(dogConfig.p1, dogConfig.p2, levelId);
+    resetGame(dogConfig, levelId);
     if(typeof Abilities!=='undefined') Abilities.spawnAll();
     Game.state=SCENES.PLAYING;
+    if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
     if(typeof startMusic==='function') startMusic();
     if(typeof isTouchDevice==='function' && isTouchDevice() && typeof showMobileControls==='function') showMobileControls(true);
     if(typeof showToast==='function') showToast('🛠 Dev: '+Levels.get(levelId).name, 1600);

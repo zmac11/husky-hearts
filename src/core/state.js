@@ -4,7 +4,7 @@
 // boolean flags, flow is a single scene value and all "current run" state hangs here.
 //
 // To keep this refactor low-risk, the canonical player/world globals still live where
-// they always have (p1/p2/twoPlayer/cheeredCount in world.js; worldObjects/colliders/
+// they always have (p1/cheeredCount in world.js; worldObjects/colliders/
 // cam/WORLD_* in world.js). `Game` and `World` are thin facades that delegate to them,
 // so old code keeps working while new code reads/writes through these namespaces.
 // The getter/setter bodies run at call time (well after world.js has initialised), so
@@ -39,11 +39,9 @@ const Game = {
   get running(){ return this.state === SCENES.PLAYING; }, // world actively simulating?
 
   // --- player access (delegates to canonical globals) ---
-  get players(){ return this.twoPlayer ? [p1, p2] : [p1]; },
+  // Single-player for now; a future multiplayer mode would widen this list.
+  get players(){ return [p1]; },
   get p1(){ return p1; },
-  get p2(){ return p2; },
-  get twoPlayer(){ return typeof twoPlayer !== 'undefined' ? twoPlayer : false; },
-  set twoPlayer(v){ twoPlayer = v; },
   get cheeredCount(){ return cheeredCount; },
   set cheeredCount(v){ cheeredCount = v; },
 };

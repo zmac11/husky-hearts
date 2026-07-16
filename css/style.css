@@ -2,7 +2,7 @@
     --sky:#FFE9D6; --sky-deep:#FFD6B8; --sunset:#FFB199;
     --meadow:#8FD4A8; --meadow-deep:#5C8D89;
     --brown:#4A3F35; --brown-soft:#7A6A58; --cream:#FFF8EF;
-    --gold:#FFD93D; --p1:#6FA8C9; --p2:#E0855B;
+    --gold:#FFD93D; --p1:#C07840;
     --shadow:rgba(74,63,53,0.25);
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -38,14 +38,17 @@
   }
   .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; }
   .hearts{ color:#e25c5c; }
-  #fsBtn{
+  #fsBtn,.hudbtn{
     font-family:inherit; font-size:12px; font-weight:bold;
     padding:5px 10px; border-radius:10px; border:2px solid var(--brown);
     background:var(--meadow-deep); color:var(--cream); cursor:pointer;
     box-shadow:0 3px 0 var(--shadow); touch-action:manipulation;
     white-space:nowrap;
   }
-  #fsBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
+  #fsBtn:active,.hudbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--shadow); }
+  .hudbtn{ padding:5px 8px; }
+  .hudbtn.muted{ opacity:.45; filter:grayscale(1); }
+  .hud-mutes{ display:flex; gap:6px; }
 
   /* ---- game frame ---- */
   #gameFrame{
@@ -113,6 +116,38 @@
   .dev-lvl.boss{ background:var(--gold); }
   .dev-lvl.soon{ background:rgba(255,255,255,0.07); color:#9aa39a; border:2px dashed rgba(255,255,255,0.15); cursor:default; box-shadow:none; }
   #devScreen .overlay-hint{ color:var(--cream); }
+
+  /* ---- options screen (key rebinding + sound) ---- */
+  #optionsScreen{
+    position:absolute; inset:0; border-radius:10px; z-index:29;
+    display:none; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:8px; text-align:center; padding:14px 12px; overflow-y:auto;
+    background:rgba(255,233,214,0.98);
+  }
+  #optionsScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.4vw,18px); }
+  .opt-section{
+    background:rgba(255,255,255,0.55); border:2px solid var(--brown-soft);
+    border-radius:12px; padding:8px 10px; width:100%; max-width:470px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .opt-h{ font-size:12px; font-weight:bold; color:var(--brown); text-align:left; }
+  .opt-hint{ font-weight:normal; color:var(--brown-soft); font-size:9px; }
+  .opt-row{ display:flex; align-items:center; gap:8px; }
+  .opt-label{ font-size:11px; color:var(--brown); font-weight:bold; width:118px; text-align:left; flex-shrink:0; }
+  .opt-row input[type=range]{ flex:1; min-width:60px; accent-color:var(--meadow-deep); }
+  .opt-val{ font-size:11px; color:var(--brown-soft); width:36px; text-align:right; flex-shrink:0; }
+  .opt-key,.opt-mute{
+    font-family:inherit; font-size:11px; font-weight:bold;
+    padding:4px 8px; border-radius:8px; border:2px solid var(--brown-soft);
+    background:var(--cream); color:var(--brown); cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation; white-space:nowrap;
+  }
+  .opt-key{ flex:1; min-width:64px; }
+  .opt-key:active,.opt-mute:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
+  .opt-key.empty{ color:var(--brown-soft); border-style:dashed; box-shadow:none; }
+  .opt-key.listening{ background:var(--gold); border-color:var(--brown); animation:optpulse .7s infinite alternate; }
+  .opt-mute.muted{ opacity:.45; filter:grayscale(1); }
+  @keyframes optpulse{ from{ transform:scale(1); } to{ transform:scale(1.06); } }
 
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
@@ -190,10 +225,6 @@
     font-size:clamp(14px,3.5vw,18px); font-weight:bold; color:var(--brown);
     display:flex; align-items:center; gap:8px; margin-bottom:2px;
   }
-  .cs-player-badge{ font-size:11px; font-weight:bold; border-radius:8px; padding:3px 8px; border:2px solid var(--brown); }
-  .p1-badge{ background:var(--p1); color:#fff; }
-  .p2-badge{ background:var(--p2); color:#fff; }
-  .cs-section-label{ font-size:11px; font-weight:bold; color:var(--brown-soft); text-transform:uppercase; letter-spacing:1px; align-self:flex-start; }
   .cs-breeds{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; width:100%; }
   .breed-card{
     display:flex; flex-direction:column; align-items:center; gap:3px;
@@ -206,15 +237,21 @@
   .breed-preview{ image-rendering:pixelated; image-rendering:crisp-edges; }
   .breed-name{ font-size:11px; font-weight:bold; color:var(--brown); }
   .breed-desc{ font-size:9px; color:var(--brown-soft); text-align:center; line-height:1.3; }
-  .cs-colors{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-  .color-swatch{
-    width:36px; height:36px; border-radius:10px; border:2px solid var(--brown-soft);
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:transform .1s; touch-action:manipulation;
+  /* stat bars panel for the selected dog */
+  .cs-stats{
+    background:var(--cream); border:2px solid var(--brown-soft); border-radius:12px;
+    padding:8px 12px; width:100%; max-width:320px;
+    display:flex; flex-direction:column; gap:4px;
   }
-  .color-swatch:hover{ transform:scale(1.12); }
-  .color-swatch.selected{ border:3px solid var(--brown); box-shadow:0 0 0 2px var(--gold); }
-  .swatch-check{ color:#fff; font-size:16px; text-shadow:0 0 3px rgba(0,0,0,0.6); font-weight:bold; }
+  .st-passive{ font-size:10px; color:var(--brown); font-weight:bold; text-align:center; margin-bottom:2px; line-height:1.3; }
+  .st-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .st-label{ font-size:11px; font-weight:bold; color:var(--brown); white-space:nowrap; }
+  .st-pips{ display:flex; gap:3px; }
+  .st-pip{
+    width:14px; height:9px; border-radius:3px;
+    background:#E8DECE; border:1px solid var(--brown-soft);
+  }
+  .st-pip.on{ background:var(--gold); border-color:var(--brown); }
   .cs-actions{ display:flex; gap:10px; margin-top:4px; justify-content:center; }
 
   /* ===== UI PANELS (pause / inventory / dialog) ===== */
@@ -359,6 +396,11 @@
     position:absolute; right:2px; bottom:0; font-size:9px; font-weight:bold;
     color:var(--brown); text-shadow:0 1px 0 #fff;
   }
+  /* ability slots (Q/E) — gold-tinted, left of the divider */
+  .hb-slot.hb-ability{ border-color:#8a6d1f; background:rgba(255,243,216,0.95); }
+  .hb-slot.hb-ability .hb-key{ color:#8a6d1f; }
+  .hb-slot.hb-ability.empty{ opacity:.55; border-style:dashed; }
+  .hb-sep{ width:2px; align-self:stretch; background:rgba(255,248,239,0.5); border-radius:2px; margin:0 2px; }
 
   /* ===== quest tracker (always-on HUD list of accepted quests, top-left of frame) ===== */
   #questTracker{
@@ -435,13 +477,16 @@
   .dialog-choice.disabled{ background:#ddd; color:#999; border-color:#bbb; cursor:not-allowed; box-shadow:none; }
 
   /* ===== FULLSCREEN ===== */
-  /* Canvas fills available space; resizeCanvas() handles the math */
+  /* Canvas fills available space; resizeCanvas() handles the math. body.fs is set by
+     resizeCanvas() for BOTH native and pseudo fullscreen: hide the page chrome so the
+     HUD + game frame are the only things on screen and nothing gets cut off. */
+  body.fs h1, body.fs #subtitle, body.fs #controls, body.fs footer{ display:none; }
+  body.fs #wrap{ justify-content:center; }
+  /* Every overlay inside the frame (menu, char select, options, pause, hotbar, toast,
+     quest tracker, dialogs) zooms to the canvas scale, so fullscreen UI fills the
+     screen instead of floating tiny in the middle. --ui-scale is set by resizeCanvas(). */
+  body.fs #gameFrame > *:not(canvas){ zoom:var(--ui-scale,1); }
   :fullscreen #gameFrame,
   :-webkit-full-screen #gameFrame {
     padding:0; border:none; border-radius:0; box-shadow:none; background:transparent;
-  }
-  :fullscreen body,
-  :-webkit-full-screen body {
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:linear-gradient(180deg,var(--sky) 0%,var(--sky-deep) 60%,var(--meadow) 100%);
   }

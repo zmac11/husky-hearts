@@ -65,6 +65,7 @@ LOAD_ORDER = [
     'mobile-controls.js', # touch d-pad
     'start.js',           # default resetGame (overridden by charselect)
     'charselect.js',      # character selection screen + start handlers
+    'options.js',         # options screen: key rebinding + sound volume/mute
     'dev.js',             # dev-mode level jumper (needs resetGame/dogConfig/Campaign)
 ]
 

@@ -1,6 +1,6 @@
 // ====================== ABILITY: BALL CANNON ======================
 // Formerly src/lolla.js. The tennis-ball + cannon fetch mini-game, now registered
-// as an ability so ANY breed with abilityId:'ballCannon' gets it (currently Lolla).
+// as an ability so ANY breed with 'ballCannon' in an ability slot gets it (currently Lolla).
 // State (ball, cannon, dropHeld) is private to this module instead of being global.
 
 (function(){
@@ -10,7 +10,7 @@
 
   // The active player carrying this ability (replaces getLollaPlayer()).
   function owner(){
-    for(const p of Game.players){ if(p && p.abilityId==='ballCannon') return p; }
+    for(const p of Game.players){ if(Abilities.playerHas(p,'ballCannon')) return p; }
     return null;
   }
 
@@ -36,12 +36,10 @@
 
   function reset(){ ball=null; cannon=null; dropHeld=false; }
 
-  function update(p, controls, dt){
+  function update(p, dt, trigger){
     if(!ball || !cannon) return;
     const dog=owner();
     if(!dog || dog.id!==p.id) return;
-
-    const dropKey = controls.ability;
 
     // Advance cannon animation
     if(cannon.firingT>0){
@@ -53,14 +51,14 @@
     if(ball.state==='idle'){
       if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
         ball.state='held'; ball.carrier=p.id;
-        showToast('🎾 Ball! [ability key] near cannon to fire · elsewhere to drop',2800);
+        showToast(`🎾 Ball! [${Input.keyName(Input.bindings[trigger][0]||Input.bindings[trigger][1])}] near cannon to fire · elsewhere to drop`,2800);
       }
     }
 
     if(ball.state==='held' && ball.carrier===p.id){
       ball.x=p.x; ball.y=p.y;
 
-      if(keys[dropKey] && !dropHeld){
+      if(Input.held(trigger) && !dropHeld){
         dropHeld=true;
         const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
         if(nearCannon){
@@ -75,7 +73,7 @@
           ball.state='idle'; ball.carrier=null;
         }
       }
-      if(!keys[dropKey]) dropHeld=false;
+      if(!Input.held(trigger)) dropHeld=false;
     }
 
     if(ball.state==='flying'){
@@ -241,5 +239,5 @@
     ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
   }
 
-  Abilities.register('ballCannon', { spawn, reset, update, drawWorld, drawOnDog });
+  Abilities.register('ballCannon', { name:'Ball Cannon', icon:'🎾', spawn, reset, update, drawWorld, drawOnDog });
 })();

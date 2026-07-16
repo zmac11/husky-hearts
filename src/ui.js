@@ -18,15 +18,13 @@ const UI = {
   updateHUD(){
     const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
     set('p1count', p1 ? p1.treats : 0);
-    set('p2count', (typeof p2!=='undefined' && p2) ? p2.treats : 0);
     set('cheerCount', Game.cheeredCount);
     set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
     set('levelName', lvl ? lvl.name : '—');
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
-    // Heart bars (per active player) + P1 hotbar.
+    // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
-    const h2=this.$('p2hearts'); if(h2 && typeof p2!=='undefined' && p2) h2.innerHTML=this._heartMarkup(p2);
     this.renderHotbar();
     this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
@@ -280,23 +278,37 @@ const UI = {
     const t=(typeof performance!=='undefined')?performance.now():0;
     g.save(); g.scale(S,S);
     const cx=(LW/S)/2, cy=(LH/S)/2+5;
-    const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t) : null;
+    const a=(typeof Wearables!=='undefined') ? Wearables.anchor(cx, cy, 'down', p.equipment||{}, t, p.breed) : null;
     if(a) Wearables.drawBack(g, a);
-    drawBreedPreviewInline(g, p.breed, p.color, cx, cy, t);
+    drawBreedPreviewInline(g, p.breed, cx, cy, t);
     if(a) Wearables.drawFront(g, a);
     g.restore();
   },
 
   // ---------- hotbar (always-visible, mirrors the inventory's first row) ----------
-  // Keys 1..N map to the first HOTBAR inventory slots. Anything can sit here; only some
-  // item types actually do something when used (see useHotbar).
+  // Two ability slots (the dog's active abilities, fired with the Ability 1/2 keys)
+  // sit left of a divider; keys 1..N map to the first HOTBAR inventory slots. Anything
+  // can sit in the number slots; only some item types do something when used (useHotbar).
   renderHotbar(){
     const bar=this.$('hotbar'); if(!bar) return;
     const show = Game.state===SCENES.PLAYING||Game.state===SCENES.PAUSED||Game.state===SCENES.DIALOG||this.invOpen;
     bar.style.display = show ? 'flex' : 'none';
     if(!show){ bar.innerHTML=''; return; }
-    const cells=p1?Inventory.cells(p1):[];
     let html='';
+    // Ability slots — filled from the breed's abilities (data/breeds.js); empty slots
+    // stay visible (dashed) so every dog shows where future abilities will live.
+    const abilities=(p1&&p1.abilities)||[];
+    for(let i=0;i<2;i++){
+      const def=Abilities.get(abilities[i]);
+      const b=Input.bindings['ability'+(i+1)];
+      const key=Input.keyName(b[0]||b[1]);
+      html+=`<button class="hb-slot hb-ability${def?'':' empty'}" title="${def?`${def.name||'Ability'} — press ${key}`:'No ability yet'}">`
+        + `<span class="hb-key">${key}</span>`
+        + (def?`<span class="hb-icon">${def.icon||'✨'}</span>`:'')
+        + `</button>`;
+    }
+    html+='<span class="hb-sep"></span>';
+    const cells=p1?Inventory.cells(p1):[];
     for(let i=0;i<Inventory.HOTBAR;i++){
       const c=cells[i], def=c?Items.get(c.id):null;
       html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${def?`title="${def.name} — press ${i+1}"`:''}>`
@@ -481,14 +493,16 @@ const UI = {
     const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : (d.npc.quest ? [] : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}]);
     wares.forEach(w=>{
       const def=Items.get(w.id); if(!def) return;
-      const afford=d.player.treats>=w.cost;
+      // Smart dogs haggle: the smarts bar (data/breeds.js) discounts the NPC's price.
+      const price=Math.max(1, Math.round(w.cost * ((d.player.stats && d.player.stats.priceMul) || 1)));
+      const afford=d.player.treats>=price;
       const btn=document.createElement('button');
       btn.className='dialog-choice'+(afford?'':' disabled');
-      btn.textContent=`${def.icon} Buy ${def.name} — ${w.cost} 🦴`;
+      btn.textContent=`${def.icon} Buy ${def.name} — ${price} 🦴`;
       btn.addEventListener('click',()=>{
-        if(d.player.treats<w.cost){ this.renderDialog("You don't have enough treats for that."); return; }
+        if(d.player.treats<price){ this.renderDialog("You don't have enough treats for that."); return; }
         if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
-        d.player.treats-=w.cost; Inventory.add(d.player, w.id, 1); this.updateHUD();
+        d.player.treats-=price; Inventory.add(d.player, w.id, 1); this.updateHUD();
         if(typeof sfxCollect==='function') sfxCollect();
         const tail = def.type==='wearable' ? ' Open your inventory (I) to wear it!' : ' Anything else?';
         this.renderDialog(`Enjoy your ${def.name}!${tail}`);
@@ -516,8 +530,7 @@ const UI = {
     this.panel=null; this._dialog=null;
     Game.state=SCENES.GAMEOVER;
     if(typeof stopMusic==='function') stopMusic();   // the sad faint sound already played
-    const who = (Game.twoPlayer && p) ? `P${p.id}'s dog` : 'Your dog';
-    const t=this.$('gameOverText'); if(t) t.textContent=`${who} fainted... but every good dog gets another chance.`;
+    const t=this.$('gameOverText'); if(t) t.textContent=`Your dog fainted... but every good dog gets another chance.`;
     this._show('gameOverScreen', true);
     this.renderHotbar();              // hide the hotbar
   },

@@ -25,7 +25,6 @@ const Save = {
       version: 1,
       levelId: LevelManager.current ? LevelManager.current.id : null,
       worldW: WORLD_W, worldH: WORLD_H,
-      twoPlayer: Game.twoPlayer,
       cheeredCount: Game.cheeredCount,
       progress: (typeof Progress!=='undefined') ? Progress.completed : {},
       players: Game.players.map(p=>this._serializePlayer(p)),
@@ -64,8 +63,7 @@ const Save = {
     friends = data.friends || [];
     entities = data.entities || [];
 
-    // --- players ---
-    twoPlayer = !!data.twoPlayer;
+    // --- player ---
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
       pl.dir = sp.dir; pl.treats = sp.treats;
@@ -77,7 +75,6 @@ const Save = {
       return pl;
     };
     if(data.players[0]) p1 = restore(data.players[0]);
-    if(data.players[1]) p2 = restore(data.players[1]);
 
     Game.cheeredCount = data.cheeredCount || 0;
     if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
@@ -91,8 +88,6 @@ const Save = {
     if(typeof UI !== 'undefined' && UI.closePanel) UI.closePanel();
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
-    document.getElementById('p2panel').style.display = twoPlayer ? 'flex' : 'none';
-    const p2c = document.getElementById('p2controls'); if(p2c) p2c.style.display = twoPlayer ? 'block' : 'none';
     sparkles = [];
     Game.state = SCENES.PLAYING;
     updateHUD();

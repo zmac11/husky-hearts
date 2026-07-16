@@ -5,21 +5,14 @@ let WORLD_W=1920, WORLD_H=1280;
 const VIEW_W=640, VIEW_H=416;
 const cam={x:0,y:0};
 function updateCamera(){
-  // Follow the living dogs so the view doesn't sit on a grave while a co-op partner is
-  // still exploring. If everyone is down, keep the framing on p1 (the death frame).
-  const active=twoPlayer?[p1,p2]:[p1];
-  const alive=active.filter(p=>!p.dead);
-  const focus=alive.length?alive:active;
-  let tx,ty;
-  if(focus.length>1){ tx=(focus[0].x+focus[1].x)/2; ty=(focus[0].y+focus[1].y)/2; }
-  else { tx=focus[0].x; ty=focus[0].y; }
-  cam.x=Math.max(0,Math.min(WORLD_W-VIEW_W,tx-VIEW_W/2));
-  cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,ty-VIEW_H/2));
+  // Follow the dog (a fainted dog keeps the framing on its death frame).
+  cam.x=Math.max(0,Math.min(WORLD_W-VIEW_W,p1.x-VIEW_W/2));
+  cam.y=Math.max(0,Math.min(WORLD_H-VIEW_H,p1.y-VIEW_H/2));
 }
 
-// Scene flow now lives in Game.state (see core/state.js); twoPlayer & cheeredCount
-// remain the canonical globals that Game delegates to.
-let twoPlayer=false,cheeredCount=0;
+// Scene flow now lives in Game.state (see core/state.js); cheeredCount remains the
+// canonical global that Game delegates to.
+let cheeredCount=0;
 const CHEER_TOTAL=5;
 
 // Raw key state (`keys`) and listeners moved to core/input.js.
@@ -404,16 +397,15 @@ function nudgeOutOfWater(obj, margin=10){
   }
 }
 
-function makePlayer(id,color,x,y,breed='husky',markings='classic'){
+function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
-    speed:def.stats.speed,stats:def.stats,abilityId:def.abilityId,
-    howling:false,howlTimer:0,breed,markings,swimming:false};
+    speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
+    howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
 }
-let p1=makePlayer(1,'#6FA8C9',200,200);
-let p2=makePlayer(2,'#E0855B',260,200);
+let p1=makePlayer(1,'#C07840',200,200);
 
 let sparkles=[];
 function spawnSparkles(x,y,color,count=14){

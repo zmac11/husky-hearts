@@ -32,6 +32,32 @@ const Entities = {
 
   updateAll(t, dt){ for(const e of entities){ const d=this.def(e.kind); if(d && d.update) d.update(e, t, dt); } },
 
+  // How "loud" this dog currently is: scales every enemy's own detection range.
+  // Base comes from the breed's noise bar (data/breeds.js → stats.noiseMul); howling
+  // is extra noise — for HOWL_NOISE_MS after a howl starts (p.noiseT echo window,
+  // see update.js) the dog is heard from 1.5× as far, so howls near enemies are risky.
+  noiseFactor(p){
+    const boosted = p && (p.howling || p.noiseT>0);
+    return ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+  },
+
+  // "!" pop above an entity that just noticed a dog. Set `e.alertT=700` on the
+  // wander→chase transition; call this from the entity's draw() while it counts down.
+  drawAlert(e){
+    if(!e.alertT || e.alertT<=0) return;
+    const age=700-e.alertT;
+    const pop=Math.min(1, age/140);              // pop-in scale
+    const fade=Math.min(1, e.alertT/180);        // fade-out at the end
+    const y=e.y-26-pop*5+Math.sin(age/90)*1.5;   // little startled bounce
+    ctx.save();
+    ctx.globalAlpha=fade;
+    ctx.translate(e.x, y); ctx.scale(pop||0.01, pop||0.01);
+    ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.lineWidth=3; ctx.strokeStyle='#FFF8EF'; ctx.strokeText('!',0,0);
+    ctx.fillStyle='#E03030'; ctx.fillText('!',0,0);
+    ctx.restore();
+  },
+
   // Nearest interactable entity to player p within range.
   interactableNear(p){
     let best=null, bestD=Infinity;

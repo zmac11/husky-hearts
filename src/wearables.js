@@ -80,17 +80,27 @@ const Wearables = {
   // ---- rendering ----
   // Build the anchor used by both the world dog and the paper-doll. `x` is the dog's
   // horizontal centre; `foot` is its baseline (`by` in drawDog). Head/face/neck/body
-  // offsets are tuned to the shared breed silhouette.
-  anchor(x, foot, dir, equipment, t){
-    return { x, headY:foot-18, faceY:foot-11, neckY:foot-2, bodyY:foot+1, dir, t, equipment };
+  // offsets are tuned per silhouette: the standard frame fits Dinno/Lolla; tiny breeds
+  // (Ťapka) have a lower head, eyes at foot-8 and a shorter body, so clothing shifts
+  // down and the render table shrinks pieces via `a.small`.
+  anchor(x, foot, dir, equipment, t, breed){
+    const small = breed==='tapka';
+    return small
+      ? { x, headY:foot-14, faceY:foot-8,  neckY:foot,   bodyY:foot+3, dir, t, equipment, small:true }
+      : { x, headY:foot-18, faceY:foot-11, neckY:foot-2, bodyY:foot+1, dir, t, equipment, small:false };
   },
 
+  // Layering is direction-aware: back-slot items (capes) hang on the dog's BACK, so
+  // facing down/left/right they sit behind the sprite — but facing up (away from the
+  // camera) the back is what you see, so they draw OVER the sprite instead. This lives
+  // in the shared pass, so it applies to every wearable and every breed automatically.
   drawBack(g, a){
     const eq=a.equipment; if(!eq) return;
-    if(eq.back) this._paint(g, eq.back, a);   // capes sit behind the dog
+    if(eq.back && a.dir!=='up') this._paint(g, eq.back, a);
   },
   drawFront(g, a){
     const eq=a.equipment; if(!eq) return;
+    if(eq.back && a.dir==='up') this._paint(g, eq.back, a);   // cape covers the back you're looking at
     ['body','neck','head','face'].forEach(slot=>{ if(eq[slot]) this._paint(g, eq[slot], a); });
   },
   _paint(g, id, a){
@@ -115,10 +125,10 @@ const Wearables = {
       _wpx(g, x-6, y-2, 12, 6, '#C0392B');   // dome
       _wpx(g, x-6, y-4, 12, 3, '#D9503E');   // crown top
       _wpx(g, x-2, y-5, 5, 2, '#D9503E');
-      // brim points the way the dog faces
+      // brim points the way the dog faces (facing up it's hidden behind the head)
       if(a.dir==='right')      _wpx(g, x+5, y+3, 8, 2, '#9E2A1E');
       else if(a.dir==='left')  _wpx(g, x-13, y+3, 8, 2, '#9E2A1E');
-      else                     _wpx(g, x-4, y+4, 8, 2, '#9E2A1E');
+      else if(a.dir==='down')  _wpx(g, x-4, y+4, 8, 2, '#9E2A1E');
     },
     ribbon(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY+2;
@@ -130,33 +140,56 @@ const Wearables = {
     shades(g,a){
       if(a.dir==='up') return;               // eyes hidden facing away
       const y=a.faceY;
+      if(a.small){                           // narrow face → smaller lenses over the eyes
+        if(a.dir==='right'){ _wpx(g, a.x+2, y, 5, 3, '#111'); _wpx(g, a.x+6, y+1, 1, 1, '#111'); }
+        else if(a.dir==='left'){ _wpx(g, a.x-7, y, 5, 3, '#111'); _wpx(g, a.x-7, y+1, 1, 1, '#111'); }
+        else { _wpx(g, a.x-5, y, 4, 3, '#111'); _wpx(g, a.x+1, y, 4, 3, '#111'); _wpx(g, a.x-1, y+1, 2, 1, '#111'); }
+        return;
+      }
       if(a.dir==='right'){ _wpx(g, a.x+3, y, 6, 3, '#111'); _wpx(g, a.x+8, y+1, 1, 1, '#111'); }
       else if(a.dir==='left'){ _wpx(g, a.x-9, y, 6, 3, '#111'); _wpx(g, a.x-9, y+1, 1, 1, '#111'); }
       else { _wpx(g, a.x-6, y, 5, 3, '#111'); _wpx(g, a.x+1, y, 5, 3, '#111'); _wpx(g, a.x-1, y+1, 2, 1, '#111'); }
     },
     scarf(g,a){
-      const y=a.neckY;
-      _wpx(g, a.x-8, y, 16, 4, '#2E7D5B');   // wrap
-      _wpx(g, a.x-8, y+1, 16, 1, '#F0E6C8'); // knit stripe
-      const dx = a.dir==='left'? -9 : 5;     // dangling tail
-      _wpx(g, a.x+dx, y+2, 3, 7, '#2E7D5B');
-      _wpx(g, a.x+dx, y+5, 3, 1, '#F0E6C8');
+      const y=a.neckY, w=a.small?12:16, hw=w/2;
+      _wpx(g, a.x-hw, y, w, 4, '#2E7D5B');   // wrap
+      _wpx(g, a.x-hw, y+1, w, 1, '#F0E6C8'); // knit stripe
+      const dx = a.dir==='left'? -(hw+1) : hw-3;  // dangling tail
+      _wpx(g, a.x+dx, y+2, 3, a.small?5:7, '#2E7D5B');
+      _wpx(g, a.x+dx, y+4, 3, 1, '#F0E6C8');
     },
     raincoat(g,a){
-      const y=a.bodyY;
-      _wpx(g, a.x-10, y, 20, 11, '#F2C94C'); // coat body
-      _wpx(g, a.x-10, y, 20, 2, '#E0B23C');  // collar shade
+      const y=a.bodyY, w=a.small?14:20, h=a.small?8:11, hw=w/2;
+      _wpx(g, a.x-hw, y, w, h, '#F2C94C');   // coat body
+      _wpx(g, a.x-hw, y, w, 2, '#E0B23C');   // collar shade
       _wpx(g, a.x-1, y+2, 2, 2, '#8A6D1A');  // buttons
-      _wpx(g, a.x-1, y+6, 2, 2, '#8A6D1A');
-      _wpx(g, a.x-10, y+9, 20, 2, '#D9A82E');// hem
+      _wpx(g, a.x-1, y+(a.small?5:6), 2, 2, '#8A6D1A');
+      _wpx(g, a.x-hw, y+h-2, w, 2, '#D9A82E');// hem
     },
     cape(g,a){
-      const y=a.bodyY;
-      _wpx(g, a.x-9, y-2, 18, 12, '#B03040'); // cloth
-      _wpx(g, a.x-9, y-2, 18, 3, '#D04A5A');  // shoulder collar
-      _wpx(g, a.x-9, y+10, 5, 3, '#8C2434');  // ragged hem
-      _wpx(g, a.x-1, y+10, 5, 3, '#8C2434');
-      _wpx(g, a.x+6, y+10, 3, 3, '#8C2434');
+      // Direction-aware so the cape is actually visible: facing down/up it drapes
+      // WIDER than the body (edges + hem peek out); facing left/right it trails
+      // behind the dog and flutters as they run.
+      const y=a.bodyY, t=a.t||0;
+      const C='#B03040', Cd='#8C2434', Cl='#D04A5A';
+      if(a.dir==='down'||a.dir==='up'){
+        const w=a.small?18:24, h=a.small?11:14, hw=w/2;
+        _wpx(g, a.x-hw, y-2, w, h, C);
+        _wpx(g, a.x-hw, y-2, w, 3, Cl);                 // shoulder collar
+        _wpx(g, a.x-hw, y-2+h-3, 4, 3, Cd);             // ragged hem
+        _wpx(g, a.x-2, y-2+h-3, 4, 3, Cd);
+        _wpx(g, a.x+hw-3, y-2+h-3, 3, 3, Cd);
+      } else {
+        const trailLeft=a.dir==='right';                // trails opposite the facing
+        const bw=a.small?7:10;                          // clears the body silhouette
+        const len=a.small?7:9, h=a.small?9:12;
+        const flut=Math.sin(t/170)*1.5;                 // gentle run flutter
+        const x0=trailLeft ? a.x-bw-len : a.x+bw;
+        _wpx(g, x0, y-2+flut*0.5, len, h, C);           // trailing cloth
+        _wpx(g, trailLeft?x0:x0+len-3, y-2+flut, 3, h, Cd); // fluttering outer edge
+        _wpx(g, a.x-bw, y-3, bw*2, 3, C);               // draped over the shoulders
+        _wpx(g, trailLeft?a.x-bw-3:a.x+bw-1, y-3, 4, 3, Cl); // clasp at the shoulder
+      }
     },
     beanie(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY;
@@ -169,6 +202,16 @@ const Wearables = {
       if(a.dir==='up') return;               // eyes hidden facing away
       const y=a.faceY;
       const lens='#3AA0C8', frame='#2A2E36', strap='#C0463C';
+      if(a.small){                           // narrow face → slimmer goggles
+        if(a.dir==='right'){ _wpx(g, a.x+1, y-1, 6, 4, frame); _wpx(g, a.x+2, y, 4, 2, lens); }
+        else if(a.dir==='left'){ _wpx(g, a.x-7, y-1, 6, 4, frame); _wpx(g, a.x-6, y, 4, 2, lens); }
+        else {
+          _wpx(g, a.x-6, y-1, 12, 4, frame);
+          _wpx(g, a.x-5, y, 4, 2, lens); _wpx(g, a.x+1, y, 4, 2, lens);
+        }
+        _wpx(g, a.x-7, y, 2, 2, strap); _wpx(g, a.x+5, y, 2, 2, strap);
+        return;
+      }
       if(a.dir==='right'){ _wpx(g, a.x+3, y-1, 7, 4, frame); _wpx(g, a.x+4, y, 5, 2, lens); }
       else if(a.dir==='left'){ _wpx(g, a.x-10, y-1, 7, 4, frame); _wpx(g, a.x-9, y, 5, 2, lens); }
       else {

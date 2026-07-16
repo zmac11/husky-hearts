@@ -28,7 +28,9 @@ Entities.register('enemy', {
     const target=_nearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
-    if(target && dist<e.chaseR){
+    // Detection range scales with how loud the target dog is (breed noise + howling).
+    if(target && dist<e.chaseR*Entities.noiseFactor(target)){
+      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
@@ -36,6 +38,7 @@ Entities.register('enemy', {
       e.dir=Math.cos(ang)>=0?1:-1;
       if(dist<20 && e.cool<=0){ _enemyTouch(e, target); e.cool=900; }
     } else {
+      e._chasing=false;
       // wander
       e.wanderT-=dt;
       if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(600,1600); }
@@ -47,6 +50,7 @@ Entities.register('enemy', {
     e.x=clamp(e.x, 20, WORLD_W-20);
     e.y=clamp(e.y, 26, WORLD_H-20);
     if(e.cool>0) e.cool=Math.max(0, e.cool-dt);
+    if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
     e.bob=t;
   },
 
@@ -70,6 +74,8 @@ Entities.register('enemy', {
     px(x+D*6-4,y-6,2,2,'#FF3030'); px(x+D*6+2,y-6,2,2,'#FF3030');
     // grumpy brow
     px(x+D*6-5,y-7,10,1,'#1A1616');
+    // startled "!" when it just heard a dog
+    Entities.drawAlert(e);
   },
 });
 
