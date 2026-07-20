@@ -1,6 +1,25 @@
 // ====================== COLLECTIBLES ======================
 function drawCollectible(item,t){
   if(item.taken) return;
+
+  // Plain ground items (spent cannon balls): a tennis ball lying on the grass with a
+  // simple shadow — no floating badge, no glow ring, no bob.
+  if(item.plain && item.type==='ball'){
+    const bx=Math.round(item.x), by=Math.round(item.y);
+    ctx.globalAlpha=0.25;
+    ctx.beginPath(); ctx.ellipse(bx, by+4, 6, 2.5, 0, 0, Math.PI*2);
+    ctx.fillStyle='#1A2A1A'; ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#B5E853';
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#CCFF77';
+    ctx.beginPath(); ctx.arc(bx-1, by-1, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0.35, Math.PI-0.35); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
+    return;
+  }
+
   const bob  = Math.sin(t/320 + item.bob) * 4;
   const pulse= 1 + Math.sin(t/260 + item.bob) * 0.1; // gentle scale throb
   const x = item.x, y = item.y + bob;

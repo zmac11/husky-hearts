@@ -36,6 +36,12 @@ const ITEMS_DATA = {
   beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie' },
   snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles' },
   trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
+
+  // treasure-chest loop (data/chests.js): keys open silver chests; the rest is loot
+  key:      { name:'Chest Key',   icon:'🗝️', type:'tool',       value:8 },
+  feast:    { name:'Feast',       icon:'🍖', type:'consumable', value:7, heal:12 },  // heals 6 hearts
+  goldbone: { name:'Golden Bone', icon:'🏅', type:'treat',      value:5 },
+  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown' },  // golden-chest exclusive
 };
 
 const Items = {

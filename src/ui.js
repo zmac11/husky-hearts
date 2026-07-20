@@ -8,6 +8,7 @@ const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
+  skillsOpen: false,  // skill tree — same non-blocking overlay pattern
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -31,6 +32,7 @@ const UI = {
     if(this.invOpen) this.renderInventory();
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
+    if(this.skillsOpen) this.renderSkills();
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -60,7 +62,8 @@ const UI = {
     if(Game.state===SCENES.PLAYING) this.openJournal();
   },
   openJournal(){
-    this.closeInventory();            // never stack the two non-blocking overlays
+    this.closeInventory();            // never stack the non-blocking overlays
+    this.closeSkills();
     this.journalOpen=true;
     this.renderJournal();
     this._show('questScreen', true);
@@ -68,6 +71,71 @@ const UI = {
   closeJournal(){
     this.journalOpen=false;
     this._show('questScreen', false);
+  },
+
+  // ---------- skill tree (K): per-dog character + ability upgrades ----------
+  toggleSkills(){
+    if(this.skillsOpen){ this.closeSkills(); return; }
+    if(Game.state===SCENES.PLAYING) this.openSkills();
+  },
+  openSkills(){
+    this.closeInventory();            // one non-blocking overlay at a time
+    this.closeJournal();
+    this.skillsOpen=true;
+    this.renderSkills();
+    this._show('skillScreen', true);
+  },
+  closeSkills(){
+    this.skillsOpen=false;
+    this._show('skillScreen', false);
+  },
+
+  renderSkills(){
+    const body=this.$('skillBody'); if(!body) return;
+    const p=p1; if(!p){ body.innerHTML=''; return; }
+    const b=Breeds.get(p.breed);
+    const nodes=Skills.nodesFor(p.breed);
+    const row=n=>{
+      const lvl=Skills.level(p,n.id);
+      const pips=n.max>0
+        ? `<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`
+        : '';
+      const lvlDesc=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
+      const nextDesc=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next: ${n.levels[lvl]}</div>` : '';
+      return `<div class="sk-node${n.locked?' locked':''}">
+        <div class="sk-head">
+          <span class="sk-name">${n.icon} ${n.name}</span>
+          ${pips}
+          <span class="sk-btns">
+            <button class="sk-btn" data-act="skdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
+            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(n.locked||lvl>=n.max)?'disabled':''}>+</button>
+          </span>
+        </div>
+        <div class="sk-desc">${n.desc}</div>
+        ${lvlDesc}${nextDesc}
+      </div>`;
+    };
+    body.innerHTML=`
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · Skill points: <b>free</b> <span class="sk-note">(earning them comes later — level as you wish!)</span></div>
+      <div class="q-sect">Character</div>
+      ${nodes.filter(n=>!n.ability).map(row).join('')}
+      <div class="q-sect">Ability</div>
+      ${nodes.filter(n=>n.ability).map(row).join('')}`;
+  },
+
+  _onSkillClick(ev){
+    const btn=ev.target.closest('[data-act]'); if(!btn || btn.disabled) return;
+    const p=p1; if(!p) return;
+    const id=btn.dataset.node;
+    if(btn.dataset.act==='skup'){
+      if(Skills.addPoint(p,id)){
+        if(typeof sfxCollect==='function') sfxCollect();
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-10,'#FFD93D',10);
+      }
+    } else if(btn.dataset.act==='skdown'){
+      Skills.removePoint(p,id);
+    }
+    this.updateHUD();   // hearts/hotbar + re-renders the open tree
   },
 
   renderJournal(){
@@ -158,6 +226,7 @@ const UI = {
   // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.skillsOpen){ this.closeSkills(); return; }
     if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
@@ -167,6 +236,7 @@ const UI = {
     if(Game.state!==SCENES.PLAYING) return;
     this.closeInventory();            // never stack pause on top of a non-blocking overlay
     this.closeJournal();
+    this.closeSkills();
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this._show('pauseScreen', true);
   },
@@ -181,6 +251,7 @@ const UI = {
 
   openInventory(){
     this.closeJournal();              // one non-blocking overlay at a time
+    this.closeSkills();
     this.invOpen=true;
     this._invPlayer=0;
     this.renderInventory();
@@ -296,15 +367,27 @@ const UI = {
     if(!show){ bar.innerHTML=''; return; }
     let html='';
     // Ability slots — filled from the breed's abilities (data/breeds.js); empty slots
-    // stay visible (dashed) so every dog shows where future abilities will live.
+    // stay visible (dashed) so every dog shows where future abilities will live. Slots
+    // 0/1 are the standard abilities (Q/E); slot 2 is the ULTIMATE (R), styled apart.
     const abilities=(p1&&p1.abilities)||[];
-    for(let i=0;i<2;i++){
-      const def=Abilities.get(abilities[i]);
+    for(let i=0;i<3;i++){
+      const id=abilities[i];
+      const def=Abilities.get(id);
+      const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      html+=`<button class="hb-slot hb-ability${def?'':' empty'}" title="${def?`${def.name||'Ability'} — press ${key}`:'No ability yet'}">`
+      // An ability the dog carries but hasn't learned yet (skill-tree level 0) shows
+      // as an empty slot pointing at the tree. Gating is data-driven via def.skillNode.
+      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
+      const learned=def && lvl>0;
+      const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
+      const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
+                : def ? `${def.name} — learn it in the Skill Tree (${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])})`
+                : emptyLabel;
+      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" title="${title}">`
         + `<span class="hb-key">${key}</span>`
-        + (def?`<span class="hb-icon">${def.icon||'✨'}</span>`:'')
+        + (learned?`<span class="hb-icon">${def.icon||'✨'}</span>`:(ult?'<span class="hb-icon hb-ult-mark">★</span>':''))
+        + (learned?`<span class="hb-cd" data-ability="${id}"><i></i><b></b></span>`:'')
         + `</button>`;
     }
     html+='<span class="hb-sep"></span>';
@@ -317,6 +400,25 @@ const UI = {
         + `</button>`;
     }
     bar.innerHTML=html;
+  },
+
+  // Per-frame cooldown sweep on the hotbar ability slots (called from main.js).
+  // Only touches styles/text — no innerHTML rebuild, so it's cheap every frame.
+  tickCooldowns(){
+    if(!p1) return;
+    document.querySelectorAll('.hb-cd').forEach(el=>{
+      const id=el.dataset.ability;
+      const left=Abilities.cdLeft(p1, id);
+      if(left<=0){ if(el.style.display!=='none'){ el.style.display='none'; } return; }
+      const total=el._total && el._total>=left ? el._total : left;   // remember the start for the sweep
+      el._total=total;
+      if(el.style.display!=='flex') el.style.display='flex';
+      el.querySelector('i').style.height=Math.round((left/total)*100)+'%';
+      const secs=Math.ceil(left/1000);
+      const label=el.querySelector('b');
+      if(label.textContent!==String(secs)) label.textContent=secs;
+      if(left<=16) el._total=0;                                      // reset for the next use
+    });
   },
 
   // Use P1 hotbar slot n (1-based) = inventory slot n-1: consumables heal & are consumed,
@@ -333,8 +435,14 @@ const UI = {
       if(typeof sfxCollect==='function') sfxCollect();
       showToast(`🍪 Ate ${def.name} · +${healed} HP`,1400);
     } else if(def && def.type==='toy'){
-      if(typeof sfxCollect==='function') sfxCollect();
-      showToast(`🎾 You play with the ${def.name}!`,1200);
+      // Standing near Lolla's placed cannon, using a ball loads the magazine instead.
+      const turret=(cell.id==='ball' && typeof Abilities!=='undefined') ? Abilities.get('ballCannon') : null;
+      const res=turret && turret.tryLoadBall ? turret.tryLoadBall(p) : false;
+      if(res==='loaded'){ Inventory.removeAt(p, n-1, 1); }
+      else if(res!=='full'){
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🎾 You play with the ${def.name}!`,1200);
+      }
     } else if(def && def.type==='wearable'){
       if(Wearables.equipFromSlot(p, n-1, def.slot)) showToast(`🎩 Equipped ${def.name}!`,1200);
     } else {
@@ -450,6 +558,7 @@ const UI = {
   openDialog(npc, player){
     this.closeInventory();            // dialog is blocking; don't stack it over an overlay
     this.closeJournal();
+    this.closeSkills();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
@@ -525,6 +634,7 @@ const UI = {
     if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
     this.closeInventory();
     this.closeJournal();
+    this.closeSkills();
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
@@ -539,6 +649,7 @@ const UI = {
   quitToMenu(){
     this.closeInventory();
     this.closeJournal();
+    this.closeSkills();
     this.closePanel();
     if(typeof WorldMap!=='undefined') WorldMap.hide();
     if(typeof stopMusic==='function') stopMusic();
@@ -584,6 +695,9 @@ const UI = {
       inv.addEventListener('dragend',   e=>this._onDragEnd(e));
     }
     const bar=this.$('hotbar'); if(bar) bar.addEventListener('click', e=>this._onInvClick(e));
+    // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
+    const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
+    const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){

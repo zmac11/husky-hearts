@@ -16,6 +16,7 @@ Entities.register('wolf', {
     e.speed   = e.speed   || 1.15;   // brisk — outpaces a corgi, presses a husky
     e.chaseR  = e.chaseR  || 190;    // keen senses: long detection range
     e.dmg     = e.dmg     || 3;      // bites for more than a heart
+    e.hp      = (typeof e.hp==='number') ? e.hp : 6;   // 3 cannon-ball hits
     e.dir     = 1;
     e.wanderT = 0;
     e.wanderAng = 0;
@@ -32,6 +33,21 @@ Entities.register('wolf', {
     const target=_wolfNearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
+    // Feared (Storm Fang aura): run AWAY from the dog and don't attack.
+    if(e.fearedT>0 && target){
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.5*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.5*swim*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      e._chasing=false;
+      e.x=clamp(e.x, 20, WORLD_W-20);
+      e.y=clamp(e.y, 26, WORLD_H-20);
+      if(e.cool>0)    e.cool=Math.max(0, e.cool-dt);
+      if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
+      if(e.hurtT>0)   e.hurtT=Math.max(0, e.hurtT-dt);
+      e.bob=t;
+      return;
+    }
     // Keen ears: detection range scales with how loud the target dog is.
     const hearR=e.chaseR*Entities.noiseFactor(target);
     if(target && dist<hearR){
@@ -60,6 +76,8 @@ Entities.register('wolf', {
     if(e.lunge>0)   e.lunge=Math.max(0, e.lunge-dt);
     if(e.lungeCd>0) e.lungeCd=Math.max(0, e.lungeCd-dt);
     if(e.alertT>0)  e.alertT=Math.max(0, e.alertT-dt);
+    if(e.hurtT>0)   e.hurtT=Math.max(0, e.hurtT-dt);
+    if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
     e.bob=t;
   },
 
@@ -86,6 +104,12 @@ Entities.register('wolf', {
     // glowing eyes + angry brow
     px(x+D*7-4,y-7,2,2,'#FFC400'); px(x+D*7+2,y-7,2,2,'#FFC400');
     px(x+D*7-5,y-8,10,1,'#22252B');
+    // red flash while hurt (mirrors the dog's hurt flash)
+    if(e.hurtT>0){
+      ctx.globalAlpha=Math.min(0.5, e.hurtT/440);
+      px(x-13,y-16,26,30,'#FF3B3B');
+      ctx.globalAlpha=1;
+    }
     // startled "!" when it just heard a dog
     Entities.drawAlert(e);
   },

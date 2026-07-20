@@ -18,22 +18,24 @@
 //     smarts — priceMul = 1.15 − 0.05×bar (shop prices) and
 //              questBonus = 0.05×(bar−3) (extra treats from quest rewards)
 // passive — human-readable description of the dog's standout trait (shown in UI).
-// abilities — two active-ability slots, [slot1, slot2], each a key into the Abilities
-//   registry (null = empty slot). Slot 1 fires on the "Ability 1" key (default Q),
-//   slot 2 on "Ability 2" (default E). Each dog can carry a different pair.
+// abilities — three active-ability slots, [slot1, slot2, ultimate], each a key into
+//   the Abilities registry (null = empty slot). Slot 1 fires on "Ability 1" (default Q),
+//   slot 2 on "Ability 2" (default E), slot 3 is the ULTIMATE on "Ultimate" (default R).
+//   Each dog can carry a different set; slot 3 is reserved for big ultimate abilities.
 // color — the breed's signature colour (HUD dot / minimap marker); the dogs draw
 //   their real coat colours in-sprite, so this is just their accent hue.
 
 const BREEDS_DATA = {
   dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️', color:'#C07840',
                bars:{ health:5, speed:5, swim:4, noise:3, smarts:3 },
-               passive:'Alpha — tough and a step faster than the pack', abilities:[null,null] },
+               passive:'Alpha — tough and a step faster than the pack', abilities:['stormFang','spiritWolf',null] },
   lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟', color:'#6FA8C9',
                bars:{ health:3, speed:2, swim:3, noise:5, smarts:5 },
-               passive:'Clever & loud — haggles well, but enemies hear her coming', abilities:['ballCannon',null] },
+               passive:'Clever & loud — haggles well, but enemies hear her coming', abilities:['ballCannon','scream',null] },
   tapka:     { name:'Ťapka',     desc:'Tiny Prague Ratter',   emoji:'🐭', color:'#B5854F',
                bars:{ health:1, speed:4, swim:2, noise:1, smarts:4 },
-               passive:'Featherweight — frail but swift, and almost silent', abilities:[null,null] },
+               digMul:1.6,   // ratters are born diggers — chests come up much faster
+               passive:'Featherweight — frail but swift, almost silent, and a born digger', abilities:['innerMonster','scurry',null] },
 };
 
 // Display order for the character-select screen.
@@ -58,6 +60,8 @@ function _derive(b){
     noiseMul:   +(0.7  + 0.15*(bars.noise-1)).toFixed(2),
     priceMul:   +(1.15 - 0.05*bars.smarts).toFixed(2),
     questBonus: +(0.05*(bars.smarts-3)).toFixed(2),
+    scentR:     100 + 10*bars.smarts,   // how far this dog smells buried chests (px)
+    digMul:     b.digMul || 1,          // dig-speed multiplier (Ťapka the ratter: 1.6)
   };
   return b;
 }

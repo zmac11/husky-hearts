@@ -76,6 +76,8 @@ Levels.register({
     Entities.spawn('enemy', { x: WORLD_W*0.5, y: WORLD_H*0.6, speed:0.8, chaseR:90 });
     // A friendly squirrel keeps the orchard cheerful.
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.4, y:WORLD_H*0.4 });
+
+    Chests.spawnForLevel('meadow-3');   // buried treasure — first (locked) silver chest
   },
 
   quest: {

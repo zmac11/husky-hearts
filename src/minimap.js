@@ -34,6 +34,17 @@ function drawMinimap(){
   entities.forEach(e=>{
     if(e.kind==='grave'){ ctx.fillStyle='#9A9A92'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-2,3,4); return; }
     if(e.kind==='critter'){ ctx.fillStyle='#7FE0A0'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); return; }
+    if(e.kind==='chest'){
+      // buried chests stay secret (that's what noses are for); dug ones glint gold
+      if(e.state==='dug'){ ctx.fillStyle='#FFC400'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-1,3,3); }
+      return;
+    }
+    if(e.kind==='portal'){
+      const pulse=0.6+Math.sin(performance.now()/250)*0.4;
+      ctx.globalAlpha=pulse; ctx.fillStyle='#FFD93D';
+      ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,5,5); ctx.globalAlpha=1;
+      return;
+    }
     ctx.fillStyle=hostile[e.kind]?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4);
   });
   // viewport

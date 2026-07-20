@@ -26,7 +26,9 @@ LOAD_ORDER = [
     'core/state.js',      # SCENES enum + Game/World state facades
     'core/input.js',      # keys, control maps, ESC hook
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
+    'data/skills.js',     # skill tree nodes + Skills.apply (used by makePlayer)
     'data/items.js',      # item definitions (inventory / shop)
+    'data/chests.js',     # treasure-chest rarities/loot tables + per-level spawns
     'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
     'quests.js',          # NPC quest system (give-item + future types)
@@ -49,11 +51,19 @@ LOAD_ORDER = [
     'entities/grave.js',    # grave marker left where a dog faints
     'entities/critter.js',  # friendly wildlife (moose/beaver/loon — positive interaction)
     'entities/npc.js',      # NPC kind (interactable)
+    'entities/chest.js',    # buried treasure chests (sniff → dig → unlock → loot)
+    'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
+    'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
     'minimap.js',         # drawMinimap
-    'abilities/registry.js',    # Abilities registry (register/dispatch)
-    'abilities/ballCannon.js',  # ball-cannon ability (formerly lolla.js)
+    'abilities/registry.js',    # Abilities registry (register/dispatch + cooldowns)
+    'abilities/ballCannon.js',  # Lolla: placeable auto-turret
+    'abilities/stormFang.js',   # Dinno Q: storm transformation + lightning
+    'abilities/spiritWolf.js',  # Dinno E: spectral wolf summon
+    'abilities/scream.js',      # Lolla E: piercing AOE scream
+    'abilities/innerMonster.js',# Ťapka Q: feral melee transform + lifesteal
+    'abilities/scurry.js',      # Ťapka E: evasive dash + i-frames
     'level-manager.js',   # LevelManager.load (build world + themed ground)
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
     'toast.js',           # showToast

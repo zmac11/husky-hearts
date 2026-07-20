@@ -156,6 +156,57 @@ function cycleSoundtrack(){
 function currentTrackName(){ return SOUNDTRACKS[currentTrack].name; }
 
 function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,sfxBus,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,sfxBus,t+0.07,0.1); }
+// Muffled digging thuds (paws on dirt) — looped by the chest entity while digging.
+function sfxDig(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [0,0.14].forEach(d=>{ const o=ac.createOscillator(),g=ac.createGain(); o.type='triangle'; o.frequency.setValueAtTime(noteHz(N.C3),t+d); o.frequency.exponentialRampToValueAtTime(noteHz(N.C3)*0.6,t+d+0.09); g.gain.setValueAtTime(0.3,t+d); g.gain.linearRampToValueAtTime(0,t+d+0.1); o.connect(g); g.connect(sfxBus); o.start(t+d); o.stop(t+d+0.12); }); }
+// Lock click + rising chime for opening a locked chest with a key.
+function sfxUnlock(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'square',noteHz(N.C4),0.12,sfxBus,t,0.05); [N.E5,N.G5,N.C6].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+0.1+i*0.09,0.16)); }
+// Thunder: a sharp crack followed by a long low rumble (Storm Fang bolts/activation).
+function sfxThunder(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  osc(ac,'square',noteHz(N.C6),0.18,sfxBus,t,0.05); osc(ac,'square',noteHz(N.G5),0.14,sfxBus,t+0.03,0.06);
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.C3)*0.7,t+0.05);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.C3)*0.35,t+1.0);
+  g.gain.setValueAtTime(0.0001,t+0.05); g.gain.exponentialRampToValueAtTime(0.3,t+0.12);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
+  o.connect(g); g.connect(sfxBus); o.start(t+0.05); o.stop(t+1.15);
+}
+// Lolla's piercing scream: a harsh, wavering high screech that descends.
+function sfxScream(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.A5),t);
+  o.frequency.linearRampToValueAtTime(noteHz(N.C5),t+0.5);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
+  osc(ac,'square',noteHz(N.E5),0.08,sfxBus,t,0.3);   // grainy overtone
+}
+// Ťapka's inner-monster roar: a low guttural growl.
+function sfxRoar(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.C3),t);
+  o.frequency.linearRampToValueAtTime(noteHz(N.E3),t+0.25);
+  o.frequency.linearRampToValueAtTime(noteHz(N.C3),t+0.5);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.28,t+0.06);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
+}
+// Scurry dash: a quick airy whoosh.
+function sfxDash(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(noteHz(N.G4),t);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.G5),t+0.12);
+  g.gain.setValueAtTime(0.16,t); g.gain.linearRampToValueAtTime(0,t+0.16);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.18);
+}
+// Airy howl chord for summoning the spirit wolf.
+function sfxSummon(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  [N.A4,N.E5,N.A5].forEach((n,i)=>{ const o=ac.createOscillator(),g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(noteHz(n)*0.97,t+i*0.06);
+    o.frequency.linearRampToValueAtTime(noteHz(n),t+i*0.06+0.4);
+    g.gain.setValueAtTime(0.0001,t+i*0.06); g.gain.linearRampToValueAtTime(0.16,t+i*0.06+0.1);
+    g.gain.linearRampToValueAtTime(0,t+i*0.06+0.7);
+    o.connect(g); g.connect(sfxBus); o.start(t+i*0.06); o.stop(t+i*0.06+0.75); });
+}
 function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.1,0.18)); }
 function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,sfxBus,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,sfxBus,t+0.5,0.4); }
 function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6); }

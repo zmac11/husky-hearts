@@ -191,6 +191,16 @@ const Wearables = {
         _wpx(g, trailLeft?a.x-bw-3:a.x+bw-1, y-3, 4, 3, Cl); // clasp at the shoulder
       }
     },
+    crown(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-6, y-1, 12, 4, '#E8B824');   // gold band
+      _wpx(g, x-6, y-5, 2, 4, '#E8B824');    // three points
+      _wpx(g, x-1, y-6, 2, 5, '#E8B824');
+      _wpx(g, x+4, y-5, 2, 4, '#E8B824');
+      _wpx(g, x-6, y-1, 12, 1, '#F8D858');   // band highlight
+      _wpx(g, x-3, y, 2, 2, '#C23A4A');      // ruby
+      _wpx(g, x+2, y, 2, 2, '#2E6ED0');      // sapphire
+    },
     beanie(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY;
       _wpx(g, x-7, y-1, 14, 4, '#8A3B3B');   // knit band

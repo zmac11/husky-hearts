@@ -136,7 +136,7 @@ const Options = {
     }
     const foot=document.getElementById('footKeys');
     if(foot){
-      foot.innerHTML=`<b>Esc</b> pause · <b>${kn(b.inventory[0]||b.inventory[1])}</b> inventory · <b>${kn(b.journal[0]||b.journal[1])}</b> quests`;
+      foot.innerHTML=`<b>Esc</b> pause · <b>${kn(b.inventory[0]||b.inventory[1])}</b> inventory · <b>${kn(b.journal[0]||b.journal[1])}</b> quests · <b>${kn(b.skills[0]||b.skills[1])}</b> skills`;
     }
     // Hotbar ability slots show their bound keys — keep them in sync too.
     if(typeof UI!=='undefined' && UI.renderHotbar) UI.renderHotbar();

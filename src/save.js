@@ -14,7 +14,8 @@ const Save = {
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
-             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead };
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
+             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0 };
   },
 
   save(){
@@ -69,6 +70,9 @@ const Save = {
       pl.dir = sp.dir; pl.treats = sp.treats;
       pl.inventory = sp.inventory || Inventory.create(); Inventory.cells(pl); // normalize length
       pl.equipment = sp.equipment || {};
+      pl.skills = sp.skills || {};
+      pl.skillPoints = sp.skillPoints || 0;
+      if(typeof Skills!=='undefined') Skills.apply(pl);   // re-derive stats from skills
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       pl.dead = !!sp.dead;

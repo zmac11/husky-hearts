@@ -19,8 +19,10 @@ const Input = {
     { id:'action',    label:'Howl / Deliver' },
     { id:'ability1',  label:'Ability 1' },
     { id:'ability2',  label:'Ability 2' },
+    { id:'ability3',  label:'Ultimate' },
     { id:'inventory', label:'Inventory' },
     { id:'journal',   label:'Quest Journal' },
+    { id:'skills',    label:'Skill Tree' },
   ],
 
   DEFAULTS: {
@@ -31,8 +33,10 @@ const Input = {
     action:    ['Space','Enter'],
     ability1:  ['KeyQ', null],
     ability2:  ['KeyE', null],
+    ability3:  ['KeyR', null],   // ultimate slot
     inventory: ['KeyI', null],
     journal:   ['KeyJ', null],
+    skills:    ['KeyK', null],
   },
 
   bindings: {},   // action id → [primaryCode|null, altCode|null]
@@ -124,6 +128,7 @@ window.addEventListener('keydown', e=>{
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(Input.bindings.inventory.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
   if(Input.bindings.journal.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
+  if(Input.bindings.skills.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleSkills) UI.toggleSkills(); }
   // Dev mode: backtick, or the "<" key (IntlBackslash = the key next to left Shift on
   // ISO/European keyboards, which types "<" — e.key covers any other layout too).
   if(e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '<'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }

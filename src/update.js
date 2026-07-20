@@ -9,15 +9,27 @@ function updatePlayer(p,t,dt){
   if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
   if(Input.held('left'))dx--; if(Input.held('right'))dx++;
   p.moving=dx!==0||dy!==0;
+  // Compose active abilities' speed multipliers (each returns 1 while inactive):
+  // Storm Fang, Inner Monster, Scurry's landing burst all contribute here.
+  let spdMul=1;
+  if(typeof Abilities!=='undefined'){
+    (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
+  }
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
-    const spd=p.swimming?p.speed*swimMul:p.speed;
+    const spd=(p.swimming?p.speed*swimMul:p.speed)*spdMul;
     p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
+  }
+  // Scurry dash: a scripted lunge independent of input (abilities/scurry.js sets these).
+  if(p.dashT>0){
+    p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale;
+    p.dashT=Math.max(0, p.dashT-dt);
+    p.moving=true;
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
@@ -106,10 +118,27 @@ function checkWin(){
   const q=lvl&&lvl.quest;
   const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
   if(!done) return;
+  if(entities.some(e=>e.kind==='portal')) return;   // exit already spawned
   sfxWin();
-  // Freeze the world, then reveal the campaign world map so you can see your progress
-  // and continue to the next level (WorldMap handles "no more content yet" gracefully).
-  Game.state=SCENES.WORLDMAP;
-  setTimeout(()=>{ if(typeof WorldMap!=='undefined') WorldMap.showAfter(lvl.id); }, 700);
+  // The world keeps playing: a biome-themed exit portal appears near the dog, and the
+  // player walks into it to reveal the journey map (portal.js runs the old flow).
+  // On a biome's final level a golden chest materialises beside it.
+  const env=Campaign.envOfLevel(lvl.id);
+  const nextLvl=lvl.next && Levels.get(lvl.next);
+  const nextEnv=nextLvl ? Campaign.envOfLevel(nextLvl.id) : null;
+  // portal spot: a clear patch of dry land near the dog
+  const spot={ x:clamp(p1.x+90, 80, WORLD_W-80), y:clamp(p1.y, 80, WORLD_H-80) };
+  nudgeOutOfWater(spot, 40);
+  Entities.spawn('portal', { x:spot.x, y:spot.y, levelId:lvl.id,
+    colA:(env&&env.color)||'#9B7EC8', colB:'#FFD93D', icon:(nextEnv&&nextEnv.icon)||'✨' });
+  const finale=Campaign.isFinalRealLevel(lvl.id);
+  if(finale){
+    const cs={ x:clamp(spot.x-56, 60, WORLD_W-60), y:spot.y+8 };
+    nudgeOutOfWater(cs, 20);
+    Entities.spawn('chest', { x:cs.x, y:cs.y, rarity:'golden', state:'dug' });
+    spawnSparkles(cs.x, cs.y-8, '#FFD93D', 20);
+  }
+  showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
+                   : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
 }
 

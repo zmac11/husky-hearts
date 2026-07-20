@@ -78,6 +78,17 @@ const Campaign = {
     }
     return 0;
   },
+
+  // The environment object that owns a level.
+  envOfLevel(levelId){ return this.environments[this.envIndexOfLevel(levelId)]; },
+
+  // Is this the LAST playable (real) level of its biome? Until boss fights exist,
+  // clearing it counts as finishing the biome → the exit portal gets a golden chest.
+  isFinalRealLevel(levelId){
+    const env=this.envOfLevel(levelId);
+    const real=env.levels.filter(l=>l.real);
+    return real.length>0 && real[real.length-1].id===levelId;
+  },
 };
 
 // Campaign progress: which level ids the player has cleared this run. Persisted in the

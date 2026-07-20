@@ -400,10 +400,14 @@ function nudgeOutOfWater(obj, margin=10){
 function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
-  return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
+  const p={id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
+    skills:{},skillPoints:0,   // skill-tree levels + reserved points (data/skills.js)
+    abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
+  if(typeof Skills!=='undefined') Skills.apply(p);   // derive stats fresh (never share def.stats)
+  return p;
 }
 let p1=makePlayer(1,'#C07840',200,200);
 

@@ -31,6 +31,7 @@ Levels.register({
     // friends. No merchants and no enemies yet; those are introduced in later levels
     // (shops in Wildflower Field, a first gentle enemy in Old Orchard Path).
     Entities.clear();
+    Chests.spawnForLevel('meadow');   // a couple of buried wooden chests to sniff out
   },
 
   // Completion condition (the "quest"). checkWin() consults this.
