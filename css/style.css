@@ -397,9 +397,27 @@
     color:var(--brown); text-shadow:0 1px 0 #fff;
   }
   /* ability slots (Q/E) — gold-tinted, left of the divider */
-  .hb-slot.hb-ability{ border-color:#8a6d1f; background:rgba(255,243,216,0.95); }
+  .hb-slot.hb-ability{ border-color:#8a6d1f; background:rgba(255,243,216,0.95); overflow:hidden; }
+  /* cooldown sweep: dark fill drains top→bottom + seconds label */
+  .hb-cd{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    pointer-events:none; border-radius:6px;
+  }
+  .hb-cd i{
+    position:absolute; left:0; right:0; top:0; height:100%;
+    background:rgba(40,34,26,0.55);
+  }
+  .hb-cd b{
+    position:relative; color:#FFF8EF; font-size:11px; font-style:normal;
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);
+  }
   .hb-slot.hb-ability .hb-key{ color:#8a6d1f; }
   .hb-slot.hb-ability.empty{ opacity:.55; border-style:dashed; }
+  /* ultimate slot (R) — purple/gold, stands apart from the two normal abilities */
+  .hb-slot.hb-ultimate{ border-color:#7A4FB0; background:rgba(240,230,255,0.95); }
+  .hb-slot.hb-ultimate .hb-key{ color:#7A4FB0; }
+  .hb-slot.hb-ultimate.empty{ opacity:.6; border-style:dashed; }
+  .hb-ult-mark{ color:#B79AE0; font-size:16px; }
   .hb-sep{ width:2px; align-self:stretch; background:rgba(255,248,239,0.5); border-radius:2px; margin:0 2px; }
 
   /* ===== quest tracker (always-on HUD list of accepted quests, top-left of frame) ===== */
@@ -458,6 +476,50 @@
   .q-badge.ok{ background:#d8f2cf; border-color:#5aa34a; color:#2f6a26; }
   .q-badge.new{ background:var(--gold); border-color:var(--brown); }
   .q-empty{ font-size:12px; color:var(--brown-soft); line-height:1.5; padding:6px 2px; }
+
+  /* ===== skill tree (K): non-blocking overlay, docked left like the journal ===== */
+  #skillScreen{
+    position:absolute; top:8px; left:8px; bottom:8px; z-index:25;
+    width:min(310px,76%);
+    display:flex; flex-direction:column; align-items:stretch; gap:8px;
+    padding:12px; text-align:left; overflow-y:auto;
+    background:rgba(255,248,239,0.95);
+    border:3px solid var(--brown); border-radius:14px;
+    box-shadow:0 6px 18px rgba(74,63,53,0.35);
+  }
+  #skillHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #skillScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
+  #skillScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }
+  #skillBody{ display:flex; flex-direction:column; gap:7px; align-items:stretch; }
+  .sk-meta{ font-size:11px; color:var(--brown); }
+  .sk-note{ color:var(--brown-soft); font-weight:normal; font-size:10px; }
+  .sk-node{
+    background:var(--cream); border:2px solid var(--brown); border-radius:11px;
+    padding:7px 9px; box-shadow:0 2px 0 var(--shadow);
+  }
+  .sk-node.locked{ opacity:0.55; border-style:dashed; }
+  .sk-head{ display:flex; align-items:center; gap:8px; }
+  .sk-name{ font-size:12px; font-weight:bold; color:var(--brown); flex:1; }
+  .sk-pips{ display:flex; gap:3px; }
+  .sk-btns{ display:flex; gap:4px; }
+  .sk-btn{
+    font-family:inherit; font-size:13px; font-weight:bold; width:22px; height:22px;
+    border-radius:7px; border:2px solid var(--brown); background:var(--meadow);
+    color:var(--brown); cursor:pointer; box-shadow:0 2px 0 var(--shadow); line-height:1;
+    display:flex; align-items:center; justify-content:center; touch-action:manipulation;
+  }
+  .sk-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
+  .sk-btn:disabled{ background:#ddd; color:#999; border-color:#bbb; cursor:default; box-shadow:none; }
+  .sk-desc{ font-size:11px; color:var(--brown-soft); margin-top:3px; line-height:1.35; }
+  .sk-lvldesc{ font-size:10px; color:var(--brown); margin-top:2px; }
+  .sk-lvldesc.next{ color:#8a6d1f; }
+  #btnSkills{
+    font-family:inherit; font-size:11px; font-weight:bold;
+    padding:4px 8px; border-radius:8px; border:2px solid var(--brown);
+    background:var(--meadow); color:var(--brown); cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation;
+  }
+  #btnSkills:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
 
   /* dialog */
   #dialogBox{

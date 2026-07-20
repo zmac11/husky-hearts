@@ -213,7 +213,7 @@ Levels.register({
       wares: [
         {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
         {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
-        {id:'cape',     cost:10},
+        {id:'cape',     cost:10}, {id:'key',        cost:8},
       ],
     });
     // A prowling wolf pack — the teeth of the level.
@@ -230,6 +230,8 @@ Levels.register({
     if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
     if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
     Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
+
+    Chests.spawnForLevel('rocky');   // buried treasure in the valley
   },
 
   quest: {

@@ -51,6 +51,20 @@ function drawDog(p,t){
     ctx.restore();
   }
 
+  // Piercing Scream (Lolla): pink sound-wave arcs bursting sideways from the muzzle.
+  if(p.screamT>0){
+    ctx.save();
+    ctx.lineWidth=2; ctx.strokeStyle='#FF9ED2'; ctx.lineCap='round';
+    const dirA = p.dir==='left' ? Math.PI : 0;   // arcs face the way she's looking
+    for(let i=0;i<3;i++){
+      const ph=((t/300)+i/3)%1;
+      ctx.globalAlpha=0.8*(1-ph);
+      ctx.beginPath(); ctx.arc(x, by-8, 6+ph*16, dirA-Math.PI*0.35, dirA+Math.PI*0.35);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
   Abilities.drawOnDog(p,x,by);
 
@@ -91,8 +105,20 @@ function drawDog(p,t){
 }
 
 function _drawDinno(x,by,t,C,D,L,W,K,p){
-  // Red/copper husky with distinctive white face mask — fixed real-dog colors
-  const RC='#C07040', RD=shade(RC,-30), RL=shade(RC,40), RW='#F0EAD8';
+  // Red/copper husky with distinctive white face mask — fixed real-dog colors.
+  // Storm Fang (p.wolfT>0) swaps the coat to storm-grey with glowing eyes + sparks.
+  const storm=p.wolfT>0;
+  const RC=storm?'#5A6470':'#C07040', RD=storm?'#3A424E':shade('#C07040',-30),
+        RL=storm?'#7A879A':shade('#C07040',40), RW=storm?'#C8D4E4':'#F0EAD8';
+  if(storm) K='#7FD4FF';               // eyes (and nose) glow electric blue
+  if(storm){
+    // crackling spark flecks around the body
+    for(let i=0;i<4;i++){
+      const a=t/150+i*1.7;
+      const sx=x+Math.cos(a)*(11+(i%2)*4), sy=by-8+Math.sin(a*1.4)*11;
+      if(Math.floor(t/110+i)%3===0){ ctx.fillStyle=i%2?'#7FD4FF':'#FFFFFF'; ctx.fillRect(Math.round(sx),Math.round(sy),2,2); }
+    }
+  }
   if(p.howling){
     px(x-10,by-2,20,14,RC); px(x-6,by+4,12,8,RW);
     px(x-7,by-16,14,16,RC); px(x-5,by-13,10,10,RW);
@@ -166,9 +192,19 @@ function _drawTapka(x,by,t,C,D,L,W,K,p){
   // Prague Ratter: tiny fawn dog, oversized upright ears, big dark eyes and a
   // greying muzzle — fixed real-dog colors, ignores player color. Drawn smaller
   // than every other breed (she's a featherweight).
-  const TC='#B5854F', TD=shade(TC,-32), TL=shade(TC,38);
-  const TG='#D9CFC0';   // greying muzzle / light chest
-  const PK='#D8A090';   // ear inner
+  // Inner Monster (p.monsterT>0) swaps to a dark reddish feral coat with red glowing eyes.
+  const monster=p.monsterT>0;
+  const TC=monster?'#7A4A42':'#B5854F', TD=monster?'#4E2E2A':shade('#B5854F',-32), TL=shade('#B5854F',38);
+  const TG=monster?'#A98A82':'#D9CFC0';   // greying muzzle / light chest
+  const PK=monster?'#A83A2E':'#D8A090';   // ear inner
+  if(monster){
+    K='#FF2015';                          // eyes + nose glow red
+    for(let i=0;i<4;i++){                 // red spark flecks around the body
+      const a=t/140+i*1.6;
+      const sx=x+Math.cos(a)*(9+(i%2)*4), sy=by-6+Math.sin(a*1.4)*10;
+      if(Math.floor(t/100+i)%3===0){ ctx.fillStyle=i%2?'#FF5030':'#FFC0B0'; ctx.fillRect(Math.round(sx),Math.round(sy),2,2); }
+    }
+  }
   if(p.howling){
     // tiny sit-back howl, muzzle to the sky
     px(x-7,by+1,14,10,TC); px(x-4,by+4,8,6,TG);

@@ -14,6 +14,7 @@ Entities.register('enemy', {
   init(e){
     e.speed   = e.speed || 0.9;
     e.chaseR  = e.chaseR || 120;   // start chasing within this range
+    e.hp      = (typeof e.hp==='number') ? e.hp : 4;   // 2 cannon-ball hits
     e.dir     = 1;
     e.wanderT = 0;
     e.wanderAng = 0;
@@ -28,8 +29,16 @@ Entities.register('enemy', {
     const target=_nearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
+    // Feared (Storm Fang aura): run AWAY from the dog and don't attack.
+    if(e.fearedT>0 && target){
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.5*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.5*swim*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      e._chasing=false;
+    }
     // Detection range scales with how loud the target dog is (breed noise + howling).
-    if(target && dist<e.chaseR*Entities.noiseFactor(target)){
+    else if(target && dist<e.chaseR*Entities.noiseFactor(target)){
       if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
@@ -51,6 +60,8 @@ Entities.register('enemy', {
     e.y=clamp(e.y, 26, WORLD_H-20);
     if(e.cool>0) e.cool=Math.max(0, e.cool-dt);
     if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
+    if(e.hurtT>0) e.hurtT=Math.max(0, e.hurtT-dt);
+    if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
     e.bob=t;
   },
 
@@ -74,6 +85,12 @@ Entities.register('enemy', {
     px(x+D*6-4,y-6,2,2,'#FF3030'); px(x+D*6+2,y-6,2,2,'#FF3030');
     // grumpy brow
     px(x+D*6-5,y-7,10,1,'#1A1616');
+    // red flash while hurt (mirrors the dog's hurt flash)
+    if(e.hurtT>0){
+      ctx.globalAlpha=Math.min(0.5, e.hurtT/440);
+      px(x-12,y-14,24,28,'#FF3B3B');
+      ctx.globalAlpha=1;
+    }
     // startled "!" when it just heard a dog
     Entities.drawAlert(e);
   },

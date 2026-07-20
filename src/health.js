@@ -16,6 +16,7 @@ const Health = {
 
   damage(p, n){
     if(!p || p.dead || p.hp<=0) return;
+    if(p.invulnT>0) return;            // Scurry i-frames (abilities/scurry.js)
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
     if(typeof updateHUD==='function') updateHUD();
@@ -54,5 +55,9 @@ const Health = {
   },
 
   // Decay the per-frame hurt flash.
-  tick(p, dt){ if(p && p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt); },
+  tick(p, dt){
+    if(!p) return;
+    if(p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt);
+    if(p.invulnT>0) p.invulnT=Math.max(0, p.invulnT-dt);
+  },
 };

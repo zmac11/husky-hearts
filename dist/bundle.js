@@ -127,8 +127,10 @@ const Input = {
     { id:'action',    label:'Howl / Deliver' },
     { id:'ability1',  label:'Ability 1' },
     { id:'ability2',  label:'Ability 2' },
+    { id:'ability3',  label:'Ultimate' },
     { id:'inventory', label:'Inventory' },
     { id:'journal',   label:'Quest Journal' },
+    { id:'skills',    label:'Skill Tree' },
   ],
 
   DEFAULTS: {
@@ -139,8 +141,10 @@ const Input = {
     action:    ['Space','Enter'],
     ability1:  ['KeyQ', null],
     ability2:  ['KeyE', null],
+    ability3:  ['KeyR', null],   // ultimate slot
     inventory: ['KeyI', null],
     journal:   ['KeyJ', null],
+    skills:    ['KeyK', null],
   },
 
   bindings: {},   // action id → [primaryCode|null, altCode|null]
@@ -232,6 +236,7 @@ window.addEventListener('keydown', e=>{
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(Input.bindings.inventory.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
   if(Input.bindings.journal.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
+  if(Input.bindings.skills.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleSkills) UI.toggleSkills(); }
   // Dev mode: backtick, or the "<" key (IntlBackslash = the key next to left Shift on
   // ISO/European keyboards, which types "<" — e.key covers any other layout too).
   if(e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '<'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
@@ -262,22 +267,24 @@ window.addEventListener('keyup', e=>{ keys[e.code] = false; });
 //     smarts — priceMul = 1.15 − 0.05×bar (shop prices) and
 //              questBonus = 0.05×(bar−3) (extra treats from quest rewards)
 // passive — human-readable description of the dog's standout trait (shown in UI).
-// abilities — two active-ability slots, [slot1, slot2], each a key into the Abilities
-//   registry (null = empty slot). Slot 1 fires on the "Ability 1" key (default Q),
-//   slot 2 on "Ability 2" (default E). Each dog can carry a different pair.
+// abilities — three active-ability slots, [slot1, slot2, ultimate], each a key into
+//   the Abilities registry (null = empty slot). Slot 1 fires on "Ability 1" (default Q),
+//   slot 2 on "Ability 2" (default E), slot 3 is the ULTIMATE on "Ultimate" (default R).
+//   Each dog can carry a different set; slot 3 is reserved for big ultimate abilities.
 // color — the breed's signature colour (HUD dot / minimap marker); the dogs draw
 //   their real coat colours in-sprite, so this is just their accent hue.
 
 const BREEDS_DATA = {
   dinno:     { name:'Dinno',     desc:'The real husky boss',  emoji:'❤️', color:'#C07840',
                bars:{ health:5, speed:5, swim:4, noise:3, smarts:3 },
-               passive:'Alpha — tough and a step faster than the pack', abilities:[null,null] },
+               passive:'Alpha — tough and a step faster than the pack', abilities:['stormFang','spiritWolf',null] },
   lolla:     { name:'Lolla',     desc:'Fluff queen supreme',  emoji:'🌟', color:'#6FA8C9',
                bars:{ health:3, speed:2, swim:3, noise:5, smarts:5 },
-               passive:'Clever & loud — haggles well, but enemies hear her coming', abilities:['ballCannon',null] },
+               passive:'Clever & loud — haggles well, but enemies hear her coming', abilities:['ballCannon','scream',null] },
   tapka:     { name:'Ťapka',     desc:'Tiny Prague Ratter',   emoji:'🐭', color:'#B5854F',
                bars:{ health:1, speed:4, swim:2, noise:1, smarts:4 },
-               passive:'Featherweight — frail but swift, and almost silent', abilities:[null,null] },
+               digMul:1.6,   // ratters are born diggers — chests come up much faster
+               passive:'Featherweight — frail but swift, almost silent, and a born digger', abilities:['innerMonster','scurry',null] },
 };
 
 // Display order for the character-select screen.
@@ -302,6 +309,8 @@ function _derive(b){
     noiseMul:   +(0.7  + 0.15*(bars.noise-1)).toFixed(2),
     priceMul:   +(1.15 - 0.05*bars.smarts).toFixed(2),
     questBonus: +(0.05*(bars.smarts-3)).toFixed(2),
+    scentR:     100 + 10*bars.smarts,   // how far this dog smells buried chests (px)
+    digMul:     b.digMul || 1,          // dig-speed multiplier (Ťapka the ratter: 1.6)
   };
   return b;
 }
@@ -313,6 +322,129 @@ const Breeds = {
   get(id){ return BREEDS_DATA[id] || BREEDS_DATA.dinno; },
   // {id, name, desc, emoji, bars, stats, passive, abilities} for each breed, in display order.
   list(){ return BREED_ORDER.map(id => Object.assign({ id }, BREEDS_DATA[id])); },
+};
+
+// ===== src/data/skills.js =====
+// ====================== SKILLS (data) ======================
+// The skill tree: per-dog upgrades for the character itself plus the breed's active
+// abilities. Every dog shares the "character" nodes; ability nodes are per breed
+// (Lolla's Ball Cannon is the first — Dinno's and Ťapka's are future placeholders).
+//
+// Player state is plain data (save-friendly): p.skills = { nodeId: level }, plus
+// p.skillPoints (reserved — EARNING points is future work; while that's unbuilt the
+// tree levels freely and the − button refunds, so tuning can be playtested).
+//
+// Skills.apply(p) is the single place skill effects become numbers: it recomputes
+// p.maxHp / p.speed / p.stats from the breed's base values + current skill levels.
+// It must be called after any level change (UI), at makePlayer, and on save-load.
+
+const SKILL_NODES = {
+  // ---- character nodes (every dog) ----
+  common: [
+    { id:'vitality', name:'Vitality',   icon:'💪', max:3, desc:'+2 max health per level' },
+    { id:'swift',    name:'Swift Paws', icon:'🐾', max:3, desc:'+0.06 speed per level' },
+    { id:'nose',     name:'Keen Nose',  icon:'👃', max:2, desc:'+20 scent radius per level (buried chests)' },
+    { id:'soft',     name:'Soft Steps', icon:'🤫', max:2, desc:'−8% noise per level (enemies hear you later)' },
+  ],
+  // ---- ability nodes (per breed) ----
+  byBreed: {
+    lolla: [
+      { id:'cannon', name:'Ball Cannon', icon:'🎾', max:3, ability:true,
+        desc:'Placeable turret (Q) — load 🎾 balls from the hotbar, auto-fires at enemies',
+        levels:[
+          'L1 · place with Q · 1-ball magazine · range 130 · 2 dmg + knockback',
+          'L2 · 3-ball magazine · faster fire',
+          'L3 · range 180 · 3 dmg · auto-reloads from your bag while you stand close',
+        ] },
+      { id:'scream', name:'Piercing Scream', icon:'🔊', max:3, ability:true,
+        desc:'Scream (E) — a few seconds of AOE damage + knockback around you',
+        levels:[
+          'L1 · 2.5s · pulse damage (2) + knockback · 95px · 20s cooldown',
+          'L2 · 3s · 115px · 25% chance to frighten enemies each pulse',
+          'L3 · 3.5s · 135px · 3 dmg · 45% fear · 18s cooldown',
+        ] },
+    ],
+    dinno: [
+      { id:'stormfang', name:'Storm Fang', icon:'⚡', max:3, ability:true,
+        desc:'Unleash the inner wolf (Q): storm form with lightning striking nearby enemies',
+        levels:[
+          'L1 · 8s storm · bolt every 3.5s (4 dmg) · +15% speed · 45s cooldown',
+          'L2 · 10s storm · bolt every 2.5s · fear aura — enemies flee',
+          'L3 · 12s storm · bolt every 2s (5 dmg) chains to a 2nd enemy · +25% speed · 40s cooldown',
+        ] },
+      { id:'spiritwolf', name:'Spirit of the Storm', icon:'🐺', max:3, ability:true,
+        desc:'Summon a spectral storm-wolf (E) that hunts enemies with crackling bites',
+        levels:[
+          'L1 · 12s companion · 2 dmg bites · 40s cooldown',
+          'L2 · 16s companion · 3 dmg bites',
+          'L3 · bites arc lightning to a 2nd enemy · 32s cooldown',
+        ] },
+    ],
+    tapka: [
+      { id:'monster', name:'Inner Monster', icon:'👹', max:3, ability:true,
+        desc:'Unleash the beast (Q): red-eyed feral form that bites enemies and heals off them',
+        levels:[
+          'L1 · 6s · +25% speed · bite 2 dmg · heals +1 hp/bite · 30s cooldown',
+          'L2 · 8s · bite 3 dmg · heals +2 hp/bite',
+          'L3 · 10s · +35% speed · 26s cooldown',
+        ] },
+      { id:'scurry', name:'Scurry', icon:'💨', max:3, ability:true,
+        desc:'Dash (E) a short distance with a burst of invulnerability — pure escape',
+        levels:[
+          'L1 · dash ~90px · brief invulnerability · 9s cooldown',
+          'L2 · dash ~120px · 7s cooldown',
+          'L3 · dash + a 1s speed burst on landing · 5s cooldown',
+        ] },
+    ],
+  },
+};
+
+const Skills = {
+  // All nodes shown for a breed, character nodes first.
+  nodesFor(breed){
+    return SKILL_NODES.common.concat(SKILL_NODES.byBreed[breed] || []);
+  },
+  node(breed, id){ return this.nodesFor(breed).find(n=>n.id===id) || null; },
+
+  level(p, id){ return (p && p.skills && p.skills[id]) || 0; },
+
+  addPoint(p, id){
+    const n=this.node(p.breed, id);
+    if(!n || n.locked) return false;
+    const cur=this.level(p, id);
+    if(cur>=n.max) return false;
+    (p.skills || (p.skills={}))[id]=cur+1;
+    this.apply(p);
+    return true;
+  },
+  removePoint(p, id){
+    const cur=this.level(p, id);
+    if(cur<=0) return false;
+    p.skills[id]=cur-1;
+    this.apply(p);
+    return true;
+  },
+
+  // Recompute the player's derived numbers from breed base + skill levels. Never
+  // mutates the breed def: p.stats becomes a fresh object each time (makePlayer used
+  // to share def.stats by reference — cloning here is what makes skills safe).
+  apply(p){
+    if(!p) return;
+    const base=Breeds.get(p.breed);
+    const lv=id=>this.level(p, id);
+    const wasMax = p.hp>=p.maxHp;
+    p.maxHp = (base.hp||20) + 2*lv('vitality');
+    if(wasMax) p.hp=p.maxHp; else p.hp=Math.min(p.hp, p.maxHp);
+    p.speed = +(base.stats.speed + 0.06*lv('swift')).toFixed(2);
+    p.stats = Object.assign({}, base.stats, {
+      speed:    p.speed,
+      scentR:   base.stats.scentR + 20*lv('nose'),
+      noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft'))).toFixed(3),
+    });
+    // NOTE: no UI calls here — apply() runs during initial module evaluation
+    // (makePlayer at world.js load), before ui.js's `const UI` exists. Callers
+    // that change levels at runtime refresh the HUD themselves.
+  },
 };
 
 // ===== src/data/items.js =====
@@ -354,12 +486,122 @@ const ITEMS_DATA = {
   beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie' },
   snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles' },
   trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
+
+  // treasure-chest loop (data/chests.js): keys open silver chests; the rest is loot
+  key:      { name:'Chest Key',   icon:'🗝️', type:'tool',       value:8 },
+  feast:    { name:'Feast',       icon:'🍖', type:'consumable', value:7, heal:12 },  // heals 6 hearts
+  goldbone: { name:'Golden Bone', icon:'🏅', type:'treat',      value:5 },
+  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown' },  // golden-chest exclusive
 };
 
 const Items = {
   all: ITEMS_DATA,
   get(id){ return ITEMS_DATA[id] || null; },
   list(){ return Object.keys(ITEMS_DATA).map(id => Object.assign({ id }, ITEMS_DATA[id])); },
+};
+
+// ===== src/data/chests.js =====
+// ====================== CHESTS (data) ======================
+// The treasure-chest loop: chests are buried invisibly around each level. A dog close
+// enough smells them (sniff wisps, scent radius = stats.scentR from the smarts bar),
+// digs them up on the action key (dig speed × stats.digMul — Ťapka is fastest), then
+// opens them for loot. Silver chests are locked and consume a 🗝️ Chest Key. A golden
+// chest (never buried) spawns beside the exit portal when a biome's last level is
+// cleared — later this hook moves to "boss defeated" with no chest changes.
+//
+// Loot entries: {treats:n} spills n bone/heart pickups; {item:id, qty?} spills the item.
+// Tables are rolled fresh on open (Math.random, like the rest of the game's spawning).
+
+const CHEST_RARITIES = {
+  wooden: {
+    name:'Wooden Chest', locked:false, digMs:1000,
+    base:'#8B6340', band:'#6B4A28', lid:'#A07040', glow:null,
+    loot(p){
+      const L=[{treats:3+Math.floor(Math.random()*4)}];             // 3–6
+      if(Math.random()<0.40) L.push({item:'biscuit'});
+      if(Math.random()<0.10) L.push({item:'key'});
+      return L;
+    },
+  },
+  iron: {
+    name:'Iron Chest', locked:false, digMs:1400,
+    base:'#9AA0AA', band:'#6A6E78', lid:'#B4BAC4', glow:null,
+    loot(p){
+      const L=[{treats:6+Math.floor(Math.random()*5)}];             // 6–10
+      L.push({item:Math.random()<0.5?'biscuit':'trailmix'});
+      if(Math.random()<0.25) L.push({item:'key'});
+      if(Math.random()<0.15) L.push({item:['ribbon','ballcap','scarf'][Math.floor(Math.random()*3)]});
+      return L;
+    },
+  },
+  silver: {
+    name:'Silver Chest', locked:true, digMs:1800,
+    base:'#D8DCE4', band:'#AAB2C0', lid:'#EAEDF2', glow:'rgba(220,228,240,0.35)',
+    loot(p){
+      const L=[{treats:10+Math.floor(Math.random()*7)}];            // 10–16
+      L.push({item:'feast'});
+      if(Math.random()<0.60) L.push({item:['shades','tophat','raincoat','beanie','snowgoggles'][Math.floor(Math.random()*5)]});
+      if(Math.random()<0.30) L.push({item:'goldbone'});
+      if(Math.random()<0.20) L.push({item:'key'});
+      return L;
+    },
+  },
+  golden: {
+    name:'Golden Chest', locked:false, digMs:0,
+    base:'#F2C94C', band:'#D9A82E', lid:'#F8DC74', glow:'rgba(255,216,80,0.45)',
+    loot(p){
+      const L=[{treats:20}];
+      // the crown is the trophy — once you own/wear one, later goldens pay out in gold bones
+      const hasCrown=p && ((typeof Inventory!=='undefined' && Inventory.count(p,'crown')>0) ||
+                           (p.equipment && p.equipment.head==='crown'));
+      L.push(hasCrown ? {item:'goldbone', qty:2} : {item:'crown'});
+      L.push({item:'feast', qty:2});
+      L.push({item:'goldbone'});
+      L.push({item:'key'});
+      return L;
+    },
+  },
+};
+
+// Which rarities are buried in each level (order doesn't matter).
+const CHEST_SPAWNS = {
+  'meadow':   ['wooden','wooden'],
+  'meadow-2': ['wooden','wooden','iron'],
+  'meadow-3': ['wooden','wooden','iron','silver'],
+  'rocky':    ['wooden','iron','iron','silver'],
+};
+
+const Chests = {
+  RARITIES: CHEST_RARITIES,
+  def(rarity){ return CHEST_RARITIES[rarity] || CHEST_RARITIES.wooden; },
+
+  // Find a dry, walkable, out-of-the-way burial spot: never in ponds/lakes/rivers
+  // (digging underwater is nonsense), clear of colliders (visibility), away from the
+  // dog's spawn and from other chests.
+  _findSpot(spawn, placed){
+    for(let tries=0; tries<80; tries++){
+      const x=rand(120, WORLD_W-120), y=rand(120, WORLD_H-120);
+      if(isWater(x,y,40)) continue;                                        // dry land only, with margin
+      if(colliders.some(c=> x>c.x-30 && x<c.x+c.w+30 && y>c.y-34 && y<c.y+c.h+30)) continue;
+      if(spawn && Math.hypot(x-spawn.x,y-spawn.y)<260) continue;           // not right at the start
+      if(placed.some(s=>Math.hypot(x-s.x,y-s.y)<140)) continue;            // spread out
+      return {x,y};
+    }
+    return null;   // crowded level — better to skip a chest than bury it badly
+  },
+
+  // Called from each level's generate() after terrain + entities exist.
+  spawnForLevel(levelId){
+    const plan=CHEST_SPAWNS[levelId]; if(!plan) return;
+    const spawn=(typeof Levels!=='undefined' && Levels.get(levelId) && Levels.get(levelId).spawn) || {x:200,y:200};
+    const placed=[];
+    plan.forEach(rarity=>{
+      const spot=this._findSpot(spawn, placed);
+      if(!spot) return;
+      placed.push(spot);
+      Entities.spawn('chest', { x:spot.x, y:spot.y, rarity, state:'buried' });
+    });
+  },
 };
 
 // ===== src/data/campaign.js =====
@@ -442,6 +684,17 @@ const Campaign = {
       if(this.environments[i].levels.some(l=>l.id===levelId)) return i;
     }
     return 0;
+  },
+
+  // The environment object that owns a level.
+  envOfLevel(levelId){ return this.environments[this.envIndexOfLevel(levelId)]; },
+
+  // Is this the LAST playable (real) level of its biome? Until boss fights exist,
+  // clearing it counts as finishing the biome → the exit portal gets a golden chest.
+  isFinalRealLevel(levelId){
+    const env=this.envOfLevel(levelId);
+    const real=env.levels.filter(l=>l.real);
+    return real.length>0 && real[real.length-1].id===levelId;
   },
 };
 
@@ -685,6 +938,7 @@ const Health = {
 
   damage(p, n){
     if(!p || p.dead || p.hp<=0) return;
+    if(p.invulnT>0) return;            // Scurry i-frames (abilities/scurry.js)
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
     if(typeof updateHUD==='function') updateHUD();
@@ -723,7 +977,11 @@ const Health = {
   },
 
   // Decay the per-frame hurt flash.
-  tick(p, dt){ if(p && p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt); },
+  tick(p, dt){
+    if(!p) return;
+    if(p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt);
+    if(p.invulnT>0) p.invulnT=Math.max(0, p.invulnT-dt);
+  },
 };
 
 // ===== src/wearables.js =====
@@ -920,6 +1178,16 @@ const Wearables = {
         _wpx(g, trailLeft?a.x-bw-3:a.x+bw-1, y-3, 4, 3, Cl); // clasp at the shoulder
       }
     },
+    crown(g,a){
+      const x=a.x+Wearables._hdx(a.dir), y=a.headY;
+      _wpx(g, x-6, y-1, 12, 4, '#E8B824');   // gold band
+      _wpx(g, x-6, y-5, 2, 4, '#E8B824');    // three points
+      _wpx(g, x-1, y-6, 2, 5, '#E8B824');
+      _wpx(g, x+4, y-5, 2, 4, '#E8B824');
+      _wpx(g, x-6, y-1, 12, 1, '#F8D858');   // band highlight
+      _wpx(g, x-3, y, 2, 2, '#C23A4A');      // ruby
+      _wpx(g, x+2, y, 2, 2, '#2E6ED0');      // sapphire
+    },
     beanie(g,a){
       const x=a.x+Wearables._hdx(a.dir), y=a.headY;
       _wpx(g, x-7, y-1, 14, 4, '#8A3B3B');   // knit band
@@ -1111,6 +1379,57 @@ function cycleSoundtrack(){
 function currentTrackName(){ return SOUNDTRACKS[currentTrack].name; }
 
 function sfxCollect(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'sine',noteHz(N.G5),0.35,sfxBus,t,0.08); osc(ac,'sine',noteHz(N.C5+12),0.25,sfxBus,t+0.07,0.1); }
+// Muffled digging thuds (paws on dirt) — looped by the chest entity while digging.
+function sfxDig(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [0,0.14].forEach(d=>{ const o=ac.createOscillator(),g=ac.createGain(); o.type='triangle'; o.frequency.setValueAtTime(noteHz(N.C3),t+d); o.frequency.exponentialRampToValueAtTime(noteHz(N.C3)*0.6,t+d+0.09); g.gain.setValueAtTime(0.3,t+d); g.gain.linearRampToValueAtTime(0,t+d+0.1); o.connect(g); g.connect(sfxBus); o.start(t+d); o.stop(t+d+0.12); }); }
+// Lock click + rising chime for opening a locked chest with a key.
+function sfxUnlock(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'square',noteHz(N.C4),0.12,sfxBus,t,0.05); [N.E5,N.G5,N.C6].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+0.1+i*0.09,0.16)); }
+// Thunder: a sharp crack followed by a long low rumble (Storm Fang bolts/activation).
+function sfxThunder(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  osc(ac,'square',noteHz(N.C6),0.18,sfxBus,t,0.05); osc(ac,'square',noteHz(N.G5),0.14,sfxBus,t+0.03,0.06);
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.C3)*0.7,t+0.05);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.C3)*0.35,t+1.0);
+  g.gain.setValueAtTime(0.0001,t+0.05); g.gain.exponentialRampToValueAtTime(0.3,t+0.12);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);
+  o.connect(g); g.connect(sfxBus); o.start(t+0.05); o.stop(t+1.15);
+}
+// Lolla's piercing scream: a harsh, wavering high screech that descends.
+function sfxScream(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.A5),t);
+  o.frequency.linearRampToValueAtTime(noteHz(N.C5),t+0.5);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.05);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
+  osc(ac,'square',noteHz(N.E5),0.08,sfxBus,t,0.3);   // grainy overtone
+}
+// Ťapka's inner-monster roar: a low guttural growl.
+function sfxRoar(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(noteHz(N.C3),t);
+  o.frequency.linearRampToValueAtTime(noteHz(N.E3),t+0.25);
+  o.frequency.linearRampToValueAtTime(noteHz(N.C3),t+0.5);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.28,t+0.06);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
+}
+// Scurry dash: a quick airy whoosh.
+function sfxDash(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(noteHz(N.G4),t);
+  o.frequency.exponentialRampToValueAtTime(noteHz(N.G5),t+0.12);
+  g.gain.setValueAtTime(0.16,t); g.gain.linearRampToValueAtTime(0,t+0.16);
+  o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.18);
+}
+// Airy howl chord for summoning the spirit wolf.
+function sfxSummon(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
+  [N.A4,N.E5,N.A5].forEach((n,i)=>{ const o=ac.createOscillator(),g=ac.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(noteHz(n)*0.97,t+i*0.06);
+    o.frequency.linearRampToValueAtTime(noteHz(n),t+i*0.06+0.4);
+    g.gain.setValueAtTime(0.0001,t+i*0.06); g.gain.linearRampToValueAtTime(0.16,t+i*0.06+0.1);
+    g.gain.linearRampToValueAtTime(0,t+i*0.06+0.7);
+    o.connect(g); g.connect(sfxBus); o.start(t+i*0.06); o.stop(t+i*0.06+0.75); });
+}
 function sfxDeliver(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.1,0.18)); }
 function sfxCheer(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C5+12].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.4,sfxBus,t+i*0.12,0.25)); osc(ac,'sine',noteHz(N.G5),0.3,sfxBus,t+0.5,0.4); }
 function sfxHowl(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(noteHz(N.A4),t); o.frequency.linearRampToValueAtTime(noteHz(N.A5),t+0.5); g.gain.setValueAtTime(0.2,t); g.gain.linearRampToValueAtTime(0,t+0.55); o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6); }
@@ -1532,10 +1851,14 @@ function nudgeOutOfWater(obj, margin=10){
 function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
-  return {id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
+  const p={id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
+    skills:{},skillPoints:0,   // skill-tree levels + reserved points (data/skills.js)
+    abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
+  if(typeof Skills!=='undefined') Skills.apply(p);   // derive stats fresh (never share def.stats)
+  return p;
 }
 let p1=makePlayer(1,'#C07840',200,200);
 
@@ -1598,6 +1921,7 @@ Levels.register({
     // friends. No merchants and no enemies yet; those are introduced in later levels
     // (shops in Wildflower Field, a first gentle enemy in Old Orchard Path).
     Entities.clear();
+    Chests.spawnForLevel('meadow');   // a couple of buried wooden chests to sniff out
   },
 
   // Completion condition (the "quest"). checkWin() consults this.
@@ -1687,6 +2011,8 @@ Levels.register({
     if(ponds[1]) Entities.spawn('critter', { species:'duck', x:ponds[1].x, y:ponds[1].y });
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.68, y:WORLD_H*0.62 });
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.30, y:WORLD_H*0.58 });
+
+    Chests.spawnForLevel('meadow-2');   // buried treasure — first iron chest
   },
 
   quest: {
@@ -1776,6 +2102,8 @@ Levels.register({
     Entities.spawn('enemy', { x: WORLD_W*0.5, y: WORLD_H*0.6, speed:0.8, chaseR:90 });
     // A friendly squirrel keeps the orchard cheerful.
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.4, y:WORLD_H*0.4 });
+
+    Chests.spawnForLevel('meadow-3');   // buried treasure — first (locked) silver chest
   },
 
   quest: {
@@ -2002,7 +2330,7 @@ Levels.register({
       wares: [
         {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
         {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
-        {id:'cape',     cost:10},
+        {id:'cape',     cost:10}, {id:'key',        cost:8},
       ],
     });
     // A prowling wolf pack — the teeth of the level.
@@ -2019,6 +2347,8 @@ Levels.register({
     if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
     if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
     Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
+
+    Chests.spawnForLevel('rocky');   // buried treasure in the valley
   },
 
   quest: {
@@ -2917,6 +3247,25 @@ function drawWorld(t){
 // ====================== COLLECTIBLES ======================
 function drawCollectible(item,t){
   if(item.taken) return;
+
+  // Plain ground items (spent cannon balls): a tennis ball lying on the grass with a
+  // simple shadow — no floating badge, no glow ring, no bob.
+  if(item.plain && item.type==='ball'){
+    const bx=Math.round(item.x), by=Math.round(item.y);
+    ctx.globalAlpha=0.25;
+    ctx.beginPath(); ctx.ellipse(bx, by+4, 6, 2.5, 0, 0, Math.PI*2);
+    ctx.fillStyle='#1A2A1A'; ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#B5E853';
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#CCFF77';
+    ctx.beginPath(); ctx.arc(bx-1, by-1, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0.35, Math.PI-0.35); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
+    return;
+  }
+
   const bob  = Math.sin(t/320 + item.bob) * 4;
   const pulse= 1 + Math.sin(t/260 + item.bob) * 0.1; // gentle scale throb
   const x = item.x, y = item.y + bob;
@@ -3263,6 +3612,33 @@ const Entities = {
   },
   clear(){ entities.length = 0; },
   all(){ return entities; },
+  remove(e){ const i=entities.indexOf(e); if(i!==-1) entities.splice(i,1); },
+
+  // Damage an entity (turret balls, future traps…): red flash, knockback shove away
+  // from (fromX,fromY) — skipped for future bosses via e.noKnockback — and on 0 hp a
+  // defeat poof with a small chance of dropped loot. Call OUTSIDE updateAll's loop.
+  hurt(e, dmg, fromX, fromY, knock=12){
+    if(typeof e.hp!=='number') return false;    // not a damageable entity
+    e.hp -= dmg;
+    e.hurtT = 220;
+    if(!e.noKnockback && typeof fromX==='number'){
+      const ang=Math.atan2(e.y-fromY, e.x-fromX);
+      e.x=clamp(e.x+Math.cos(ang)*knock, 20, WORLD_W-20);
+      e.y=clamp(e.y+Math.sin(ang)*knock, 26, WORLD_H-20);
+    }
+    if(e.hp<=0){
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9C9C9', 20);
+      if(Math.random()<0.4){
+        collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
+                            pickupAt:performance.now()+600 });
+      }
+      this.remove(e);
+      if(typeof sfxDeliver==='function') sfxDeliver();
+      showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);
+      return true;   // defeated
+    }
+    return false;
+  },
 
   updateAll(t, dt){ for(const e of entities){ const d=this.def(e.kind); if(d && d.update) d.update(e, t, dt); } },
 
@@ -3328,6 +3704,7 @@ Entities.register('enemy', {
   init(e){
     e.speed   = e.speed || 0.9;
     e.chaseR  = e.chaseR || 120;   // start chasing within this range
+    e.hp      = (typeof e.hp==='number') ? e.hp : 4;   // 2 cannon-ball hits
     e.dir     = 1;
     e.wanderT = 0;
     e.wanderAng = 0;
@@ -3342,8 +3719,16 @@ Entities.register('enemy', {
     const target=_nearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
+    // Feared (Storm Fang aura): run AWAY from the dog and don't attack.
+    if(e.fearedT>0 && target){
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.5*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.5*swim*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      e._chasing=false;
+    }
     // Detection range scales with how loud the target dog is (breed noise + howling).
-    if(target && dist<e.chaseR*Entities.noiseFactor(target)){
+    else if(target && dist<e.chaseR*Entities.noiseFactor(target)){
       if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
@@ -3365,6 +3750,8 @@ Entities.register('enemy', {
     e.y=clamp(e.y, 26, WORLD_H-20);
     if(e.cool>0) e.cool=Math.max(0, e.cool-dt);
     if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
+    if(e.hurtT>0) e.hurtT=Math.max(0, e.hurtT-dt);
+    if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
     e.bob=t;
   },
 
@@ -3388,6 +3775,12 @@ Entities.register('enemy', {
     px(x+D*6-4,y-6,2,2,'#FF3030'); px(x+D*6+2,y-6,2,2,'#FF3030');
     // grumpy brow
     px(x+D*6-5,y-7,10,1,'#1A1616');
+    // red flash while hurt (mirrors the dog's hurt flash)
+    if(e.hurtT>0){
+      ctx.globalAlpha=Math.min(0.5, e.hurtT/440);
+      px(x-12,y-14,24,28,'#FF3B3B');
+      ctx.globalAlpha=1;
+    }
     // startled "!" when it just heard a dog
     Entities.drawAlert(e);
   },
@@ -3424,6 +3817,7 @@ Entities.register('wolf', {
     e.speed   = e.speed   || 1.15;   // brisk — outpaces a corgi, presses a husky
     e.chaseR  = e.chaseR  || 190;    // keen senses: long detection range
     e.dmg     = e.dmg     || 3;      // bites for more than a heart
+    e.hp      = (typeof e.hp==='number') ? e.hp : 6;   // 3 cannon-ball hits
     e.dir     = 1;
     e.wanderT = 0;
     e.wanderAng = 0;
@@ -3440,6 +3834,21 @@ Entities.register('wolf', {
     const target=_wolfNearestPlayer(e);
     const dist=target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
 
+    // Feared (Storm Fang aura): run AWAY from the dog and don't attack.
+    if(e.fearedT>0 && target){
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.5*swim*dtScale;
+      e.y+=Math.sin(ang)*e.speed*1.5*swim*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      e._chasing=false;
+      e.x=clamp(e.x, 20, WORLD_W-20);
+      e.y=clamp(e.y, 26, WORLD_H-20);
+      if(e.cool>0)    e.cool=Math.max(0, e.cool-dt);
+      if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
+      if(e.hurtT>0)   e.hurtT=Math.max(0, e.hurtT-dt);
+      e.bob=t;
+      return;
+    }
     // Keen ears: detection range scales with how loud the target dog is.
     const hearR=e.chaseR*Entities.noiseFactor(target);
     if(target && dist<hearR){
@@ -3468,6 +3877,8 @@ Entities.register('wolf', {
     if(e.lunge>0)   e.lunge=Math.max(0, e.lunge-dt);
     if(e.lungeCd>0) e.lungeCd=Math.max(0, e.lungeCd-dt);
     if(e.alertT>0)  e.alertT=Math.max(0, e.alertT-dt);
+    if(e.hurtT>0)   e.hurtT=Math.max(0, e.hurtT-dt);
+    if(e.fearedT>0) e.fearedT=Math.max(0, e.fearedT-dt);
     e.bob=t;
   },
 
@@ -3494,6 +3905,12 @@ Entities.register('wolf', {
     // glowing eyes + angry brow
     px(x+D*7-4,y-7,2,2,'#FFC400'); px(x+D*7+2,y-7,2,2,'#FFC400');
     px(x+D*7-5,y-8,10,1,'#22252B');
+    // red flash while hurt (mirrors the dog's hurt flash)
+    if(e.hurtT>0){
+      ctx.globalAlpha=Math.min(0.5, e.hurtT/440);
+      px(x-13,y-16,26,30,'#FF3B3B');
+      ctx.globalAlpha=1;
+    }
     // startled "!" when it just heard a dog
     Entities.drawAlert(e);
   },
@@ -3784,6 +4201,399 @@ Entities.register('npc', {
   },
 });
 
+// ===== src/entities/chest.js =====
+// ====================== ENTITY: TREASURE CHEST ======================
+// Buried → dug → open. While buried it is invisible; a dog inside its scent radius
+// gets sniff wisps at the nose (faster = closer), and within reach the loose-dirt
+// patch + "!" marker reveal the dig spot. The action key digs (progress ring, dirt
+// kicked out, speed × the dog's digMul), then opens the chest — silver consumes a
+// 🗝️ Chest Key first. Loot spills onto the grass as ordinary pickups.
+//
+// All state is plain data ({rarity, state, digT, unlocked, opened}) so chests ride
+// through save/load like any entity; init() is idempotent against restored fields.
+
+Entities.register('chest', {
+  radius: 30,
+
+  init(e){
+    e.rarity   = e.rarity || 'wooden';
+    e.state    = e.state  || 'buried';    // 'buried' | 'dug' | 'open'
+    e.digT     = (typeof e.digT==='number') ? e.digT : 0;   // remaining dig ms (0 = idle)
+    e.unlocked = !!e.unlocked;
+    e._dirtT   = 0;                        // throttle for dirt particles while digging
+  },
+
+  update(e, t, dt){
+    if(e.state!=='buried' || e.digT<=0) return;
+    const p=p1;
+    // walking away abandons the dig
+    if(!p || p.dead || Math.hypot(p.x-e.x, p.y-e.y)>46){ e.digT=0; return; }
+    const digMul=(p.stats && p.stats.digMul) || 1;
+    e.digT -= dt*digMul;
+    // dirt kicked out behind the digging dog
+    e._dirtT-=dt;
+    if(e._dirtT<=0){ e._dirtT=140; if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+4, '#8B6B4A', 4); }
+    if(e.digT<=0){
+      e.digT=0; e.state='dug';
+      const def=Chests.def(e.rarity);
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#FFD93D', 16);
+      if(typeof sfxDeliver==='function') sfxDeliver();
+      showToast(`💰 You dug up a ${def.name}!${def.locked&&!e.unlocked?' It’s locked…':''}`, 2000);
+    }
+  },
+
+  onInteract(e, p){
+    const def=Chests.def(e.rarity);
+    if(e.state==='buried'){
+      if(e.digT>0) return;                         // already digging
+      e.digT=def.digMs; e._digMax=def.digMs;
+      if(typeof sfxDig==='function') sfxDig();
+      return;
+    }
+    if(e.state!=='dug') return;                    // open chests are just decor
+    if(def.locked && !e.unlocked){
+      if(typeof Inventory!=='undefined' && Inventory.has(p,'key')){
+        Inventory.remove(p,'key',1);
+        e.unlocked=true;
+        if(typeof sfxUnlock==='function') sfxUnlock();
+        showToast('🗝️ The key clicks — unlocked!', 1400);
+        if(typeof updateHUD==='function') updateHUD();
+        // falls through: next action press opens it (one beat of anticipation)
+        return;
+      }
+      showToast('🔒 This chest is locked — you need a 🗝️ Chest Key.', 1800);
+      return;
+    }
+    this._open(e, p);
+  },
+
+  _open(e, p){
+    const def=Chests.def(e.rarity);
+    e.state='open';
+    if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-8, '#FFD93D', 26);
+    if(typeof sfxCheer==='function') sfxCheer();
+    // Spill the loot in a ring of ordinary pickups around the chest.
+    const loot=def.loot(p);
+    let slot=0, spillCount=0;
+    loot.forEach(entry=>{ spillCount += entry.treats ? entry.treats : 1; });
+    const drop=(type, qty, isTreat)=>{
+      const ang=(slot/Math.max(1,spillCount))*Math.PI*2 + Math.PI/6;
+      const r=26+ (slot%2)*12;
+      const spot={ x:clamp(e.x+Math.cos(ang)*r, 30, WORLD_W-30),
+                   y:clamp(e.y+Math.sin(ang)*r+6, 30, WORLD_H-30) };
+      nudgeOutOfWater(spot, 12);
+      const idef=Items.get(type);
+      collectibles.push({ x:spot.x, y:spot.y, type, qty, taken:false, bob:rand(0,Math.PI*2),
+        // items are `dropped` so pickups don't double-award treats; treat spills aren't,
+        // so each bone/heart collected counts toward p.treats as usual
+        dropped:!isTreat, icon:idef?idef.icon:'❓', pickupAt:performance.now()+700+slot*90 });
+      slot++;
+    };
+    loot.forEach(entry=>{
+      if(entry.treats){ for(let i=0;i<entry.treats;i++) drop(Math.random()<0.7?'bone':'heart', 1, true); }
+      else drop(entry.item, entry.qty||1, false);
+    });
+    showToast(`✨ ${def.name} opened!`, 1800);
+  },
+
+  draw(e, t){
+    const def=Chests.def(e.rarity);
+    const x=Math.round(e.x), y=Math.round(e.y);
+
+    if(e.state==='buried'){
+      const p=p1; if(!p || p.dead) return;
+      const d=Math.hypot(p.x-e.x, p.y-e.y);
+      const scentR=(p.stats && p.stats.scentR) || 120;
+      if(d>scentR) return;                          // completely hidden
+
+      // sniff wisps at the dog's nose — pulse faster the closer you are
+      const closeness=1-d/scentR;                  // 0 far → 1 on top of it
+      const period=900-(900-260)*closeness;        // wisp pulse speeds up as you close in
+      const ph=(t%period)/period;
+      ctx.save();
+      ctx.globalAlpha=0.5*(1-ph)*(0.4+0.6*closeness);
+      ctx.fillStyle='#F0E6D2';
+      const nx=p.x+(p.dir==='right'?12:p.dir==='left'?-12:0);
+      const ny=p.y-(p.dir==='up'?18:6)-ph*8;
+      ctx.beginPath(); ctx.arc(nx-2, ny, 1.6+ph*1.4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(nx+2, ny-3, 1.2+ph*1.2, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      // within reach: loose-dirt patch + pulsing "!" (npc-style prompt)
+      if(d<46){
+        ctx.save();
+        ctx.globalAlpha=0.85;
+        ctx.fillStyle='#A98456';
+        ctx.beginPath(); ctx.ellipse(x, y+4, 13, 6, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='#8B6B4A';
+        px(x-6,y+1,4,3,'#8B6B4A'); px(x+2,y+4,5,3,'#8B6B4A'); px(x-2,y+6,3,2,'#7A5C40');
+        ctx.restore();
+        if(e.digT>0){
+          // dig progress ring
+          const prog=1-(e.digT/(e._digMax||def.digMs));
+          ctx.save();
+          ctx.lineWidth=3; ctx.strokeStyle='rgba(74,63,53,0.35)';
+          ctx.beginPath(); ctx.arc(x, y-18, 9, 0, Math.PI*2); ctx.stroke();
+          ctx.strokeStyle='#FFD93D';
+          ctx.beginPath(); ctx.arc(x, y-18, 9, -Math.PI/2, -Math.PI/2+prog*Math.PI*2); ctx.stroke();
+          ctx.restore();
+        } else {
+          const pulse=1+Math.sin(t/240)*0.12;
+          ctx.save();
+          ctx.translate(x, y-16); ctx.scale(pulse, pulse);
+          ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.lineWidth=3; ctx.strokeStyle='#FFF8EF'; ctx.strokeText('!',0,0);
+          ctx.fillStyle='#C08A2A'; ctx.fillText('!',0,0);
+          ctx.restore();
+        }
+      }
+      return;
+    }
+
+    // ---- dug / open: the chest itself ----
+    // soft glow for precious rarities
+    if(def.glow){
+      const gr=16+Math.sin(t/300)*2;
+      ctx.save(); ctx.globalAlpha=0.5;
+      const g=ctx.createRadialGradient(x,y-4,2,x,y-4,gr+8);
+      g.addColorStop(0,def.glow); g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-4,gr+8,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // shadow
+    ctx.globalAlpha=0.2; ctx.beginPath(); ctx.ellipse(x,y+9,13,4,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+
+    if(e.state==='open'){
+      // open lid behind the box + dark interior
+      px(x-10,y-14,20,6,def.lid); px(x-10,y-14,20,2,def.band);
+      px(x-9,y-8,18,4,'#241A10');
+      px(x-10,y-6,20,12,def.base);
+      px(x-10,y-6,20,2,def.band);
+      px(x-10,y+4,20,2,def.band);
+    } else {
+      // closed box with domed lid + band + hasp
+      px(x-10,y-4,20,10,def.base);
+      px(x-10,y-10,20,7,def.lid);
+      px(x-9,y-12,18,3,def.lid);
+      px(x-10,y-4,20,2,def.band);
+      px(x-2,y-5,4,6,def.band);                    // hasp plate
+      const lockCol=(def.locked && !e.unlocked) ? '#3A3630' : def.band;
+      px(x-1,y-3,2,3,lockCol);                     // keyhole / latch
+      if(def.locked && !e.unlocked){
+        // padlock dangle
+        px(x-2,y+1,4,4,'#4A4640'); px(x-1,y+2,2,2,'#2A2620');
+      }
+      // twinkle on precious chests
+      if(def.glow && Math.floor(t/400)%3===0){ px(x+5,y-9,2,2,'#FFFFFF'); }
+    }
+  },
+});
+
+// ===== src/entities/portal.js =====
+// ====================== ENTITY: EXIT PORTAL ======================
+// Spawns when a level's quest completes (update.js checkWin): instead of the world
+// map opening automatically, the dog walks into this swirling gate to move on. It is
+// tinted with the CURRENT biome's colours and floats the NEXT biome's icon above it,
+// so every environment gets its own themed doorway. On biome finales a golden chest
+// spawns beside it (see checkWin).
+
+Entities.register('portal', {
+  radius: 0,   // not action-key interactable — walking in triggers it
+
+  init(e){
+    e.colA = e.colA || '#9B7EC8';    // swirl primary (biome colour)
+    e.colB = e.colB || '#FFD93D';    // swirl accent
+    e.icon = e.icon || '✨';         // destination biome icon floating above
+    e.used = !!e.used;
+  },
+
+  update(e, t, dt){
+    if(e.used) return;
+    const p=p1;
+    if(!p || p.dead) return;
+    if(Math.hypot(p.x-e.x, p.y-e.y)<26){
+      e.used=true;
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-10, e.colB, 24);
+      // Freeze the world and reveal the journey map (the flow checkWin used to run).
+      Game.state=SCENES.WORLDMAP;
+      const id=e.levelId;
+      setTimeout(()=>{ if(typeof WorldMap!=='undefined') WorldMap.showAfter(id); }, 500);
+    }
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    ctx.save();
+    // ground glow
+    ctx.globalAlpha=0.35+Math.sin(t/350)*0.1;
+    const gg=ctx.createRadialGradient(x,y+6,2,x,y+6,26);
+    gg.addColorStop(0,e.colB); gg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.ellipse(x,y+6,26,10,0,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+
+    // standing oval gate: swirling arcs alternating biome colours
+    for(let i=0;i<3;i++){
+      const ph=(t/900+i/3)%1;
+      ctx.globalAlpha=0.75*(1-Math.abs(ph-0.5));
+      ctx.strokeStyle=i%2?e.colB:e.colA;
+      ctx.lineWidth=3-i*0.6;
+      ctx.beginPath();
+      ctx.ellipse(x, y-14, 12+ph*5, 20+ph*4, Math.sin(t/700+i)*0.15, 0, Math.PI*2);
+      ctx.stroke();
+    }
+    // inner shimmer
+    ctx.globalAlpha=0.55+Math.sin(t/220)*0.2;
+    const ig=ctx.createRadialGradient(x,y-14,1,x,y-14,14);
+    ig.addColorStop(0,'#FFFFFF'); ig.addColorStop(0.5,e.colA); ig.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=ig; ctx.beginPath(); ctx.ellipse(x,y-14,11,18,0,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+
+    // orbiting sparkle dots
+    for(let i=0;i<4;i++){
+      const a=t/500+i*Math.PI/2;
+      ctx.globalAlpha=0.8;
+      ctx.fillStyle=i%2?e.colB:'#FFFFFF';
+      ctx.fillRect(Math.round(x+Math.cos(a)*15)-1, Math.round(y-14+Math.sin(a)*22)-1, 2, 2);
+    }
+    ctx.globalAlpha=1;
+
+    // destination biome icon bobbing above the gate
+    ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(e.icon, x, y-44+Math.sin(t/400)*2);
+    ctx.restore();
+  },
+});
+
+// ===== src/entities/spiritwolf.js =====
+// ====================== ENTITY: SPIRIT WOLF (Dinno's summon) ======================
+// A translucent storm-wolf conjured by Spirit of the Storm (abilities/spiritWolf.js).
+// It hunts the nearest damageable enemy with lightning-crackling bites; with nothing
+// to hunt it trots at its summoner's side. Despawns in a poof when lifeT runs out.
+// Plain-data state ({lifeT, dmg, chain, biteCd}) so it rides through save/load.
+
+Entities.register('spiritwolf', {
+  radius: 0,   // not interactable
+
+  init(e){
+    e.lifeT  = (typeof e.lifeT==='number') ? e.lifeT : 12000;
+    e.dmg    = e.dmg || 2;
+    e.chain  = !!e.chain;            // L3: bites arc to a second enemy
+    e.speed  = e.speed || 1.5;
+    e.biteCd = e.biteCd || 0;
+    e.dir    = 1;
+    e.arcT   = 0;                    // brief lightning-arc visual after a chain bite
+  },
+
+  _prey(e){
+    let best=null, bestD=Infinity;
+    for(const o of entities){
+      if(o===e || typeof o.hp!=='number' || (o.kind!=='enemy' && o.kind!=='wolf')) continue;
+      const d=Math.hypot(o.x-e.x, o.y-e.y);
+      if(d<bestD){ best=o; bestD=d; }
+    }
+    return best;
+  },
+
+  update(e, t, dt){
+    e.lifeT-=dt;
+    if(e.lifeT<=0){
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-8, '#7FD4FF', 18);
+      Entities.remove(e);
+      return;
+    }
+    if(e.biteCd>0) e.biteCd=Math.max(0, e.biteCd-dt);
+    if(e.arcT>0){ e.arcT=Math.max(0, e.arcT-dt); }
+
+    const prey=this._prey(e);
+    if(prey){
+      const dist=Math.hypot(prey.x-e.x, prey.y-e.y);
+      const ang=Math.atan2(prey.y-e.y, prey.x-e.x);
+      if(dist>18){
+        e.x+=Math.cos(ang)*e.speed*dtScale;
+        e.y+=Math.sin(ang)*e.speed*dtScale;
+      }
+      e.dir=Math.cos(ang)>=0?1:-1;
+      if(dist<20 && e.biteCd<=0){
+        e.biteCd=700;
+        Entities.hurt(prey, e.dmg, e.x, e.y, 10);
+        if(typeof spawnSparkles==='function') spawnSparkles(prey.x, prey.y-8, '#7FD4FF', 8);
+        // L3: the bite arcs lightning to a second enemy nearby (half damage)
+        if(e.chain){
+          let second=null, bd=100;
+          for(const o of entities){
+            if(o===prey || o===e || typeof o.hp!=='number' || (o.kind!=='enemy' && o.kind!=='wolf')) continue;
+            const d=Math.hypot(o.x-prey.x, o.y-prey.y);
+            if(d<bd){ second=o; bd=d; }
+          }
+          if(second){
+            e.arcT=200; e.arcFrom={x:prey.x,y:prey.y-8}; e.arcTo={x:second.x,y:second.y-8};
+            Entities.hurt(second, Math.max(1,Math.ceil(e.dmg/2)), prey.x, prey.y, 8);
+            spawnSparkles(second.x, second.y-8, '#7FD4FF', 6);
+          }
+        }
+      }
+    } else {
+      // heel: trot back to the summoner's side
+      const dog=p1;
+      if(dog && !dog.dead){
+        const dist=Math.hypot(dog.x-e.x, dog.y-e.y);
+        if(dist>56){
+          const ang=Math.atan2(dog.y-e.y, dog.x-e.x);
+          e.x+=Math.cos(ang)*e.speed*dtScale;
+          e.y+=Math.sin(ang)*e.speed*dtScale;
+          e.dir=Math.cos(ang)>=0?1:-1;
+        }
+      }
+    }
+    e.x=clamp(e.x, 20, WORLD_W-20);
+    e.y=clamp(e.y, 26, WORLD_H-20);
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/240)*1.5);
+    const D=e.dir;
+    const body='#6E7C92', belly='#96A6BC', dark='#4A5568';
+    const fading=e.lifeT<1500 ? Math.max(0.15, e.lifeT/1500) : 1;   // fade out at the end
+
+    ctx.save();
+    ctx.globalAlpha=0.65*fading;
+
+    // spectral glow under it instead of a shadow
+    const gg=ctx.createRadialGradient(x,y+9,1,x,y+9,16);
+    gg.addColorStop(0,'rgba(127,212,255,0.5)'); gg.addColorStop(1,'rgba(127,212,255,0)');
+    ctx.fillStyle=gg; ctx.beginPath(); ctx.ellipse(x,y+9,16,6,0,0,Math.PI*2); ctx.fill();
+
+    // wolf silhouette (compact version of the mountain wolf)
+    px(x-D*13-2,y-6,7,6,dark); px(x-D*15-2,y-8,5,5,body);   // bushy tail
+    px(x-12,y-5,24,13,body);
+    px(x-9,y+1,18,6,belly);
+    px(x-9,y+7,4,6,dark); px(x-2,y+7,4,6,dark); px(x+6,y+7,4,6,dark);
+    px(x+D*7-7,y-11,14,12,body);
+    px(x+D*7-6,y-15,4,5,dark); px(x+D*7+2,y-15,4,5,dark);
+    px(x+D*10-3,y-4,7,5,belly);
+    // glowing storm eyes
+    px(x+D*7-4,y-7,2,2,'#7FD4FF'); px(x+D*7+2,y-7,2,2,'#7FD4FF');
+
+    // crackling spark flecks
+    for(let i=0;i<3;i++){
+      const a=t/160+i*2.1;
+      const sx=x+Math.cos(a)*(10+i*3), sy=y-6+Math.sin(a*1.3)*8;
+      if(Math.floor(t/120+i)%3===0){ ctx.fillStyle=i%2?'#7FD4FF':'#FFFFFF'; ctx.fillRect(Math.round(sx),Math.round(sy),2,2); }
+    }
+
+    // chain-lightning arc visual after an L3 bite
+    if(e.arcT>0 && e.arcFrom && e.arcTo){
+      ctx.globalAlpha=(e.arcT/200)*fading;
+      ctx.strokeStyle='#AEE8FF'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(e.arcFrom.x, e.arcFrom.y);
+      const mx=(e.arcFrom.x+e.arcTo.x)/2+rand(-6,6), my=(e.arcFrom.y+e.arcTo.y)/2+rand(-6,6);
+      ctx.lineTo(mx,my); ctx.lineTo(e.arcTo.x, e.arcTo.y); ctx.stroke();
+    }
+
+    ctx.restore();
+  },
+});
+
 // ===== src/dog-sprite.js =====
 // ====================== DOG SPRITE ======================
 function drawDog(p,t){
@@ -3838,6 +4648,20 @@ function drawDog(p,t){
     ctx.restore();
   }
 
+  // Piercing Scream (Lolla): pink sound-wave arcs bursting sideways from the muzzle.
+  if(p.screamT>0){
+    ctx.save();
+    ctx.lineWidth=2; ctx.strokeStyle='#FF9ED2'; ctx.lineCap='round';
+    const dirA = p.dir==='left' ? Math.PI : 0;   // arcs face the way she's looking
+    for(let i=0;i<3;i++){
+      const ph=((t/300)+i/3)%1;
+      ctx.globalAlpha=0.8*(1-ph);
+      ctx.beginPath(); ctx.arc(x, by-8, 6+ph*16, dirA-Math.PI*0.35, dirA+Math.PI*0.35);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // Active-ability overlay drawn on the dog (e.g. Lolla's ball in mouth)
   Abilities.drawOnDog(p,x,by);
 
@@ -3878,8 +4702,20 @@ function drawDog(p,t){
 }
 
 function _drawDinno(x,by,t,C,D,L,W,K,p){
-  // Red/copper husky with distinctive white face mask — fixed real-dog colors
-  const RC='#C07040', RD=shade(RC,-30), RL=shade(RC,40), RW='#F0EAD8';
+  // Red/copper husky with distinctive white face mask — fixed real-dog colors.
+  // Storm Fang (p.wolfT>0) swaps the coat to storm-grey with glowing eyes + sparks.
+  const storm=p.wolfT>0;
+  const RC=storm?'#5A6470':'#C07040', RD=storm?'#3A424E':shade('#C07040',-30),
+        RL=storm?'#7A879A':shade('#C07040',40), RW=storm?'#C8D4E4':'#F0EAD8';
+  if(storm) K='#7FD4FF';               // eyes (and nose) glow electric blue
+  if(storm){
+    // crackling spark flecks around the body
+    for(let i=0;i<4;i++){
+      const a=t/150+i*1.7;
+      const sx=x+Math.cos(a)*(11+(i%2)*4), sy=by-8+Math.sin(a*1.4)*11;
+      if(Math.floor(t/110+i)%3===0){ ctx.fillStyle=i%2?'#7FD4FF':'#FFFFFF'; ctx.fillRect(Math.round(sx),Math.round(sy),2,2); }
+    }
+  }
   if(p.howling){
     px(x-10,by-2,20,14,RC); px(x-6,by+4,12,8,RW);
     px(x-7,by-16,14,16,RC); px(x-5,by-13,10,10,RW);
@@ -3953,9 +4789,19 @@ function _drawTapka(x,by,t,C,D,L,W,K,p){
   // Prague Ratter: tiny fawn dog, oversized upright ears, big dark eyes and a
   // greying muzzle — fixed real-dog colors, ignores player color. Drawn smaller
   // than every other breed (she's a featherweight).
-  const TC='#B5854F', TD=shade(TC,-32), TL=shade(TC,38);
-  const TG='#D9CFC0';   // greying muzzle / light chest
-  const PK='#D8A090';   // ear inner
+  // Inner Monster (p.monsterT>0) swaps to a dark reddish feral coat with red glowing eyes.
+  const monster=p.monsterT>0;
+  const TC=monster?'#7A4A42':'#B5854F', TD=monster?'#4E2E2A':shade('#B5854F',-32), TL=shade('#B5854F',38);
+  const TG=monster?'#A98A82':'#D9CFC0';   // greying muzzle / light chest
+  const PK=monster?'#A83A2E':'#D8A090';   // ear inner
+  if(monster){
+    K='#FF2015';                          // eyes + nose glow red
+    for(let i=0;i<4;i++){                 // red spark flecks around the body
+      const a=t/140+i*1.6;
+      const sx=x+Math.cos(a)*(9+(i%2)*4), sy=by-6+Math.sin(a*1.4)*10;
+      if(Math.floor(t/100+i)%3===0){ ctx.fillStyle=i%2?'#FF5030':'#FFC0B0'; ctx.fillRect(Math.round(sx),Math.round(sy),2,2); }
+    }
+  }
   if(p.howling){
     // tiny sit-back howl, muzzle to the sky
     px(x-7,by+1,14,10,TC); px(x-4,by+4,8,6,TG);
@@ -4115,6 +4961,17 @@ function drawMinimap(){
   entities.forEach(e=>{
     if(e.kind==='grave'){ ctx.fillStyle='#9A9A92'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-2,3,4); return; }
     if(e.kind==='critter'){ ctx.fillStyle='#7FE0A0'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4); return; }
+    if(e.kind==='chest'){
+      // buried chests stay secret (that's what noses are for); dug ones glint gold
+      if(e.state==='dug'){ ctx.fillStyle='#FFC400'; ctx.fillRect(MX+e.x*sx-1,MY+e.y*sy-1,3,3); }
+      return;
+    }
+    if(e.kind==='portal'){
+      const pulse=0.6+Math.sin(performance.now()/250)*0.4;
+      ctx.globalAlpha=pulse; ctx.fillStyle='#FFD93D';
+      ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,5,5); ctx.globalAlpha=1;
+      return;
+    }
     ctx.fillStyle=hostile[e.kind]?'#E05555':'#FFE08A'; ctx.fillRect(MX+e.x*sx-2,MY+e.y*sy-2,4,4);
   });
   // viewport
@@ -4155,7 +5012,15 @@ const Abilities = {
   spawnAll(){ for(const id in this._defs){ const d=this._defs[id]; if(d.spawn) d.spawn(); } },
   reset(){ for(const id in this._defs){ const d=this._defs[id]; if(d.reset) d.reset(); } },
 
+  // ---- shared cooldowns ----
+  // Per-player, per-ability cooldowns live in p.abilityCd (plain ms map, initialised
+  // by makePlayer; deliberately NOT saved — cooldowns reset on load). Ticked here so
+  // every ability def gets them for free.
+  cdLeft(p, id){ return (p && p.abilityCd && p.abilityCd[id]) || 0; },
+  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; },
+
   update(p, dt){
+    if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });
@@ -4169,112 +5034,150 @@ const Abilities = {
 };
 
 // ===== src/abilities/ballCannon.js =====
-// ====================== ABILITY: BALL CANNON ======================
-// Formerly src/lolla.js. The tennis-ball + cannon fetch mini-game, now registered
-// as an ability so ANY breed with 'ballCannon' in an ability slot gets it (currently Lolla).
-// State (ball, cannon, dropHeld) is private to this module instead of being global.
+// ====================== ABILITY: BALL CANNON (placeable turret) ======================
+// Lolla's signature ability, gated by the 'cannon' skill-tree node (data/skills.js).
+// Q places (or moves) the cannon at her feet. Load it by USING a 🎾 ball from the
+// hotbar while standing within LOAD_R of it (ui.js useHotbar 'toy' branch calls
+// Abilities.tryLoadBall). It auto-fires at the nearest enemy in range: hit enemies
+// take damage + a knockback shove (Entities.hurt), and the spent ball drops as a
+// collectible at the impact point — ammo is recyclable. Skill levels (L1–L3) raise
+// magazine size, fire rate, range, damage, and finally auto-reload from the bag.
 
 (function(){
-  let ball   = null;   // { x, y, state:'idle'|'held'|'flying', carrier, ... }
-  let cannon = null;   // { x, y, angle, firingT, smoke[] }
-  let dropHeld = false;
+  let cannon = null;   // { x, y, angle, mag, fireCd, firingT, smoke[], reloadCd }
+  let shots  = [];     // flying balls: { x,y, sx,sy, tx,ty, prog, dur, target }
 
-  // The active player carrying this ability (replaces getLollaPlayer()).
+  const LOAD_R  = 48;  // stand this close to load / auto-reload
+  const PARAMS  = {    // per skill level (index = level)
+    1: { cap:1, range:180, dmg:2, fireMs:1400, autoReload:false },
+    2: { cap:3, range:180, dmg:2, fireMs:1000, autoReload:false },
+    3: { cap:3, range:260, dmg:3, fireMs:1000, autoReload:true  },
+  };
+
   function owner(){
     for(const p of Game.players){ if(Abilities.playerHas(p,'ballCannon')) return p; }
     return null;
   }
+  function skillLevel(p){ return (typeof Skills!=='undefined' && p) ? Skills.level(p,'cannon') : 0; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(1, skillLevel(p)))]; }
 
-  function spawn(){
-    ball=null; cannon=null;
-    const dog=owner();
-    if(!dog) return;
+  function spawn(){ /* nothing pre-placed — Lolla places the cannon herself */ }
+  function reset(){ cannon=null; shots=[]; }
 
-    let bx,by;
-    do{ bx=rand(200,WORLD_W-200); by=rand(200,WORLD_H-200); }
-    while(Math.hypot(bx-dog.x,by-dog.y)<160 || isInPond(bx,by));
-
-    ball={ x:bx, y:by, state:'idle', carrier:null,
-           startX:bx, startY:by, landX:bx, landY:by,
-           flightProgress:0, flightDuration:1500 };
-
-    let cx,cy;
-    do{ cx=rand(250,WORLD_W-250); cy=rand(250,WORLD_H-250); }
-    while(Math.hypot(cx-bx,cy-by)<220 || Math.hypot(cx-dog.x,cy-dog.y)<180 || isInPond(cx,cy));
-
-    cannon={ x:cx, y:cy, angle:Math.random()*Math.PI*2, firingT:0, smoke:[] };
+  // Q pressed (registry routes the ability trigger here via onTrigger).
+  function place(p){
+    const lvl=skillLevel(p);
+    if(lvl<1){
+      showToast(`🌳 Learn Ball Cannon in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      return;
+    }
+    const cd=Abilities.cdLeft(p,'ballCannon');
+    if(cd>0){ showToast(`⏳ Cannon recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
+    Abilities.startCd(p,'ballCannon',2000);   // placement feels deliberate, not spammy
+    const spot={ x:p.x, y:p.y+6 };
+    nudgeOutOfWater(spot, 20);
+    if(!cannon) cannon={ x:spot.x, y:spot.y, angle:0, mag:0, fireCd:0, firingT:0, smoke:[], reloadCd:0 };
+    else { cannon.x=spot.x; cannon.y=spot.y; }
+    spawnSparkles(spot.x, spot.y-6, '#C9A6FF', 10);
+    if(typeof sfxCollect==='function') sfxCollect();
+    showToast(cannon.mag>0 ? '🎾 Cannon moved (magazine kept)' : '🎾 Cannon placed — load it with balls from your hotbar!', 1800);
   }
 
-  function reset(){ ball=null; cannon=null; dropHeld=false; }
+  // Called from ui.js useHotbar when a 🎾 ball is used. Returns:
+  //   'loaded' — ball went into the magazine (caller consumes it from the bag)
+  //   'full'   — near the cannon but the magazine is full (ball kept, toast shown)
+  //   false    — no cannon / not near it (caller falls back to play-flavor)
+  function tryLoadBall(p){
+    if(!cannon || !Abilities.playerHas(p,'ballCannon') || skillLevel(p)<1) return false;
+    if(Math.hypot(p.x-cannon.x, p.y-cannon.y)>LOAD_R) return false;
+    const cap=params(p).cap;
+    if(cannon.mag>=cap){ showToast(`🎾 Magazine full (${cannon.mag}/${cap})`, 1200); return 'full'; }
+    cannon.mag++;
+    if(typeof sfxCollect==='function') sfxCollect();
+    showToast(`🎾 Loaded! (${cannon.mag}/${cap})`, 1200);
+    return 'loaded';
+  }
+
+  function nearestEnemy(range){
+    let best=null, bestD=range;
+    for(const e of entities){
+      if(typeof e.hp!=='number' || (e.kind!=='enemy' && e.kind!=='wolf')) continue;
+      const d=Math.hypot(e.x-cannon.x, e.y-cannon.y);
+      if(d<bestD){ best=e; bestD=d; }
+    }
+    return best;
+  }
 
   function update(p, dt, trigger){
-    if(!ball || !cannon) return;
     const dog=owner();
     if(!dog || dog.id!==p.id) return;
 
-    // Advance cannon animation
+    // Q → place / move (edge-triggered)
+    const held=Input.held(trigger);
+    if(held && !update._qHeld) place(p);
+    update._qHeld=held;
+
+    if(!cannon) return;
+    const cfg=params(p);
+
+    // animation bookkeeping
     if(cannon.firingT>0){
       cannon.firingT=Math.max(0, cannon.firingT-dt);
       cannon.smoke.forEach(s=>{ s.x+=s.vx*dtScale; s.y+=s.vy*dtScale; s.vy-=0.04*dtScale; s.life-=dt; s.r+=0.04*dtScale; });
       cannon.smoke=cannon.smoke.filter(s=>s.life>0);
     }
+    if(cannon.fireCd>0) cannon.fireCd=Math.max(0, cannon.fireCd-dt);
 
-    if(ball.state==='idle'){
-      if(Math.hypot(p.x-ball.x, p.y-ball.y)<22){
-        ball.state='held'; ball.carrier=p.id;
-        showToast(`🎾 Ball! [${Input.keyName(Input.bindings[trigger][0]||Input.bindings[trigger][1])}] near cannon to fire · elsewhere to drop`,2800);
+    // L3: auto-reload from the bag while Lolla stands close
+    if(cfg.autoReload && cannon.mag<cfg.cap && Math.hypot(p.x-cannon.x,p.y-cannon.y)<LOAD_R){
+      cannon.reloadCd-=dt;
+      if(cannon.reloadCd<=0 && Inventory.count(p,'ball')>0){
+        Inventory.remove(p,'ball',1); cannon.mag++;
+        cannon.reloadCd=1200;
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🎾 Auto-loaded (${cannon.mag}/${cfg.cap})`, 900);
+        if(typeof updateHUD==='function') updateHUD();
       }
-    }
+    } else cannon.reloadCd=0;
 
-    if(ball.state==='held' && ball.carrier===p.id){
-      ball.x=p.x; ball.y=p.y;
+    // auto-fire at the nearest enemy in range
+    const target=nearestEnemy(cfg.range);
+    if(target) cannon.angle=Math.atan2(target.y-cannon.y, target.x-cannon.x);   // track it
+    if(target && cannon.mag>0 && cannon.fireCd<=0) fire(target, cfg);
 
-      if(Input.held(trigger) && !dropHeld){
-        dropHeld=true;
-        const nearCannon=Math.hypot(p.x-cannon.x, p.y-cannon.y)<48;
-        if(nearCannon){
-          fire();
-          showToast('💥 Fired! Go fetch!',1600);
-          sfxCollect();
-        } else {
-          const ox=p.dir==='right'?14:p.dir==='left'?-14:0;
-          const oy=p.dir==='down'?12:p.dir==='up'?-12:0;
-          ball.x=clamp(p.x+ox,60,WORLD_W-60);
-          ball.y=clamp(p.y+oy,60,WORLD_H-60);
-          ball.state='idle'; ball.carrier=null;
+    // advance flying balls — they HOME onto their target (moving wolves used to
+    // outrun shots aimed at their fire-time position, so nothing ever landed)
+    shots.forEach(s=>{
+      const e=s.target;
+      const alive=e && entities.indexOf(e)!==-1;
+      if(alive){ s.tx=e.x; s.ty=e.y; }             // keep tracking while it lives
+      s.prog+=dt/s.dur;
+      if(s.prog>=1){
+        s.done=true;
+        if(alive){
+          Entities.hurt(e, s.dmg, cannon.x, cannon.y, 12);
+          spawnSparkles(s.tx, s.ty-6, '#B5E853', 10);
         }
-      }
-      if(!Input.held(trigger)) dropHeld=false;
-    }
-
-    if(ball.state==='flying'){
-      ball.flightProgress+=dt/ball.flightDuration;
-      if(ball.flightProgress>=1){
-        ball.flightProgress=1;
-        ball.x=ball.landX; ball.y=ball.landY;
-        ball.state='idle'; ball.carrier=null;
-        spawnSparkles(ball.x,ball.y,'#B5E853',8);
-        showToast('🎾 Fetch!',1200);
+        // the spent ball lands as plain recyclable ammo (no treat, no glow badge)
+        const spot={ x:clamp(s.tx+rand(-10,10), 30, WORLD_W-30), y:clamp(s.ty+rand(-6,10), 30, WORLD_H-30) };
+        nudgeOutOfWater(spot, 12);
+        collectibles.push({ x:spot.x, y:spot.y, type:'ball', taken:false, bob:rand(0,Math.PI*2),
+                            dropped:true, plain:true, pickupAt:performance.now()+650 });
       } else {
-        ball.x=ball.startX+(ball.landX-ball.startX)*ball.flightProgress;
-        ball.y=ball.startY+(ball.landY-ball.startY)*ball.flightProgress;
+        s.x=s.sx+(s.tx-s.sx)*s.prog;
+        s.y=s.sy+(s.ty-s.sy)*s.prog;
       }
-    }
+    });
+    shots=shots.filter(s=>!s.done);
   }
 
-  function fire(){
-    // New random direction every shot
-    cannon.angle=Math.random()*Math.PI*2;
-
-    const dist=300+rand(0,120);
-    ball.startX=cannon.x; ball.startY=cannon.y;
-    ball.landX=clamp(cannon.x+Math.cos(cannon.angle)*dist, 80, WORLD_W-80);
-    ball.landY=clamp(cannon.y+Math.sin(cannon.angle)*dist, 80, WORLD_H-80);
-    ball.flightProgress=0; ball.state='flying'; ball.carrier=null;
-    ball.x=cannon.x; ball.y=cannon.y;
-
-    cannon.firingT=500; // ms total animation
-
+  function fire(target, cfg){
+    cannon.mag--;
+    cannon.fireCd=cfg.fireMs;
+    cannon.firingT=500;
+    shots.push({ sx:cannon.x, sy:cannon.y-6, x:cannon.x, y:cannon.y-6,
+                 tx:target.x, ty:target.y, prog:0, dur:280, target, dmg:cfg.dmg });
+    if(typeof sfxDeliver==='function') sfxDeliver();
     const tipX=cannon.x+Math.cos(cannon.angle)*35;
     const tipY=cannon.y+Math.sin(cannon.angle)*35;
     for(let i=0;i<6;i++){
@@ -4290,39 +5193,33 @@ const Abilities = {
 
   // ---- Drawing ----
 
-  function drawWorld(t){ drawCannon(t); drawBall(t); }
-
-  function drawBall(t){
-    if(!ball || ball.state==='held') return;
-    const flightH=ball.state==='flying' ? Math.sin(ball.flightProgress*Math.PI)*50 : 0;
-    const bx=Math.round(ball.x), by=Math.round(ball.y);
-    const visualY=by-flightH;
-
-    ctx.globalAlpha=Math.max(0.04, 0.3*(1-flightH/60));
-    ctx.beginPath();
-    ctx.ellipse(bx, by, Math.max(2,7-flightH*0.06), Math.max(1,3-flightH*0.03), 0,0,Math.PI*2);
-    ctx.fillStyle='#1A2A1A'; ctx.fill();
-    ctx.globalAlpha=1;
-
-    ctx.fillStyle='#B5E853';
-    ctx.beginPath(); ctx.arc(bx, visualY, 5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#CCFF77';
-    ctx.beginPath(); ctx.arc(bx-1, visualY-1, 2.5, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.arc(bx, visualY, 5, 0.35, Math.PI-0.35); ctx.stroke();
-    ctx.beginPath(); ctx.arc(bx, visualY, 5, Math.PI+0.35, Math.PI*2-0.35); ctx.stroke();
-
-    if(ball.state==='flying'){
-      const spin=ball.flightProgress*Math.PI*6;
-      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.arc(bx, visualY, 5, spin, spin+Math.PI); ctx.stroke();
-    }
+  function drawWorld(t){
+    drawCannon(t);
+    shots.forEach(s=>{
+      const h=Math.sin(s.prog*Math.PI)*18;   // small arc
+      const bx=Math.round(s.x), by=Math.round(s.y-h);
+      ctx.fillStyle='#B5E853'; ctx.beginPath(); ctx.arc(bx,by,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#CCFF77'; ctx.beginPath(); ctx.arc(bx-1,by-1,2,0,Math.PI*2); ctx.fill();
+      const spin=s.prog*Math.PI*6;
+      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(bx,by,4,spin,spin+Math.PI); ctx.stroke();
+    });
   }
 
   function drawCannon(t){
     if(!cannon) return;
+    const dog=owner();
+    const cfg=dog?params(dog):PARAMS[1];
     const cx=Math.round(cannon.x), cy=Math.round(cannon.y);
     const bob=cannon.firingT>0 ? 0 : Math.sin(t/700)*1;
+
+    // faint range ring while the owner stands near (helps placement)
+    if(dog && Math.hypot(dog.x-cannon.x,dog.y-cannon.y)<LOAD_R+30){
+      ctx.save();
+      ctx.globalAlpha=0.13; ctx.strokeStyle='#4A6A3A'; ctx.lineWidth=2; ctx.setLineDash([6,7]);
+      ctx.beginPath(); ctx.ellipse(cx,cy,cfg.range,cfg.range*0.6,0,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
 
     cannon.smoke.forEach(s=>{
       const a=Math.max(0, (s.life/400)*0.55);
@@ -4340,6 +5237,7 @@ const Abilities = {
     ctx.fillStyle='#1A2A1A'; ctx.fill();
     ctx.globalAlpha=1;
 
+    // wooden carriage + wheels
     ctx.fillStyle='#6B4C2A'; ctx.fillRect(-16,2,32,8);
     ctx.fillStyle='#7A5830'; ctx.fillRect(-14,0,28,6);
     [-10,10].forEach(wx=>{
@@ -4348,13 +5246,11 @@ const Abilities = {
       ctx.fillStyle='#AA8850'; ctx.beginPath(); ctx.arc(wx,6,1,0,Math.PI*2); ctx.fill();
     });
 
+    // barrel tracks the current target
     ctx.rotate(cannon.angle);
     let recoil=0;
-    if(cannon.firingT>400){
-      recoil=((500-cannon.firingT)/100)*8;
-    } else if(cannon.firingT>300){
-      recoil=((cannon.firingT-300)/100)*8;
-    }
+    if(cannon.firingT>400)      recoil=((500-cannon.firingT)/100)*8;
+    else if(cannon.firingT>300) recoil=((cannon.firingT-300)/100)*8;
 
     ctx.fillStyle='#4A4A4A';
     ctx.beginPath(); ctx.roundRect(4-recoil,-5,28,10,3); ctx.fill();
@@ -4386,31 +5282,466 @@ const Abilities = {
 
     ctx.restore();
 
-    ctx.fillStyle='rgba(255,248,220,0.88)';
-    roundRect(cx-30,cy+bob-32,60,13,3,true,false);
-    ctx.fillStyle='#4A3F35';
-    ctx.font='bold 7px monospace'; ctx.textAlign='center';
-    ctx.fillText('BALL CANNON',cx,cy+bob-22);
+    // magazine pips above the cannon (loaded balls / capacity)
+    const cap=cfg.cap;
+    const pipsW=cap*8-3;
+    for(let i=0;i<cap;i++){
+      const px0=cx-pipsW/2+i*8, py0=cy+bob-24;
+      ctx.beginPath(); ctx.arc(px0+2, py0, 3, 0, Math.PI*2);
+      ctx.fillStyle=i<cannon.mag ? '#B5E853' : 'rgba(255,248,239,0.4)';
+      ctx.fill();
+      ctx.lineWidth=1; ctx.strokeStyle='rgba(74,63,53,0.6)'; ctx.stroke();
+    }
+    if(cannon.mag===0 && Math.floor(t/600)%2===0){
+      ctx.fillStyle='rgba(255,248,239,0.9)';
+      ctx.font='bold 8px monospace'; ctx.textAlign='center';
+      ctx.fillText('LOAD ME', cx, cy+bob-30);
+    }
   }
 
-  function drawOnDog(p, x, by){
-    if(!ball || ball.state!=='held' || ball.carrier!==p.id) return;
-    const dir=p.dir;
-    let bx, bly;
-    if(dir==='right')     { bx=x+18; bly=by-8; }
-    else if(dir==='left') { bx=x-18; bly=by-8; }
-    else if(dir==='down') { bx=x+1;  bly=by-4; }
-    else return;
+  Abilities.register('ballCannon', {
+    name:'Ball Cannon', icon:'🎾', skillNode:'cannon',
+    spawn, reset, update, drawWorld,
+    tryLoadBall,                       // ui.js useHotbar hook
+    state(){ return cannon; },         // for debugging/tests
+  });
+})();
 
-    ctx.fillStyle='#B5E853';
-    ctx.beginPath(); ctx.arc(bx,bly,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#CCFF77';
-    ctx.beginPath(); ctx.arc(bx-1,bly-1,2,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.arc(bx,bly,4,0.35,Math.PI-0.35); ctx.stroke();
+// ===== src/abilities/stormFang.js =====
+// ====================== ABILITY: STORM FANG (Dinno, Q) ======================
+// Dinno lets out his inner wolf: for the storm's duration his coat turns storm-grey
+// with glowing eyes (p.wolfT drives the palette swap in dog-sprite.js), the sky
+// darkens with rain and ambient flashes, he runs faster, and lightning bolts strike
+// nearby enemies. L2 adds a fear aura (enemies flee); L3 chains bolts to a second
+// enemy. Cooldown-based (abilities/registry.js cd helpers). Gated by the 'stormfang'
+// skill node.
+
+(function(){
+  const PARAMS={
+    1:{ dur:8000,  boltMs:3500, dmg:4, speedMul:1.15, fear:0,   chain:false, cdMs:45000 },
+    2:{ dur:10000, boltMs:2500, dmg:4, speedMul:1.15, fear:160, chain:false, cdMs:45000 },
+    3:{ dur:12000, boltMs:2000, dmg:5, speedMul:1.25, fear:160, chain:true,  cdMs:40000 },
+  };
+  const BOLT_RANGE=220;
+
+  // storm visual state (module-private; resets with the level)
+  let boltCd=0, bolts=[], rain=null, flashT=0, nextFlash=0;
+
+  function owner(){
+    for(const p of Game.players){ if(Abilities.playerHas(p,'stormFang')) return p; }
+    return null;
+  }
+  function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'stormfang') : 0; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  // Exposed so update.js can apply the speed buff.
+  function speedMul(p){ return (p && p.wolfT>0) ? params(p).speedMul : 1; }
+
+  function spawn(){}
+  function reset(){ boltCd=0; bolts=[]; rain=null; flashT=0; nextFlash=0; if(p1) p1.wolfT=0; }
+
+  function activate(p){
+    const L=lvl(p);
+    if(L<1){
+      showToast(`🌳 Learn Storm Fang in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      return;
+    }
+    const cd=Abilities.cdLeft(p,'stormFang');
+    if(cd>0){ showToast(`⏳ Storm Fang recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
+    const cfg=params(p);
+    p.wolfT=cfg.dur;
+    Abilities.startCd(p,'stormFang',cfg.cdMs);
+    boltCd=600;                    // first bolt lands quickly — feels immediate
+    flashT=260; nextFlash=rand(1200,2600);
+    if(typeof sfxThunder==='function') sfxThunder();
+    spawnSparkles(p.x, p.y-14, '#7FD4FF', 20);
+    showToast('⚡ Dinno unleashes his inner wolf!', 1800);
   }
 
-  Abilities.register('ballCannon', { name:'Ball Cannon', icon:'🎾', spawn, reset, update, drawWorld, drawOnDog });
+  function nearestFoe(x, y, range, except){
+    let best=null, bestD=range;
+    for(const e of entities){
+      if(e===except || typeof e.hp!=='number' || (e.kind!=='enemy' && e.kind!=='wolf')) continue;
+      const d=Math.hypot(e.x-x, e.y-y);
+      if(d<bestD){ best=e; bestD=d; }
+    }
+    return best;
+  }
+
+  function strike(p, cfg){
+    const e=nearestFoe(p.x, p.y, BOLT_RANGE, null);
+    if(!e) return;
+    _bolt(e.x, e.y);
+    Entities.hurt(e, cfg.dmg, p.x, p.y, 14);
+    if(cfg.chain){
+      const e2=nearestFoe(e.x, e.y, 120, e);
+      if(e2){ _bolt(e2.x, e2.y); Entities.hurt(e2, Math.ceil(cfg.dmg/2), e.x, e.y, 10); }
+    }
+    flashT=Math.max(flashT, 200);
+    if(typeof sfxThunder==='function') sfxThunder();
+  }
+
+  function _bolt(tx, ty){
+    // jagged polyline from the sky down to the target
+    const pts=[]; const topY=cam.y-20;
+    let x=tx+rand(-30,30);
+    const steps=6;
+    for(let i=0;i<=steps;i++){
+      const yy=topY+(ty-topY)*(i/steps);
+      pts.push({ x:(i===steps)?tx:x+rand(-14,14), y:yy });
+      x=pts[pts.length-1].x;
+    }
+    bolts.push({ pts, life:260 });
+    spawnSparkles(tx, ty-6, '#AEE8FF', 12);
+  }
+
+  function update(p, dt, trigger){
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+
+    // Q → activate (edge-triggered)
+    const held=Input.held(trigger);
+    if(held && !update._qHeld) activate(p);
+    update._qHeld=held;
+
+    bolts.forEach(b=>b.life-=dt);
+    bolts=bolts.filter(b=>b.life>0);
+    if(flashT>0) flashT=Math.max(0,flashT-dt);
+
+    if(!(p.wolfT>0)) return;
+    p.wolfT=Math.max(0, p.wolfT-dt);
+    if(p.wolfT===0){ showToast('🌤️ The storm passes…', 1400); return; }
+
+    const cfg=params(p);
+    // periodic lightning
+    boltCd-=dt;
+    if(boltCd<=0){ strike(p, cfg); boltCd=cfg.boltMs; }
+    // ambient sky flashes
+    nextFlash-=dt;
+    if(nextFlash<=0){ flashT=Math.max(flashT,140); nextFlash=rand(1400,3000); }
+    // fear aura
+    if(cfg.fear>0){
+      for(const e of entities){
+        if(typeof e.hp!=='number' || (e.kind!=='enemy' && e.kind!=='wolf')) continue;
+        if(Math.hypot(e.x-p.x, e.y-p.y)<cfg.fear) e.fearedT=600;
+      }
+    }
+  }
+
+  function drawWorld(t){
+    const dog=owner();
+    const storming=dog && dog.wolfT>0;
+
+    if(storming){
+      // lazily (re)build rain for the viewport
+      if(!rain) rain=Array.from({length:70},()=>({ x:Math.random()*VIEW_W, y:Math.random()*VIEW_H, s:6+Math.random()*7 }));
+      // dark storm tint over the visible viewport (drawn in world space at the camera)
+      const fadeIn=Math.min(1,(params(dog).dur-dog.wolfT)/400), fadeOut=Math.min(1,dog.wolfT/600);
+      const a=0.26*Math.min(fadeIn,fadeOut);
+      ctx.fillStyle=`rgba(18,24,48,${a})`;
+      ctx.fillRect(cam.x, cam.y, VIEW_W, VIEW_H);
+      // rain streaks
+      ctx.strokeStyle='rgba(174,216,255,0.35)'; ctx.lineWidth=1;
+      rain.forEach(r=>{
+        r.x-=r.s*0.35*dtScale; r.y+=r.s*dtScale;
+        if(r.y>VIEW_H){ r.y=-10; r.x=Math.random()*(VIEW_W+60); }
+        const sx=cam.x+((r.x%VIEW_W)+VIEW_W)%VIEW_W, sy=cam.y+r.y;
+        ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx-3,sy+r.s); ctx.stroke();
+      });
+    } else rain=null;
+
+    // lightning bolts
+    bolts.forEach(b=>{
+      const a=b.life/260;
+      ctx.save();
+      ctx.globalAlpha=a;
+      ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=3; ctx.lineJoin='round';
+      ctx.beginPath(); b.pts.forEach((pt,i)=> i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y)); ctx.stroke();
+      ctx.strokeStyle='#7FD4FF'; ctx.lineWidth=1.5;
+      ctx.beginPath(); b.pts.forEach((pt,i)=> i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y)); ctx.stroke();
+      ctx.restore();
+    });
+
+    // white flash (bolt impact / ambient sheet lightning)
+    if(flashT>0){
+      ctx.fillStyle=`rgba(240,248,255,${0.35*(flashT/260)})`;
+      ctx.fillRect(cam.x, cam.y, VIEW_W, VIEW_H);
+    }
+  }
+
+  Abilities.register('stormFang', {
+    name:'Storm Fang', icon:'⚡', skillNode:'stormfang',
+    spawn, reset, update, drawWorld, speedMul,
+  });
+})();
+
+// ===== src/abilities/spiritWolf.js =====
+// ====================== ABILITY: SPIRIT OF THE STORM (Dinno, E) ======================
+// Summons a spectral storm-wolf companion (entities/spiritwolf.js) that hunts enemies
+// on its own for a while, then dissipates. One spirit at a time; cooldown-based and
+// gated by the 'spiritwolf' skill node.
+
+(function(){
+  const PARAMS={
+    1:{ dur:12000, dmg:2, chain:false, cdMs:40000 },
+    2:{ dur:16000, dmg:3, chain:false, cdMs:40000 },
+    3:{ dur:16000, dmg:3, chain:true,  cdMs:32000 },
+  };
+
+  function owner(){
+    for(const p of Game.players){ if(Abilities.playerHas(p,'spiritWolf')) return p; }
+    return null;
+  }
+  function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'spiritwolf') : 0; }
+
+  function spawn(){}
+  function reset(){}   // the spirit is an entity — Entities.clear() handles level changes
+
+  function activate(p){
+    const L=lvl(p);
+    if(L<1){
+      showToast(`🌳 Learn Spirit of the Storm in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      return;
+    }
+    const cd=Abilities.cdLeft(p,'spiritWolf');
+    if(cd>0){ showToast(`⏳ Spirit of the Storm recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
+    const cfg=PARAMS[Math.min(3, L)];
+    // one spirit at a time — re-summoning replaces the old one
+    const old=entities.find(e=>e.kind==='spiritwolf');
+    if(old) Entities.remove(old);
+    const spot={ x:p.x+(p.dir==='left'?-30:30), y:p.y+6 };
+    nudgeOutOfWater(spot, 16);
+    Entities.spawn('spiritwolf', { x:spot.x, y:spot.y, lifeT:cfg.dur, dmg:cfg.dmg, chain:cfg.chain });
+    Abilities.startCd(p,'spiritWolf',cfg.cdMs);
+    if(typeof sfxSummon==='function') sfxSummon();
+    spawnSparkles(spot.x, spot.y-10, '#7FD4FF', 22);
+    showToast('🐺 A spirit wolf answers the call!', 1800);
+  }
+
+  function update(p, dt, trigger){
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+    const held=Input.held(trigger);
+    if(held && !update._eHeld) activate(p);
+    update._eHeld=held;
+  }
+
+  Abilities.register('spiritWolf', {
+    name:'Spirit of the Storm', icon:'🐺', skillNode:'spiritwolf',
+    spawn, reset, update,
+  });
+})();
+
+// ===== src/abilities/scream.js =====
+// ====================== ABILITY: PIERCING SCREAM (Lolla, E) ======================
+// Lolla screams for a few seconds (p.screamT ms). She keeps moving freely; the scream
+// aura follows her. Every pulse it damages + knocks back all foes within radius, and
+// at higher levels has a chance to frighten them (e.fearedT — enemies flee). Expanding
+// shockwave rings visualise each pulse. Cooldown-based; gated by the 'scream' node.
+
+(function(){
+  const PARAMS={
+    1:{ dur:2500, pulseMs:500, dmg:2, radius:95,  fear:0,    cdMs:20000 },
+    2:{ dur:3000, pulseMs:500, dmg:2, radius:115, fear:0.25, cdMs:20000 },
+    3:{ dur:3500, pulseMs:500, dmg:3, radius:135, fear:0.45, cdMs:18000 },
+  };
+  let pulseCd=0, rings=[];
+
+  function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scream')) return p; } return null; }
+  function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scream') : 0; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+
+  function spawn(){}
+  function reset(){ pulseCd=0; rings=[]; if(p1) p1.screamT=0; }
+
+  function activate(p){
+    const L=lvl(p);
+    if(L<1){ showToast(`🌳 Learn Piercing Scream in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    const cd=Abilities.cdLeft(p,'scream');
+    if(cd>0){ showToast(`⏳ Scream recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
+    const cfg=params(p);
+    p.screamT=cfg.dur;
+    Abilities.startCd(p,'scream',cfg.cdMs);
+    pulseCd=0;                           // first pulse immediately
+    if(typeof sfxScream==='function') sfxScream();
+    showToast('🔊 Lolla lets out a piercing scream!', 1600);
+  }
+
+  function pulse(p, cfg){
+    rings.push({ x:p.x, y:p.y, r:16, max:cfg.radius, life:400 });
+    for(const e of entities){
+      if(typeof e.hp!=='number' || (e.kind!=='enemy' && e.kind!=='wolf')) continue;
+      if(Math.hypot(e.x-p.x, e.y-p.y)<=cfg.radius){
+        Entities.hurt(e, cfg.dmg, p.x, p.y, 16);
+        if(cfg.fear>0 && Math.random()<cfg.fear) e.fearedT=800;
+      }
+    }
+  }
+
+  function update(p, dt, trigger){
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+
+    const held=Input.held(trigger);
+    if(held && !update._eHeld) activate(p);
+    update._eHeld=held;
+
+    rings.forEach(r=>{ r.life-=dt; r.r+=(r.max-16)*(dt/400); });
+    rings=rings.filter(r=>r.life>0);
+
+    if(!(p.screamT>0)) return;
+    p.screamT=Math.max(0, p.screamT-dt);
+    const cfg=params(p);
+    pulseCd-=dt;
+    if(pulseCd<=0){ pulse(p, cfg); pulseCd=cfg.pulseMs; if(typeof sfxScream==='function' && p.screamT>0) sfxScream(); }
+  }
+
+  function drawWorld(t){
+    if(!rings.length) return;
+    rings.forEach(r=>{
+      const a=Math.max(0, r.life/400);
+      ctx.save();
+      ctx.globalAlpha=a*0.7;
+      ctx.strokeStyle='#FF9ED2'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r, r.r*0.6, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=a*0.4;
+      ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r*0.7, r.r*0.42, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  Abilities.register('scream', { name:'Piercing Scream', icon:'🔊', skillNode:'scream', spawn, reset, update, drawWorld });
+})();
+
+// ===== src/abilities/innerMonster.js =====
+// ====================== ABILITY: INNER MONSTER (Ťapka, Q) ======================
+// Ťapka lets the beast out (p.monsterT ms): red glowing eyes + darker coat (palette
+// swap in dog-sprite.js), faster, and she gains MELEE contact damage — the first
+// player→enemy damage in the game. A per-player bite cooldown lets her chomp the
+// nearest foe she's touching; every bite HEALS her (lifesteal), the payoff for the
+// frailest dog. Cooldown-based; gated by the 'monster' skill node.
+
+(function(){
+  const PARAMS={
+    1:{ dur:6000,  speedMul:1.25, dmg:2, heal:1, cdMs:30000 },
+    2:{ dur:8000,  speedMul:1.25, dmg:3, heal:2, cdMs:30000 },
+    3:{ dur:10000, speedMul:1.35, dmg:3, heal:2, cdMs:26000 },
+  };
+  const BITE_R=24, BITE_CD=500;
+
+  function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'innerMonster')) return p; } return null; }
+  function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'monster') : 0; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function speedMul(p){ return (p && p.monsterT>0) ? params(p).speedMul : 1; }
+
+  function spawn(){}
+  function reset(){ if(p1){ p1.monsterT=0; p1.meleeCd=0; } }
+
+  function activate(p){
+    const L=lvl(p);
+    if(L<1){ showToast(`🌳 Learn Inner Monster in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    const cd=Abilities.cdLeft(p,'innerMonster');
+    if(cd>0){ showToast(`⏳ Inner Monster recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
+    const cfg=params(p);
+    p.monsterT=cfg.dur; p.meleeCd=0;
+    Abilities.startCd(p,'innerMonster',cfg.cdMs);
+    if(typeof sfxRoar==='function') sfxRoar();
+    spawnSparkles(p.x, p.y-10, '#FF3020', 18);
+    showToast('👹 Ťapka unleashes her inner monster!', 1800);
+  }
+
+  function nearestFoe(p, range){
+    let best=null, bestD=range;
+    for(const e of entities){
+      if(typeof e.hp!=='number' || (e.kind!=='enemy' && e.kind!=='wolf')) continue;
+      const d=Math.hypot(e.x-p.x, e.y-p.y);
+      if(d<bestD){ best=e; bestD=d; }
+    }
+    return best;
+  }
+
+  function update(p, dt, trigger){
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+
+    const held=Input.held(trigger);
+    if(held && !update._qHeld) activate(p);
+    update._qHeld=held;
+
+    if(p.meleeCd>0) p.meleeCd=Math.max(0, p.meleeCd-dt);
+    if(!(p.monsterT>0)) return;
+    p.monsterT=Math.max(0, p.monsterT-dt);
+    if(p.monsterT===0){ showToast('😌 The monster settles…', 1400); return; }
+
+    // melee bite: chomp the nearest touching foe on the bite cooldown (safe — this
+    // runs from Abilities.update, outside the Entities.updateAll loop)
+    if(p.meleeCd<=0){
+      const e=nearestFoe(p, BITE_R);
+      if(e){
+        const cfg=params(p);
+        p.meleeCd=BITE_CD;
+        Entities.hurt(e, cfg.dmg, p.x, p.y, 12);
+        spawnSparkles(e.x, e.y-6, '#FF6040', 8);
+        if(typeof Health!=='undefined'){ const got=Health.heal(p, cfg.heal); if(got>0) spawnSparkles(p.x, p.y-10, '#FF9E9E', 5); }
+      }
+    }
+  }
+
+  Abilities.register('innerMonster', { name:'Inner Monster', icon:'👹', skillNode:'monster', spawn, reset, update, speedMul });
+})();
+
+// ===== src/abilities/scurry.js =====
+// ====================== ABILITY: SCURRY (Ťapka, E) ======================
+// A quick evasive dash in Ťapka's facing direction with a burst of invulnerability —
+// pure escape utility, no damage. Sets p.dashT + p.dashVX/VY (applied in updatePlayer
+// so collisions still resolve) and p.invulnT (Health.damage no-ops while >0). L3 leaves
+// a short speed burst on landing. Cooldown-based; gated by the 'scurry' skill node.
+
+(function(){
+  const DASH_MS=180;
+  const PARAMS={
+    1:{ dist:90,  invulnExtra:120, burstMs:0,    cdMs:9000 },
+    2:{ dist:120, invulnExtra:150, burstMs:0,    cdMs:7000 },
+    3:{ dist:120, invulnExtra:150, burstMs:1000, cdMs:5000 },
+  };
+  const DIRV={ up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+
+  function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scurry')) return p; } return null; }
+  function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scurry') : 0; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  // L3 leaves a brief speed burst after the dash (p.scurryBurstT).
+  function speedMul(p){ return (p && p.scurryBurstT>0) ? 1.3 : 1; }
+
+  function spawn(){}
+  function reset(){ if(p1){ p1.dashT=0; p1.dashVX=0; p1.dashVY=0; p1.scurryBurstT=0; } }
+
+  function activate(p){
+    const L=lvl(p);
+    if(L<1){ showToast(`🌳 Learn Scurry in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    const cd=Abilities.cdLeft(p,'scurry');
+    if(cd>0){ showToast(`⏳ Scurry recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
+    const cfg=params(p);
+    const [ux,uy]=DIRV[p.dir]||DIRV.down;
+    const perFrame=cfg.dist / (DASH_MS/FRAME_MS);   // px per 60fps-frame over the dash
+    p.dashT=DASH_MS; p.dashVX=ux*perFrame; p.dashVY=uy*perFrame;
+    p.invulnT=DASH_MS + cfg.invulnExtra;
+    if(cfg.burstMs>0) p.scurryBurstT=cfg.burstMs;
+    Abilities.startCd(p,'scurry',cfg.cdMs);
+    if(typeof sfxDash==='function') sfxDash();
+    spawnSparkles(p.x, p.y+4, '#D8CFC0', 8);   // dust puff
+    showToast('💨 Scurry!', 900);
+  }
+
+  function update(p, dt, trigger){
+    const dog=owner();
+    if(!dog || dog.id!==p.id) return;
+    const held=Input.held(trigger);
+    if(held && !update._eHeld) activate(p);
+    update._eHeld=held;
+    if(p.scurryBurstT>0) p.scurryBurstT=Math.max(0, p.scurryBurstT-dt);
+  }
+
+  Abilities.register('scurry', { name:'Scurry', icon:'💨', skillNode:'scurry', spawn, reset, update, speedMul });
 })();
 
 // ===== src/level-manager.js =====
@@ -4492,15 +5823,27 @@ function updatePlayer(p,t,dt){
   if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
   if(Input.held('left'))dx--; if(Input.held('right'))dx++;
   p.moving=dx!==0||dy!==0;
+  // Compose active abilities' speed multipliers (each returns 1 while inactive):
+  // Storm Fang, Inner Monster, Scurry's landing burst all contribute here.
+  let spdMul=1;
+  if(typeof Abilities!=='undefined'){
+    (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
+  }
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
-    const spd=p.swimming?p.speed*swimMul:p.speed;
+    const spd=(p.swimming?p.speed*swimMul:p.speed)*spdMul;
     p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
+  }
+  // Scurry dash: a scripted lunge independent of input (abilities/scurry.js sets these).
+  if(p.dashT>0){
+    p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale;
+    p.dashT=Math.max(0, p.dashT-dt);
+    p.moving=true;
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
@@ -4589,11 +5932,28 @@ function checkWin(){
   const q=lvl&&lvl.quest;
   const done=q?q.isComplete():cheeredCount>=CHEER_TOTAL;
   if(!done) return;
+  if(entities.some(e=>e.kind==='portal')) return;   // exit already spawned
   sfxWin();
-  // Freeze the world, then reveal the campaign world map so you can see your progress
-  // and continue to the next level (WorldMap handles "no more content yet" gracefully).
-  Game.state=SCENES.WORLDMAP;
-  setTimeout(()=>{ if(typeof WorldMap!=='undefined') WorldMap.showAfter(lvl.id); }, 700);
+  // The world keeps playing: a biome-themed exit portal appears near the dog, and the
+  // player walks into it to reveal the journey map (portal.js runs the old flow).
+  // On a biome's final level a golden chest materialises beside it.
+  const env=Campaign.envOfLevel(lvl.id);
+  const nextLvl=lvl.next && Levels.get(lvl.next);
+  const nextEnv=nextLvl ? Campaign.envOfLevel(nextLvl.id) : null;
+  // portal spot: a clear patch of dry land near the dog
+  const spot={ x:clamp(p1.x+90, 80, WORLD_W-80), y:clamp(p1.y, 80, WORLD_H-80) };
+  nudgeOutOfWater(spot, 40);
+  Entities.spawn('portal', { x:spot.x, y:spot.y, levelId:lvl.id,
+    colA:(env&&env.color)||'#9B7EC8', colB:'#FFD93D', icon:(nextEnv&&nextEnv.icon)||'✨' });
+  const finale=Campaign.isFinalRealLevel(lvl.id);
+  if(finale){
+    const cs={ x:clamp(spot.x-56, 60, WORLD_W-60), y:spot.y+8 };
+    nudgeOutOfWater(cs, 20);
+    Entities.spawn('chest', { x:cs.x, y:cs.y, rarity:'golden', state:'dug' });
+    spawnSparkles(cs.x, cs.y-8, '#FFD93D', 20);
+  }
+  showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
+                   : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
 }
 
 
@@ -4624,7 +5984,8 @@ const Save = {
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
-             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead };
+             equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
+             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0 };
   },
 
   save(){
@@ -4679,6 +6040,9 @@ const Save = {
       pl.dir = sp.dir; pl.treats = sp.treats;
       pl.inventory = sp.inventory || Inventory.create(); Inventory.cells(pl); // normalize length
       pl.equipment = sp.equipment || {};
+      pl.skills = sp.skills || {};
+      pl.skillPoints = sp.skillPoints || 0;
+      if(typeof Skills!=='undefined') Skills.apply(pl);   // re-derive stats from skills
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       pl.dead = !!sp.dead;
@@ -4718,6 +6082,7 @@ const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
+  skillsOpen: false,  // skill tree — same non-blocking overlay pattern
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -4741,6 +6106,7 @@ const UI = {
     if(this.invOpen) this.renderInventory();
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
+    if(this.skillsOpen) this.renderSkills();
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -4770,7 +6136,8 @@ const UI = {
     if(Game.state===SCENES.PLAYING) this.openJournal();
   },
   openJournal(){
-    this.closeInventory();            // never stack the two non-blocking overlays
+    this.closeInventory();            // never stack the non-blocking overlays
+    this.closeSkills();
     this.journalOpen=true;
     this.renderJournal();
     this._show('questScreen', true);
@@ -4778,6 +6145,71 @@ const UI = {
   closeJournal(){
     this.journalOpen=false;
     this._show('questScreen', false);
+  },
+
+  // ---------- skill tree (K): per-dog character + ability upgrades ----------
+  toggleSkills(){
+    if(this.skillsOpen){ this.closeSkills(); return; }
+    if(Game.state===SCENES.PLAYING) this.openSkills();
+  },
+  openSkills(){
+    this.closeInventory();            // one non-blocking overlay at a time
+    this.closeJournal();
+    this.skillsOpen=true;
+    this.renderSkills();
+    this._show('skillScreen', true);
+  },
+  closeSkills(){
+    this.skillsOpen=false;
+    this._show('skillScreen', false);
+  },
+
+  renderSkills(){
+    const body=this.$('skillBody'); if(!body) return;
+    const p=p1; if(!p){ body.innerHTML=''; return; }
+    const b=Breeds.get(p.breed);
+    const nodes=Skills.nodesFor(p.breed);
+    const row=n=>{
+      const lvl=Skills.level(p,n.id);
+      const pips=n.max>0
+        ? `<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`
+        : '';
+      const lvlDesc=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
+      const nextDesc=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next: ${n.levels[lvl]}</div>` : '';
+      return `<div class="sk-node${n.locked?' locked':''}">
+        <div class="sk-head">
+          <span class="sk-name">${n.icon} ${n.name}</span>
+          ${pips}
+          <span class="sk-btns">
+            <button class="sk-btn" data-act="skdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
+            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(n.locked||lvl>=n.max)?'disabled':''}>+</button>
+          </span>
+        </div>
+        <div class="sk-desc">${n.desc}</div>
+        ${lvlDesc}${nextDesc}
+      </div>`;
+    };
+    body.innerHTML=`
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · Skill points: <b>free</b> <span class="sk-note">(earning them comes later — level as you wish!)</span></div>
+      <div class="q-sect">Character</div>
+      ${nodes.filter(n=>!n.ability).map(row).join('')}
+      <div class="q-sect">Ability</div>
+      ${nodes.filter(n=>n.ability).map(row).join('')}`;
+  },
+
+  _onSkillClick(ev){
+    const btn=ev.target.closest('[data-act]'); if(!btn || btn.disabled) return;
+    const p=p1; if(!p) return;
+    const id=btn.dataset.node;
+    if(btn.dataset.act==='skup'){
+      if(Skills.addPoint(p,id)){
+        if(typeof sfxCollect==='function') sfxCollect();
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-10,'#FFD93D',10);
+      }
+    } else if(btn.dataset.act==='skdown'){
+      Skills.removePoint(p,id);
+    }
+    this.updateHUD();   // hearts/hotbar + re-renders the open tree
   },
 
   renderJournal(){
@@ -4868,6 +6300,7 @@ const UI = {
   // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.skillsOpen){ this.closeSkills(); return; }
     if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
@@ -4877,6 +6310,7 @@ const UI = {
     if(Game.state!==SCENES.PLAYING) return;
     this.closeInventory();            // never stack pause on top of a non-blocking overlay
     this.closeJournal();
+    this.closeSkills();
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this._show('pauseScreen', true);
   },
@@ -4891,6 +6325,7 @@ const UI = {
 
   openInventory(){
     this.closeJournal();              // one non-blocking overlay at a time
+    this.closeSkills();
     this.invOpen=true;
     this._invPlayer=0;
     this.renderInventory();
@@ -5006,15 +6441,27 @@ const UI = {
     if(!show){ bar.innerHTML=''; return; }
     let html='';
     // Ability slots — filled from the breed's abilities (data/breeds.js); empty slots
-    // stay visible (dashed) so every dog shows where future abilities will live.
+    // stay visible (dashed) so every dog shows where future abilities will live. Slots
+    // 0/1 are the standard abilities (Q/E); slot 2 is the ULTIMATE (R), styled apart.
     const abilities=(p1&&p1.abilities)||[];
-    for(let i=0;i<2;i++){
-      const def=Abilities.get(abilities[i]);
+    for(let i=0;i<3;i++){
+      const id=abilities[i];
+      const def=Abilities.get(id);
+      const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      html+=`<button class="hb-slot hb-ability${def?'':' empty'}" title="${def?`${def.name||'Ability'} — press ${key}`:'No ability yet'}">`
+      // An ability the dog carries but hasn't learned yet (skill-tree level 0) shows
+      // as an empty slot pointing at the tree. Gating is data-driven via def.skillNode.
+      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
+      const learned=def && lvl>0;
+      const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
+      const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
+                : def ? `${def.name} — learn it in the Skill Tree (${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])})`
+                : emptyLabel;
+      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" title="${title}">`
         + `<span class="hb-key">${key}</span>`
-        + (def?`<span class="hb-icon">${def.icon||'✨'}</span>`:'')
+        + (learned?`<span class="hb-icon">${def.icon||'✨'}</span>`:(ult?'<span class="hb-icon hb-ult-mark">★</span>':''))
+        + (learned?`<span class="hb-cd" data-ability="${id}"><i></i><b></b></span>`:'')
         + `</button>`;
     }
     html+='<span class="hb-sep"></span>';
@@ -5027,6 +6474,25 @@ const UI = {
         + `</button>`;
     }
     bar.innerHTML=html;
+  },
+
+  // Per-frame cooldown sweep on the hotbar ability slots (called from main.js).
+  // Only touches styles/text — no innerHTML rebuild, so it's cheap every frame.
+  tickCooldowns(){
+    if(!p1) return;
+    document.querySelectorAll('.hb-cd').forEach(el=>{
+      const id=el.dataset.ability;
+      const left=Abilities.cdLeft(p1, id);
+      if(left<=0){ if(el.style.display!=='none'){ el.style.display='none'; } return; }
+      const total=el._total && el._total>=left ? el._total : left;   // remember the start for the sweep
+      el._total=total;
+      if(el.style.display!=='flex') el.style.display='flex';
+      el.querySelector('i').style.height=Math.round((left/total)*100)+'%';
+      const secs=Math.ceil(left/1000);
+      const label=el.querySelector('b');
+      if(label.textContent!==String(secs)) label.textContent=secs;
+      if(left<=16) el._total=0;                                      // reset for the next use
+    });
   },
 
   // Use P1 hotbar slot n (1-based) = inventory slot n-1: consumables heal & are consumed,
@@ -5043,8 +6509,14 @@ const UI = {
       if(typeof sfxCollect==='function') sfxCollect();
       showToast(`🍪 Ate ${def.name} · +${healed} HP`,1400);
     } else if(def && def.type==='toy'){
-      if(typeof sfxCollect==='function') sfxCollect();
-      showToast(`🎾 You play with the ${def.name}!`,1200);
+      // Standing near Lolla's placed cannon, using a ball loads the magazine instead.
+      const turret=(cell.id==='ball' && typeof Abilities!=='undefined') ? Abilities.get('ballCannon') : null;
+      const res=turret && turret.tryLoadBall ? turret.tryLoadBall(p) : false;
+      if(res==='loaded'){ Inventory.removeAt(p, n-1, 1); }
+      else if(res!=='full'){
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🎾 You play with the ${def.name}!`,1200);
+      }
     } else if(def && def.type==='wearable'){
       if(Wearables.equipFromSlot(p, n-1, def.slot)) showToast(`🎩 Equipped ${def.name}!`,1200);
     } else {
@@ -5160,6 +6632,7 @@ const UI = {
   openDialog(npc, player){
     this.closeInventory();            // dialog is blocking; don't stack it over an overlay
     this.closeJournal();
+    this.closeSkills();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
@@ -5235,6 +6708,7 @@ const UI = {
     if(Game.state===SCENES.GAMEOVER) return;   // already down — don't stack
     this.closeInventory();
     this.closeJournal();
+    this.closeSkills();
     this._show('pauseScreen', false);
     this._show('dialogScreen', false);
     this.panel=null; this._dialog=null;
@@ -5249,6 +6723,7 @@ const UI = {
   quitToMenu(){
     this.closeInventory();
     this.closeJournal();
+    this.closeSkills();
     this.closePanel();
     if(typeof WorldMap!=='undefined') WorldMap.hide();
     if(typeof stopMusic==='function') stopMusic();
@@ -5294,6 +6769,9 @@ const UI = {
       inv.addEventListener('dragend',   e=>this._onDragEnd(e));
     }
     const bar=this.$('hotbar'); if(bar) bar.addEventListener('click', e=>this._onInvClick(e));
+    // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
+    const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
+    const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){
@@ -5550,6 +7028,7 @@ function loop(now){
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
     if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
     updateSparkles();updateCamera();
+    UI.tickCooldowns();   // hotbar ability cooldown sweep
   }
   if(showWorld){
     ctx.save();ctx.translate(-cam.x,-cam.y);
@@ -6088,7 +7567,7 @@ const Options = {
     }
     const foot=document.getElementById('footKeys');
     if(foot){
-      foot.innerHTML=`<b>Esc</b> pause · <b>${kn(b.inventory[0]||b.inventory[1])}</b> inventory · <b>${kn(b.journal[0]||b.journal[1])}</b> quests`;
+      foot.innerHTML=`<b>Esc</b> pause · <b>${kn(b.inventory[0]||b.inventory[1])}</b> inventory · <b>${kn(b.journal[0]||b.journal[1])}</b> quests · <b>${kn(b.skills[0]||b.skills[1])}</b> skills`;
     }
     // Hotbar ability slots show their bound keys — keep them in sync too.
     if(typeof UI!=='undefined' && UI.renderHotbar) UI.renderHotbar();

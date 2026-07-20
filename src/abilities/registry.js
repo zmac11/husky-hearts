@@ -26,7 +26,15 @@ const Abilities = {
   spawnAll(){ for(const id in this._defs){ const d=this._defs[id]; if(d.spawn) d.spawn(); } },
   reset(){ for(const id in this._defs){ const d=this._defs[id]; if(d.reset) d.reset(); } },
 
+  // ---- shared cooldowns ----
+  // Per-player, per-ability cooldowns live in p.abilityCd (plain ms map, initialised
+  // by makePlayer; deliberately NOT saved — cooldowns reset on load). Ticked here so
+  // every ability def gets them for free.
+  cdLeft(p, id){ return (p && p.abilityCd && p.abilityCd[id]) || 0; },
+  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; },
+
   update(p, dt){
+    if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });

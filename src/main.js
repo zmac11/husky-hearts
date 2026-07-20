@@ -22,6 +22,7 @@ function loop(now){
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
     if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
     updateSparkles();updateCamera();
+    UI.tickCooldowns();   // hotbar ability cooldown sweep
   }
   if(showWorld){
     ctx.save();ctx.translate(-cam.x,-cam.y);

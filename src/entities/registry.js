@@ -29,6 +29,33 @@ const Entities = {
   },
   clear(){ entities.length = 0; },
   all(){ return entities; },
+  remove(e){ const i=entities.indexOf(e); if(i!==-1) entities.splice(i,1); },
+
+  // Damage an entity (turret balls, future traps…): red flash, knockback shove away
+  // from (fromX,fromY) — skipped for future bosses via e.noKnockback — and on 0 hp a
+  // defeat poof with a small chance of dropped loot. Call OUTSIDE updateAll's loop.
+  hurt(e, dmg, fromX, fromY, knock=12){
+    if(typeof e.hp!=='number') return false;    // not a damageable entity
+    e.hp -= dmg;
+    e.hurtT = 220;
+    if(!e.noKnockback && typeof fromX==='number'){
+      const ang=Math.atan2(e.y-fromY, e.x-fromX);
+      e.x=clamp(e.x+Math.cos(ang)*knock, 20, WORLD_W-20);
+      e.y=clamp(e.y+Math.sin(ang)*knock, 26, WORLD_H-20);
+    }
+    if(e.hp<=0){
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9C9C9', 20);
+      if(Math.random()<0.4){
+        collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
+                            pickupAt:performance.now()+600 });
+      }
+      this.remove(e);
+      if(typeof sfxDeliver==='function') sfxDeliver();
+      showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);
+      return true;   // defeated
+    }
+    return false;
+  },
 
   updateAll(t, dt){ for(const e of entities){ const d=this.def(e.kind); if(d && d.update) d.update(e, t, dt); } },
 

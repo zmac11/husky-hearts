@@ -75,6 +75,8 @@ Levels.register({
     if(ponds[1]) Entities.spawn('critter', { species:'duck', x:ponds[1].x, y:ponds[1].y });
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.68, y:WORLD_H*0.62 });
     Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.30, y:WORLD_H*0.58 });
+
+    Chests.spawnForLevel('meadow-2');   // buried treasure — first iron chest
   },
 
   quest: {
