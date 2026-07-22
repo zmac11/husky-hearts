@@ -32,9 +32,36 @@ function mulberry32(seed){ // tiny deterministic RNG — returns a function prod
 const RNG = {
   seed: (Math.random()*1e9)|0,  // default run seed; LevelManager overrides per level
   _fn: null,
+  _gen: false,                  // inside a generation window? (see beginGen/endGen)
 
   // Reseed the shared stream (e.g. when (re)generating a level, or after loading a save).
   reseed(s){ this.seed = s>>>0; this._fn = mulberry32(this.seed); return this.seed; },
+
+  // ---- generation window ----
+  // Level generation must be reproducible from the run seed (core/run.js), while ordinary
+  // gameplay randomness (enemy wander, loot rolls, sparkles) stays unpredictable. So the
+  // seeded stream is only "armed" between beginGen() and endGen(): inside the window rnd()
+  // draws from it, outside it falls back to Math.random(). Every generator calls rnd()
+  // (directly or via rand()), so the same seed always rebuilds the same world.
+  beginGen(s){ this.reseed(s); this._gen = true; return this.seed; },
+  endGen(){ this._gen = false; },
+  rnd(){ return this._gen ? this._fn() : Math.random(); },
+
+  // ---- seed math ----
+  // 32-bit string hash (FNV-1a) so a level id / typed seed word becomes a number.
+  hash32(str){
+    let h = 0x811C9DC5;
+    const s = String(str==null ? '' : str);
+    for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h>>>0;
+  },
+  // Stir two seeds together so neighbouring inputs give unrelated streams.
+  mix(a,b){
+    let h = ((a>>>0) ^ Math.imul(b>>>0, 0x9E3779B1))>>>0;
+    h ^= h>>>16; h = Math.imul(h, 0x85EBCA6B);
+    h ^= h>>>13; h = Math.imul(h, 0xC2B2AE35);
+    return (h ^ h>>>16)>>>0;
+  },
 
   next(){ if(!this._fn) this._fn = mulberry32(this.seed); return this._fn(); },
   range(a,b){ return a + this.next()*(b-a); },
@@ -46,6 +73,61 @@ const RNG = {
   // that needs its own reproducible sequence without disturbing the main stream.
   fork(salt){ return mulberry32((this.seed ^ (salt>>>0)) >>> 0); },
 };
+
+// ===== src/core/run.js =====
+// ====================== RUN (seed) ======================
+// A "run" is one playthrough, identified by a single SEED. Every level's layout is
+// derived from it (LevelManager.load → RNG.beginGen(Run.levelSeed(id))), so the same
+// seed always produces the same meadow, the same pond shapes, the same buried chests.
+//
+// The seed is generated when a new game starts, or typed by the player on the character
+// select screen (charselect.js). It rides along in saves so a loaded game rebuilds the
+// same worlds — that's what lets a save store only the *dynamic* state of each level
+// (level-state.js) and regenerate the terrain instead of snapshotting it.
+//
+// Typed seeds may be anything: "12345" is used as the number, "husky" is hashed. What the
+// player typed is kept verbatim in `seedText` so it can be shown back and copied.
+
+const Run = {
+  seed: 0,        // uint32 actually used for generation
+  seedText: '',   // what the player typed / the decimal seed for a random run
+
+  // Start a brand-new random run.
+  newRandom(){
+    this.seed = (Math.random()*4294967296)>>>0;
+    this.seedText = String(this.seed);
+    return this.seed;
+  },
+
+  // Apply a player-typed seed. Blank → random. Pure digits are used as-is (so sharing
+  // "1234567" round-trips), anything else is hashed to a uint32.
+  setFromText(str){
+    const t = (str==null ? '' : String(str)).trim();
+    if(!t) return this.newRandom();
+    this.seedText = t;
+    this.seed = /^\d+$/.test(t) ? (Number(t)>>>0) : RNG.hash32(t);
+    return this.seed;
+  },
+
+  // Restore an exact seed (loading a save).
+  set(seed, text){
+    this.seed = (seed>>>0) || 0;
+    this.seedText = text || String(this.seed);
+    return this.seed;
+  },
+
+  // Per-level stream seed. `salt` is the level's own `seed:` field (levels/*.js), so two
+  // levels of the same run never share a layout even if their generators match.
+  levelSeed(levelId, salt){
+    return RNG.mix(this.seed, RNG.hash32(levelId) ^ ((salt||0)>>>0));
+  },
+
+  // Short display string for menus ('husky' or '2841991233').
+  label(){ return this.seedText || String(this.seed); },
+};
+
+// A seed exists from the very first frame — main.js builds a level before any menu runs.
+Run.newRandom();
 
 // ===== src/core/state.js =====
 // ====================== GAME STATE ======================
@@ -221,15 +303,23 @@ const Input = {
 
   down(code){ return !!keys[code]; },
 
-  // ESC hook: Options screen first, then whatever panel UI has open.
+  // ESC hook: Options / save picker first, then whatever panel UI has open.
   onEscape(){
     if(typeof Options!=='undefined' && Options.isOpen && Options.isOpen()){ Options.close(); return; }
+    if(typeof SaveUI!=='undefined' && SaveUI.isOpen && SaveUI.isOpen()){ SaveUI.close(); return; }
     if(typeof UI !== 'undefined' && UI.togglePause) UI.togglePause();
   },
 };
 Input.load();
 
 window.addEventListener('keydown', e=>{
+  // Typing in a text field (the seed box on character select) is not gameplay: don't
+  // steal the keystroke for hotbar/inventory shortcuts or swallow the space bar.
+  const t=e.target;
+  if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable)){
+    if(e.code==='Escape'){ t.blur(); }
+    return;
+  }
   keys[e.code] = true;
   // Don't let bound gameplay keys (or the usual suspects) scroll the page.
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code) || Input.boundAction(e.code)) e.preventDefault();
@@ -1679,7 +1769,13 @@ const CHEER_TOTAL=5;
 // Raw key state (`keys`) and listeners moved to core/input.js.
 
 // ---------- HELPERS ----------
-function rand(a,b){ return a+Math.random()*(b-a); }
+// `rnd()` is the game's random source: inside a level-generation window (RNG.beginGen,
+// see core/rng.js + core/run.js) it draws from the run's seeded stream, everywhere else
+// it's plain Math.random(). LEVEL GENERATORS MUST USE rnd()/rand(), NEVER Math.random() —
+// revisiting a level regenerates its terrain from the seed (level-state.js), so anything
+// unseeded would move under the entities restored on top of it.
+function rnd(){ return RNG.rnd(); }
+function rand(a,b){ return a+rnd()*(b-a); }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 
 // ---------- COLLIDERS ----------
@@ -1761,7 +1857,7 @@ function buildWorld(){
       ok = !inWater(p.x,p.y,Math.max(w,h)/2+24) && ellipseClearOfRiver(p.x,p.y,w,h,22);
     }
     taken.push(p);
-    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100,blobSeed:Math.floor(Math.random()*9999)});
+    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:rnd()*100,blobSeed:Math.floor(rnd()*9999)});
   }
 
   // ---- FENCE border ----
@@ -1774,7 +1870,7 @@ function buildWorld(){
   for(let i=0;i<22;i++){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
-    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
+    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(rnd()*3)});
     addCollider(p.x-7,p.y+19,14,13);
   }
 
@@ -1790,7 +1886,7 @@ function buildWorld(){
   for(let i=0;i<18;i++){
     const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
-    const big=Math.random()<0.35;
+    const big=rnd()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
     if(big) addCollider(p.x-12,p.y+2,24,12);
   }
@@ -1799,7 +1895,7 @@ function buildWorld(){
   for(let i=0;i<6;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
-    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-24,p.y-2,48,16);
   }
 
@@ -1810,14 +1906,14 @@ function buildWorld(){
       p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,j)=>j%3===0));
       if(!inWater(p.x,p.y,30)) break;
     }
-    worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:Math.random()*100});
+    worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100});
   }
 
   // ---- BUSHES ----
   for(let i=0;i<24;i++){
     const p=safePt(50,50,WORLD_W-50,WORLD_H-50,70,taken,40);
     taken.push(p);
-    const variant=Math.floor(Math.random()*2);
+    const variant=Math.floor(rnd()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
     addCollider(p.x-12,p.y+3,24,13);
   }
@@ -1829,7 +1925,7 @@ function buildWorld(){
     for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!inWater(fx,fy,4)) break; }
     if(inWater(fx,fy,4)) continue;   // no dry spot found this try — skip rather than float on water
     worldObjects.push({kind:'flower',x:fx,y:fy,
-      hue:flowerHues[Math.floor(Math.random()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
+      hue:flowerHues[Math.floor(rnd()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
   }
 
   // ---- WILLOW TREES ----
@@ -1847,14 +1943,14 @@ function buildWorld(){
       p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,j)=>j%4===0));
       if(!inWater(p.x,p.y,25)) break;
     }
-    worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:Math.random()<0.3});
+    worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.3});
   }
 
   // ---- MUSHROOM RINGS ----
   for(let i=0;i<4;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
-    worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100});
   }
 
   // ---- CATTAILS / REEDS along the pond shores (no collider) ----
@@ -1862,7 +1958,7 @@ function buildWorld(){
     const n=Math.floor(rand(3,6));
     for(let k=0;k<n;k++){
       const ang=rand(0,Math.PI*2);
-      worldObjects.push({kind:'cattail', seed:Math.random()*100,
+      worldObjects.push({kind:'cattail', seed:rnd()*100,
         x:pond.x+Math.cos(ang)*(pond.w/2+rand(2,10)),
         y:pond.y+Math.sin(ang)*(pond.h/2+rand(2,10))});
     }
@@ -1872,7 +1968,7 @@ function buildWorld(){
   for(let i=0;i<5;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,40);
     taken.push(p);
-    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-16,p.y-1,32,9);
   }
 
@@ -1880,7 +1976,7 @@ function buildWorld(){
   for(let i=0;i<5;i++){
     const p=safePt(70,70,WORLD_W-70,WORLD_H-70,80,taken,35);
     taken.push(p);
-    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-8,p.y-1,16,10);
   }
 
@@ -1888,7 +1984,7 @@ function buildWorld(){
   const bflyHues=['#FFFFFF','#FFD93D','#FF9E6E','#8FD4E8','#C9A6FF','#FF8FB0'];
   for(let i=0;i<14;i++){
     worldObjects.push({kind:'butterfly', x:rand(60,WORLD_W-60), y:rand(60,WORLD_H-60),
-      hue:bflyHues[Math.floor(Math.random()*bflyHues.length)], seed:Math.random()*1000});
+      hue:bflyHues[Math.floor(rnd()*bflyHues.length)], seed:rnd()*1000});
   }
 
   // ---- STONE PATHS ----
@@ -1928,7 +2024,7 @@ function makeCollectibles(){
     const baseX=rand(120,WORLD_W-120);
     items.push({
       type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
-      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(Math.random()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
       x:baseX, y:riverY(baseX)
     });
   }
@@ -1978,8 +2074,8 @@ function makeRiverPebbles(){
   const list=[];
   for(let x=40;x<WORLD_W-40;){
     const w=riverWidthAt(x), cy=riverY(x);
-    const side=Math.random()<0.5?-1:1;
-    list.push({x, y:cy+side*(w/2+rand(2,9)), big:Math.random()<0.3});
+    const side=rnd()<0.5?-1:1;
+    list.push({x, y:cy+side*(w/2+rand(2,9)), big:rnd()<0.3});
     x+=rand(26,46);
   }
   return list;
@@ -2178,7 +2274,7 @@ Levels.register({
       for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!isWater(fx,fy,4)) break; }
       if(isWater(fx,fy,4)) continue;   // keep wildflowers on dry land
       worldObjects.push({kind:'flower', x:fx, y:fy,
-        hue:hues[Math.floor(Math.random()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
+        hue:hues[Math.floor(rnd()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
     }
     worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 
@@ -2276,9 +2372,9 @@ Levels.register({
         x=rand(90,WORLD_W-90); y=rand(90,WORLD_H-90);
         ok=_orchardClearOfWater(x,y,40);
       }
-      worldObjects.push({kind:'oak', x, y, variant:Math.floor(Math.random()*3)});
+      worldObjects.push({kind:'oak', x, y, variant:Math.floor(rnd()*3)});
       addCollider(x-7, y+19, 14, 13);
-      if(Math.random()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:Math.random()<0.3});
+      if(rnd()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:rnd()<0.3});
     }
     worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 
@@ -2363,7 +2459,7 @@ function buildRockyWorld(){
   // Keep every lake fully clear of the river — nudge it up the valley if it would cross.
   lakes.forEach(l=>{ let guard=0; while(!ellipseClearOfRiver(l.x,l.y,l.w,l.h,26) && guard++<50) l.y-=12; });
   lakes.forEach(l=>worldObjects.push({kind:'lake', x:l.x, y:l.y, w:l.w, h:l.h,
-    seed:Math.random()*100, blobSeed:Math.floor(Math.random()*9999)}));
+    seed:rnd()*100, blobSeed:Math.floor(rnd()*9999)}));
   function inLake(x,y,m){ return lakes.some(l=>((x-l.x)/(l.w/2+m))**2+((y-l.y)/(l.h/2+m))**2<1); }
 
   // Placement helper: random point avoiding the river, lakes, and existing items.
@@ -2390,7 +2486,7 @@ function buildRockyWorld(){
     const baseY=rand(196,216);
     const mh=rand(150,188);          // apex = baseY - mh stays a little below the top edge
     const mw=rand(360,500);
-    worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(Math.random()*9999)});
+    worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(rnd()*9999)});
     // Solid across most of the base so you can't walk into the massif (matches the rock).
     addCollider(mx-mw*0.4, baseY-4, mw*0.8, 16);
   }
@@ -2402,7 +2498,7 @@ function buildRockyWorld(){
   // Boulders — the valley's main obstacles.
   for(let i=0;i<15;i++){
     const p=pt(60,240,W-60,H-60,120,taken,50); taken.push(p);
-    const big=Math.random()<0.6;
+    const big=rnd()<0.6;
     worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
     addCollider(p.x-(big?16:11), p.y+(big?1:0), big?32:22, big?14:11);
   }
@@ -2410,7 +2506,7 @@ function buildRockyWorld(){
   // Rock clusters.
   for(let i=0;i<7;i++){
     const p=pt(80,240,W-80,H-80,120,taken,45); taken.push(p);
-    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-24,p.y-2,48,16);
   }
 
@@ -2431,7 +2527,7 @@ function buildRockyWorld(){
   // Loose rocks (mostly walkable; big ones block).
   for(let i=0;i<18;i++){
     const p=pt(60,240,W-60,H-60,60,taken,35); taken.push(p);
-    const big=Math.random()<0.25;
+    const big=rnd()<0.25;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
     if(big) addCollider(p.x-12,p.y+2,24,12);
   }
@@ -2439,7 +2535,7 @@ function buildRockyWorld(){
   // Hardy shrubs.
   for(let i=0;i<14;i++){
     const p=pt(60,240,W-60,H-60,80,taken,40); taken.push(p);
-    worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(Math.random()*2)});
+    worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(rnd()*2)});
     addCollider(p.x-12,p.y+3,24,13);
   }
 
@@ -2450,13 +2546,13 @@ function buildRockyWorld(){
     for(let a=0;a<20;a++){ fx=rand(30,W-30); fy=rand(220,H-30); if(!isWater(fx,fy,4)) break; }
     if(isWater(fx,fy,4)) continue;   // alpine flowers stay on dry land
     worldObjects.push({kind:'flower',x:fx,y:fy,
-      hue:hues[Math.floor(Math.random()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
+      hue:hues[Math.floor(rnd()*hues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.2)});
   }
   for(let i=0;i<22;i++){
     let gx,gy;
     for(let a=0;a<20;a++){ gx=rand(40,W-40); gy=rand(220,H-40); if(!isWater(gx,gy,4)) break; }
     if(isWater(gx,gy,4)) continue;
-    worldObjects.push({kind:'tallgrass',x:gx,y:gy,blades:Math.floor(rand(4,9)),seed:Math.random()*100});
+    worldObjects.push({kind:'tallgrass',x:gx,y:gy,blades:Math.floor(rand(4,9)),seed:rnd()*100});
   }
 
   // Cozy lakeside campfires — warm landmarks.
@@ -2490,7 +2586,7 @@ function makeRockyCollectibles(){
   for(let i=0;i<6;i++){
     const baseX=rand(160,WORLD_W-160);
     items.push({ type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
-      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(Math.random()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
       x:baseX, y:riverY(baseX) });
   }
   return items;
@@ -6040,11 +6136,126 @@ const Abilities = {
   Abilities.register('scurry', { name:'Scurry', icon:'💨', skillNode:'scurry', spawn, reset, update, speedMul });
 })();
 
+// ===== src/level-state.js =====
+// ====================== LEVEL STATE ======================
+// Levels you have already been in stay exactly as you left them: chests you dug up are
+// still open, NPCs remember their quest state, defeated enemies stay gone, treats you
+// picked up don't come back. That lets you walk back into a cleared level (via the
+// journey map) to visit a shopkeeper or hand in a task.
+//
+// Only the DYNAMIC half of a level is stored here — entities, collectibles, friends and
+// the cheer count. The terrain (worldObjects/colliders/river) is NOT stored: it is
+// regenerated from the run seed (core/run.js), which is deterministic, so a snapshot is
+// tiny and saves stay small. Legacy v1 saves (made before seeding existed) carry their
+// own terrain in `world`, and restore() honours that when present.
+//
+// Snapshots are plain JSON — the same property that lets the whole thing ride along in a
+// save file (save.js) with no extra serialisation code.
+
+const LevelState = {
+  _byId: {},
+
+  // Entity kinds that are transient summons/effects — never worth preserving across a
+  // level change (they'd reappear frozen mid-animation).
+  TRANSIENT: ['spiritwolf'],
+
+  _clone(v){ return JSON.parse(JSON.stringify(v)); },
+
+  has(id){ return !!(id && this._byId[id]); },
+  get(id){ return (id && this._byId[id]) || null; },
+  all(){ return this._byId; },
+  setAll(obj){ this._byId = obj || {}; },
+  clear(){ this._byId = {}; },
+  ids(){ return Object.keys(this._byId); },
+  count(){ return this.ids().length; },
+
+  // Snapshot the live world's dynamic state for `id` (called when leaving a level).
+  capture(id){
+    if(!id) return null;
+    const keep=(typeof entities!=='undefined' && entities ? entities : [])
+      .filter(e => e && this.TRANSIENT.indexOf(e.kind)===-1);
+    const snap = {
+      cheered: (typeof Game!=='undefined') ? Game.cheeredCount : 0,
+      worldW: WORLD_W, worldH: WORLD_H,
+      entities: this._clone(keep),
+      collectibles: this._clone(typeof collectibles!=='undefined' && collectibles ? collectibles : []),
+      friends: this._clone(typeof friends!=='undefined' && friends ? friends : []),
+      at: Date.now(),
+    };
+    // A legacy (v1) level keeps its stored terrain for the rest of the run — it has no
+    // seed to regenerate from, so dropping it here would shift the ground out from under
+    // the entities the next time you walked back in.
+    const prev=this._byId[id];
+    if(prev && prev.world){ snap.world=prev.world; snap.worldW=prev.worldW; snap.worldH=prev.worldH; }
+    this._byId[id] = snap;
+    return snap;
+  },
+
+  // Apply a snapshot over a freshly generated level (LevelManager.enter does the
+  // generating first, so terrain + ground canvas already match the seed). Returns false
+  // when this level has never been visited.
+  restore(id){
+    const s = this.get(id);
+    if(!s) return false;
+
+    // Legacy (v1 save) snapshots carry their own terrain — use it rather than the
+    // freshly generated one, so an old save still looks like the world it was saved in.
+    if(s.world){
+      if(typeof s.worldW==='number'){ WORLD_W=s.worldW; WORLD_H=s.worldH; }
+      worldObjects.length=0; (s.world.objects||[]).forEach(o=>worldObjects.push(o));
+      colliders.length=0;    (s.world.colliders||[]).forEach(c=>colliders.push(c));
+      river = s.world.river || river;
+      if(typeof buildGroundCanvas==='function') buildGroundCanvas();
+    }
+
+    entities    = this._clone(s.entities || []);
+    collectibles= this._clone(s.collectibles || []);
+    friends     = this._clone(s.friends || []);
+    Game.cheeredCount = s.cheered || 0;
+    return true;
+  },
+
+  // ---------- map detail ----------
+  // What the journey map's level card shows. Reads the snapshot (an unvisited level has
+  // none), so it describes the level as you left it — not as it would generate.
+  summary(id){
+    const cleared = (typeof Progress!=='undefined') && Progress.isDone(id);
+    const s = this.get(id);
+    const current = (typeof LevelManager!=='undefined' && LevelManager.current && LevelManager.current.id===id);
+    if(!s) return { visited:false, cleared, current };
+
+    const es = s.entities || [];
+    const chestList = es.filter(e=>e.kind==='chest');
+    const npcs = es.filter(e=>e.kind==='npc').map(e=>({
+      name: e.name || 'Wanderer',
+      shop: !!(e.wares && e.wares.length),
+      quest: e.quest ? ((typeof Quests!=='undefined') ? Quests.stateOf(e.quest) : (e.quest.state||'available')) : null,
+    }));
+    const fr = s.friends || [];
+    const items = s.collectibles || [];
+    return {
+      visited: true, cleared, current,
+      chests: { looted: chestList.filter(c=>c.state==='open').length, total: chestList.length },
+      npcs,
+      enemies: es.filter(e=>e.kind==='enemy'||e.kind==='wolf').length,
+      critters: es.filter(e=>e.kind==='critter').length,
+      treatsLeft: items.filter(i=>!i.taken).length,
+      friends: { cheered: fr.filter(f=>f.cheered).length, total: fr.length },
+      at: s.at || 0,
+    };
+  },
+};
+
 // ===== src/level-manager.js =====
 // ====================== LEVEL MANAGER ======================
-// Loads a level: sets world size, reseeds RNG, runs the level's generator, and
-// rebuilds the themed ground canvas. This is the single entry point for (re)building
-// the world — called at startup (main.js) and on each game start (resetGame).
+// Loads a level: sets world size, opens a seeded generation window, runs the level's
+// generator, and rebuilds the themed ground canvas. This is the single entry point for
+// (re)building the world — called at startup (main.js) and on each game start (resetGame).
+//
+// Two ways in:
+//   load(id)   — build the level FRESH from the run seed (new game, replay, dev jump)
+//   enter(id)  — travel there during a run: build fresh, then lay the level's saved
+//                dynamic state (level-state.js) back on top if you've been there before
 
 let _currentLevel = null;
 
@@ -6052,7 +6263,7 @@ const LevelManager = {
   get current(){ return _currentLevel; },
   get theme(){ return _currentLevel ? _currentLevel.theme : null; },
 
-  // Set the active level (for theme/quest) WITHOUT regenerating — used by Save.load(),
+  // Set the active level (for theme/quest) WITHOUT regenerating — used by Save.read(),
   // which restores a world snapshot instead of building a fresh one.
   _setCurrent(level){ _currentLevel = level; },
 
@@ -6061,9 +6272,11 @@ const LevelManager = {
     if(!level){ console.warn('LevelManager: no levels registered'); return null; }
     _currentLevel = level;
 
-    // Resize world + reseed RNG, then generate.
+    // Resize world, then generate inside a seeded window so the same run seed always
+    // rebuilds this exact layout (core/run.js). Everything random in generation — terrain,
+    // collectibles, buried chests — draws from this stream via rnd()/rand().
     if(level.size){ WORLD_W = level.size.w; WORLD_H = level.size.h; }
-    if(typeof level.seed === 'number') RNG.reseed(level.seed);
+    RNG.beginGen(Run.levelSeed(level.id, level.seed));
     level.generate();
 
     // Keep quest animals (friends) and merchants (NPC entities) out of the water — their
@@ -6072,6 +6285,7 @@ const LevelManager = {
       if(typeof friends!=='undefined' && friends) friends.forEach(f=>nudgeOutOfWater(f));
       if(typeof entities!=='undefined' && entities) entities.forEach(e=>{ if(e.kind==='npc') nudgeOutOfWater(e); });
     }
+    RNG.endGen();
 
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
@@ -6085,11 +6299,47 @@ const LevelManager = {
   // Convenience: (re)load whatever level is current, defaulting to the first.
   reload(){ return this.load(_currentLevel ? _currentLevel.id : (Levels.first() && Levels.first().id)); },
 
-  // Advance an in-progress run to another level: build it, then move the existing dogs
-  // to the new spawn and heal them to full. Inventory + treats carry over as a reward
-  // for finishing the previous level; quest progress (cheeredCount) resets in load().
+  // Build `id` and restore its remembered state if it has any. Terrain always comes from
+  // the seed; only the dynamic half (chests, NPCs, enemies, treats, cheered friends) is
+  // laid back on top. `opts.keepCurrent` skips snapshotting the level we're leaving
+  // (used when loading a save, where the outgoing world isn't part of that run).
+  enter(id, opts){
+    const o = opts || {};
+    if(!o.keepCurrent && _currentLevel && typeof LevelState!=='undefined') LevelState.capture(_currentLevel.id);
+
+    const lvl = this.load(id);
+    if(!lvl) return null;
+    if(typeof LevelState!=='undefined') LevelState.restore(lvl.id);
+
+    this._armExit(lvl);
+    return lvl;
+  },
+
+  // A cleared level keeps its exit portal so you can leave again after revisiting. The
+  // restored portal has already been walked through (used:true), so re-arm it; and if a
+  // cleared level somehow has none, put one back — otherwise checkWin() would treat the
+  // revisit as a fresh clear and hand out level-clear rewards a second time.
+  _armExit(lvl){
+    if(typeof entities==='undefined' || !entities) return;
+    let portal=null;
+    entities.forEach(e=>{ if(e.kind==='portal'){ e.used=false; portal=e; } });
+    const cleared=(typeof Progress!=='undefined') && Progress.isDone(lvl.id);
+    if(!cleared || portal) return;
+    const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(lvl.id) : null;
+    const nextLvl=lvl.next && Levels.get(lvl.next);
+    const nextEnv=(nextLvl && typeof Campaign!=='undefined') ? Campaign.envOfLevel(nextLvl.id) : null;
+    const spawn=lvl.spawn || { x:200, y:200 };
+    const spot={ x:clamp(spawn.x+110, 80, WORLD_W-80), y:clamp(spawn.y+40, 80, WORLD_H-80) };
+    if(typeof nudgeOutOfWater==='function') nudgeOutOfWater(spot, 40);
+    Entities.spawn('portal', { x:spot.x, y:spot.y, levelId:lvl.id,
+      colA:(env&&env.color)||'#9B7EC8', colB:'#FFD93D', icon:(nextEnv&&nextEnv.icon)||'✨' });
+  },
+
+  // Travel to another level during a run: build/restore it, then move the existing dogs
+  // to the spawn and heal them to full. Inventory + treats always carry over; the level
+  // you leave is snapshotted so you can come back to it exactly as it was.
   goTo(id){
-    const lvl=this.load(id);
+    const lvl=this.enter(id);
     if(!lvl) return null;
     const spawn=lvl.spawn || { x:200, y:200 };
     const players=Game.players;
@@ -6104,6 +6354,7 @@ const LevelManager = {
     if(typeof updateCamera==='function') updateCamera();
     if(typeof updateHUD==='function') updateHUD();
     if(typeof showToast==='function') showToast(`⛰️ ${lvl.name}`, 2200);
+    if(typeof Save!=='undefined' && Save.auto) Save.auto();   // autosave on every arrival
     return lvl;
   },
 };
@@ -6279,17 +6530,44 @@ function showToast(msg,time=2200){
 
 // ===== src/save.js =====
 // ====================== SAVE / LOAD ======================
-// Serialises a run to localStorage and restores it. Rather than rely on seeded
-// regeneration, we snapshot the whole dynamic world (objects, colliders, entities,
-// collectibles, friends) so a loaded game is exactly what was saved — including the
-// procedurally-placed layout. All of these are plain data (no functions), so JSON
-// round-trips cleanly; behaviour lives in the registries (Breeds/Abilities/Entities).
+// Saves live in numbered SLOTS (1–6) plus a separate autosave that updates whenever you
+// arrive in a level. The picker UI is save-ui.js; this file is only storage + (de)serialisation.
+//
+// A save is small because levels are seeded: it stores the run seed (core/run.js) and,
+// per level you've visited, only the DYNAMIC state (level-state.js) — chests, NPCs,
+// enemies, treats, cheered friends. Terrain regenerates from the seed on load. Everything
+// stored is plain data (no functions), so JSON round-trips cleanly; behaviour lives in the
+// registries (Breeds/Abilities/Entities).
+//
+// localStorage layout:
+//   hh-save-v2:meta          → { slotId: {breed, dogLevel, levelName, …} }  (for the picker)
+//   hh-save-v2:slot:<id>     → the full payload for one slot
+//   hh-save-v2:migrated      → set once the pre-slot save (v1) has been imported
 
 const Save = {
-  KEY: 'husky-hearts-save-v1',
+  KEY_V1: 'husky-hearts-save-v1',      // the single pre-slot save; imported once, then left alone
+  META:   'hh-save-v2:meta',
+  MIGRATED: 'hh-save-v2:migrated',
+  SLOTS: ['1','2','3','4','5','6'],
+  AUTO: 'auto',
 
-  has(){ try { return !!localStorage.getItem(this.KEY); } catch(e){ return false; } },
+  slotKey(id){ return 'hh-save-v2:slot:' + id; },
+  allSlots(){ return this.SLOTS.concat([this.AUTO]); },
 
+  // ---------- metadata index (what the slot cards show) ----------
+  meta(){
+    try { return JSON.parse(localStorage.getItem(this.META)) || {}; }
+    catch(e){ return {}; }
+  },
+  _writeMeta(m){ try { localStorage.setItem(this.META, JSON.stringify(m)); } catch(e){} },
+  metaOf(slotId){ return this.meta()[slotId] || null; },
+
+  // Slot list for the picker: [{id, meta}] in fixed order; empty slots have meta:null.
+  list(){ const m=this.meta(); return this.allSlots().map(id=>({ id, meta: m[id] || null })); },
+  has(){ const m=this.meta(); return this.allSlots().some(id=>!!m[id]); },
+  isEmpty(slotId){ return !this.metaOf(slotId); },
+
+  // ---------- serialisation ----------
   _serializePlayer(p){
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
              treats:p.treats,
@@ -6300,53 +6578,93 @@ const Save = {
              xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
-  save(){
-    if(Game.state!==SCENES.PLAYING && Game.state!==SCENES.PAUSED){
-      showToast('Can only save while playing.', 1600); return false;
-    }
-    const data = {
-      version: 1,
-      levelId: LevelManager.current ? LevelManager.current.id : null,
-      worldW: WORLD_W, worldH: WORLD_H,
+  // Snapshot the whole run. The level you're standing in is captured into LevelState
+  // first, so `levels` always includes it.
+  capture(){
+    const levelId = LevelManager.current ? LevelManager.current.id : null;
+    if(levelId && typeof LevelState!=='undefined') LevelState.capture(levelId);
+    return {
+      version: 2,
+      seed: Run.seed, seedText: Run.seedText,
+      levelId,
       cheeredCount: Game.cheeredCount,
       progress: (typeof Progress!=='undefined') ? Progress.completed : {},
       players: Game.players.map(p=>this._serializePlayer(p)),
       cam: { x:cam.x, y:cam.y },
-      world: { objects: worldObjects, colliders: colliders, river: river },
-      collectibles: collectibles,
-      friends: friends,
-      entities: entities,
+      levels: (typeof LevelState!=='undefined') ? LevelState.all() : {},
+      at: Date.now(),
     };
+  },
+
+  _metaFrom(data){
+    const p=(data.players && data.players[0]) || {};
+    const lvl=(typeof Levels!=='undefined') && Levels.get(data.levelId);
+    const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(data.levelId) : null;
+    const breedDef=(typeof Breeds!=='undefined') && p.breed ? Breeds.get(p.breed) : null;
+    return {
+      breed: p.breed || '—',
+      breedName: breedDef ? breedDef.name : (p.breed||'Dog'),
+      breedIcon: breedDef ? breedDef.emoji : '🐕',
+      dogLevel: p.dogLevel || 1,
+      levelId: data.levelId,
+      levelName: lvl ? lvl.name : (data.levelId || 'Unknown'),
+      envIcon: env ? env.icon : '🐾',
+      seedText: data.seedText || String(data.seed||''),
+      levelsVisited: data.levels ? Object.keys(data.levels).length : 0,
+      cleared: data.progress ? Object.keys(data.progress).length : 0,
+      at: data.at || Date.now(),
+    };
+  },
+
+  // ---------- write ----------
+  write(slotId, opts){
+    const quiet=opts && opts.quiet;
+    if(Game.state!==SCENES.PLAYING && Game.state!==SCENES.PAUSED && Game.state!==SCENES.WORLDMAP){
+      if(!quiet) showToast('Can only save while playing.', 1600);
+      return false;
+    }
+    const data=this.capture();
     try {
-      localStorage.setItem(this.KEY, JSON.stringify(data));
-      showToast('💾 Game saved!', 1500);
+      localStorage.setItem(this.slotKey(slotId), JSON.stringify(data));
+      const m=this.meta(); m[slotId]=this._metaFrom(data); this._writeMeta(m);
+      if(!quiet) showToast(`💾 Saved to slot ${slotId}!`, 1500);
+      if(typeof UI!=='undefined' && UI.refreshContinueButton) UI.refreshContinueButton();
       return true;
     } catch(e){
-      showToast('Save failed: ' + e.message, 2000);
+      const full = e && (e.name==='QuotaExceededError' || e.code===22);
+      if(!quiet) showToast(full ? 'Storage full — delete a save first.' : 'Save failed: '+e.message, 2400);
       return false;
     }
   },
 
-  load(){
+  // Autosave: silent, never blocks, always the same slot.
+  auto(){ return this.write(this.AUTO, { quiet:true }); },
+
+  remove(slotId){
+    try { localStorage.removeItem(this.slotKey(slotId)); } catch(e){}
+    const m=this.meta(); delete m[slotId]; this._writeMeta(m);
+    if(typeof UI!=='undefined' && UI.refreshContinueButton) UI.refreshContinueButton();
+    return true;
+  },
+
+  // ---------- read ----------
+  read(slotId){
     let data;
-    try { data = JSON.parse(localStorage.getItem(this.KEY)); }
+    try { data = JSON.parse(localStorage.getItem(this.slotKey(slotId))); }
     catch(e){ data = null; }
-    if(!data){ showToast('No saved game found.', 1600); return false; }
+    if(!data){ showToast('That save slot is empty.', 1600); return false; }
+    return this._apply(data);
+  },
 
-    // --- level context (theme/quest) without regenerating the world ---
-    const level = Levels.get(data.levelId) || Levels.first();
-    if(typeof level !== 'undefined' && level) LevelManager._setCurrent(level);
-    WORLD_W = data.worldW; WORLD_H = data.worldH;
+  _apply(data){
+    // --- run seed first: every level rebuilds from it ---
+    Run.set(data.seed, data.seedText);
 
-    // --- world snapshot (const arrays: mutate in place; river is reassignable) ---
-    worldObjects.length = 0; (data.world.objects||[]).forEach(o=>worldObjects.push(o));
-    colliders.length = 0;    (data.world.colliders||[]).forEach(c=>colliders.push(c));
-    river = data.world.river || null;
-    collectibles = data.collectibles || [];
-    friends = data.friends || [];
-    entities = data.entities || [];
+    // --- campaign progress + remembered level states ---
+    if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
+    if(typeof LevelState!=='undefined') LevelState.setAll(data.levels || {});
 
-    // --- player ---
+    // --- player (rebuilt before the level so the HUD and ability spawns see it) ---
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
       pl.dir = sp.dir; pl.treats = sp.treats;
@@ -6365,28 +6683,79 @@ const Save = {
       pl.dead = !!sp.dead;
       return pl;
     };
-    if(data.players[0]) p1 = restore(data.players[0]);
+    if(data.players && data.players[0]) p1 = restore(data.players[0]);
 
-    Game.cheeredCount = data.cheeredCount || 0;
-    if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
+    // --- the level: regenerate from the seed, then lay its saved state back on top ---
+    const levelId = (typeof Levels!=='undefined' && Levels.get(data.levelId)) ? data.levelId
+                                                                             : (Levels.first() && Levels.first().id);
+    LevelManager.enter(levelId, { keepCurrent:true });
+    if(typeof data.cheeredCount==='number') Game.cheeredCount = data.cheeredCount;
+
+    // The dog stands where it was saved (enter() doesn't move players).
+    if(data.players && data.players[0] && p1){ p1.x=data.players[0].x; p1.y=data.players[0].y; }
     cam.x = data.cam ? data.cam.x : 0; cam.y = data.cam ? data.cam.y : 0;
 
-    // Rebuild themed ground for this level's size, and refresh ability world items.
-    buildGroundCanvas();
     Abilities.reset(); Abilities.spawnAll();
 
     // --- enter play ---
     if(typeof UI !== 'undefined' && UI.closePanel) UI.closePanel();
+    if(typeof WorldMap!=='undefined') WorldMap.hide();
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('winScreen').style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
     sparkles = [];
+    if(typeof resetXpOrbs==='function') resetXpOrbs();
     Game.state = SCENES.PLAYING;
     updateHUD();
     if(typeof startMusic === 'function') startMusic();
+    if(typeof isTouchDevice==='function' && isTouchDevice() && typeof showMobileControls==='function') showMobileControls(true);
     showToast('📂 Game loaded!', 1500);
     return true;
   },
+
+  // ---------- legacy import ----------
+  // The pre-slot save has no seed and carries its own terrain snapshot. It's imported
+  // into the first free slot with that terrain tucked inside the level snapshot;
+  // LevelState.restore() honours a snapshot's `world` block, so it loads as it was saved.
+  migrateV1(){
+    try {
+      if(localStorage.getItem(this.MIGRATED)) return false;
+      const raw=localStorage.getItem(this.KEY_V1);
+      localStorage.setItem(this.MIGRATED, '1');
+      if(!raw) return false;
+      const old=JSON.parse(raw);
+      if(!old || !old.players) return false;
+      const target=this.SLOTS.find(id=>this.isEmpty(id));
+      if(!target) return false;
+
+      const data={
+        version:2,
+        seed:Run.seed, seedText:Run.seedText,     // unknown — terrain comes from the snapshot below
+        levelId: old.levelId,
+        cheeredCount: old.cheeredCount||0,
+        progress: old.progress || {},
+        players: old.players,
+        cam: old.cam || {x:0,y:0},
+        levels: {},
+        at: Date.now(),
+      };
+      data.levels[old.levelId] = {
+        cheered: old.cheeredCount||0,
+        worldW: old.worldW, worldH: old.worldH,
+        world: old.world || null,                 // legacy terrain — see LevelState.restore
+        entities: old.entities || [],
+        collectibles: old.collectibles || [],
+        friends: old.friends || [],
+        at: Date.now(),
+      };
+      localStorage.setItem(this.slotKey(target), JSON.stringify(data));
+      const m=this.meta(); m[target]=this._metaFrom(data); this._writeMeta(m);
+      return true;
+    } catch(e){ return false; }
+  },
 };
+
+Save.migrateV1();
 
 // ===== src/ui.js =====
 // ====================== UI LAYER ======================
@@ -6683,7 +7052,23 @@ const UI = {
     this.closeJournal();
     this.closeSkills();
     this.panel='pause'; Game.state=SCENES.PAUSED;
+    this.showSeed('pauseSeed');
     this._show('pauseScreen', true);
+  },
+
+  // Print the run seed into a small label (pause menu / world map). Clicking copies it,
+  // so a layout you like can be replayed or shared.
+  showSeed(elId){
+    const el=this.$(elId); if(!el || typeof Run==='undefined') return;
+    el.textContent='🌱 Seed: '+Run.label();
+    if(el._seedWired) return;
+    el._seedWired=true;
+    el.addEventListener('click', ()=>{
+      const txt=Run.label();
+      const done=()=>showToast('🌱 Seed copied: '+txt, 1600);
+      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, ()=>showToast('🌱 Seed: '+txt, 2000));
+      else showToast('🌱 Seed: '+txt, 2000);
+    });
   },
 
   // ---------- item tooltip (hover in inventory / shop / quest) ----------
@@ -7168,10 +7553,11 @@ const UI = {
     // Game over → replay / menu. (World-map buttons are wired inside WorldMap.)
     on('btnGameOverReplay', ()=>{ if(typeof replayRun==='function') replayRun(); });
     on('btnGameOverMenu', ()=>this.quitToMenu());
-    on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
-    on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    // Saving/loading goes through the slot picker (save-ui.js).
+    on('btnSave', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('save','pause'); });
+    on('btnLoad', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('load','pause'); });
     // Start-screen "Continue" appears only when a save exists.
-    on('btnContinue', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    on('btnContinue', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('load','menu'); });
     // Delete-confirm popup buttons.
     on('btnDelYes', ()=>this.confirmDelete(true));
     on('btnDelNo',  ()=>this.confirmDelete(false));
@@ -7220,12 +7606,146 @@ function updateHUD(){ UI.updateHUD(); }
 
 UI.init();
 
+// ===== src/save-ui.js =====
+// ====================== SAVE PICKER ======================
+// One overlay (#savesScreen) in two modes:
+//   open('save') — pick a slot to write into (occupied slots ask before overwriting)
+//   open('load') — pick a slot to load, or 🗑 delete one
+//
+// Slot 'auto' is the autosave (written by LevelManager.goTo): it can be loaded and
+// deleted, but never picked as a save target. Storage lives in save.js.
+
+const SaveUI = {
+  mode: 'load',
+  _returnTo: null,   // 'pause' | 'menu' — where the ✕ button goes back to
+  _pending: null,    // { action:'save'|'delete', slot } awaiting the inline confirm
+  _wired: false,
+
+  isOpen(){ const el=document.getElementById('savesScreen'); return !!el && getComputedStyle(el).display!=='none'; },
+
+  open(mode, returnTo){
+    this.mode = mode==='save' ? 'save' : 'load';
+    this._returnTo = returnTo || (Game.state===SCENES.PAUSED ? 'pause' : 'menu');
+    this._pending = null;
+    if(this._returnTo==='pause' && typeof UI!=='undefined') UI._show('pauseScreen', false);
+    this.render();
+    if(typeof UI!=='undefined') UI._show('savesScreen', true);
+    this._wire();
+  },
+
+  close(){
+    this._pending=null;
+    if(typeof UI!=='undefined') UI._show('savesScreen', false);
+    if(this._returnTo==='pause' && Game.state===SCENES.PAUSED && typeof UI!=='undefined') UI._show('pauseScreen', true);
+    this._returnTo=null;
+  },
+
+  // ---------- rendering ----------
+  _when(ts){
+    if(!ts) return '';
+    const d=new Date(ts), pad=n=>String(n).padStart(2,'0');
+    return `${pad(d.getDate())}.${pad(d.getMonth()+1)}. ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  },
+
+  _card(id, meta){
+    const isAuto = id===Save.AUTO;
+    const title = isAuto ? '⏱ Autosave' : `Slot ${id}`;
+    const saving = this.mode==='save';
+    const pending = this._pending && this._pending.slot===id;
+    // The autosave is never a save target — it belongs to the game, not the player.
+    const disabled = saving && isAuto;
+
+    if(pending){
+      const what = this._pending.action==='delete' ? 'Delete this save?' : 'Overwrite this save?';
+      return `<div class="save-slot confirming">
+        <div class="ss-title">${title}</div>
+        <div class="ss-confirm">${what}</div>
+        <div class="ss-confirm-btns">
+          <button class="modebtn" data-confirm="yes">✓ Yes</button>
+          <button class="modebtn secondary" data-confirm="no">✕ No</button>
+        </div>
+      </div>`;
+    }
+
+    if(!meta){
+      return `<div class="save-slot empty${disabled?' disabled':''}"${disabled?'':` data-slot="${id}"`}>
+        <div class="ss-title">${title}</div>
+        <div class="ss-empty">${saving && !disabled ? '＋ Save here' : '— empty —'}</div>
+      </div>`;
+    }
+
+    return `<div class="save-slot${disabled?' disabled':''}"${disabled?'':` data-slot="${id}"`}>
+      <div class="ss-title">${title}${disabled?' <span class="ss-tag">auto only</span>':''}</div>
+      <div class="ss-row"><b>${meta.breedIcon||'🐕'} ${meta.breedName||meta.breed}</b> · Lv ${meta.dogLevel||1}</div>
+      <div class="ss-row">${meta.envIcon||'🐾'} ${meta.levelName||'—'}</div>
+      <div class="ss-row dim">🌱 ${meta.seedText||'—'} · 🗺️ ${meta.levelsVisited||0} explored</div>
+      <div class="ss-row dim">${this._when(meta.at)}</div>
+      ${this.mode==='load' ? `<button class="ss-del" data-del="${id}" title="Delete this save">🗑</button>` : ''}
+    </div>`;
+  },
+
+  render(){
+    const body=document.getElementById('savesBody'); if(!body) return;
+    const head=document.getElementById('savesTitle');
+    if(head) head.textContent = this.mode==='save' ? '💾 Save Game' : '📂 Load Game';
+    const hint=document.getElementById('savesHint');
+    if(hint) hint.textContent = this.mode==='save'
+      ? 'Pick a slot to save into · the autosave updates by itself'
+      : 'Pick a save to load · 🗑 removes one';
+    body.innerHTML = Save.list().map(s=>this._card(s.id, s.meta)).join('');
+  },
+
+  // ---------- actions ----------
+  _pick(slotId){
+    if(this.mode==='save'){
+      if(!Save.isEmpty(slotId)){ this._pending={ action:'save', slot:slotId }; this.render(); return; }
+      this._doSave(slotId);
+    } else {
+      if(Save.isEmpty(slotId)) return;
+      this.close();
+      Save.read(slotId);
+    }
+  },
+
+  _doSave(slotId){
+    if(Save.write(slotId)) this.close();
+    else this.render();
+  },
+
+  _confirm(ok){
+    const p=this._pending; this._pending=null;
+    if(!ok || !p){ this.render(); return; }
+    if(p.action==='delete'){ Save.remove(p.slot); this.render(); }
+    else this._doSave(p.slot);
+  },
+
+  _wire(){
+    if(this._wired) return; this._wired=true;
+    const body=document.getElementById('savesBody');
+    if(body) body.addEventListener('click', e=>{
+      const yes=e.target.closest('[data-confirm]');
+      if(yes){ this._confirm(yes.dataset.confirm==='yes'); return; }
+      const del=e.target.closest('[data-del]');
+      if(del){ this._pending={ action:'delete', slot:del.dataset.del }; this.render(); return; }
+      const card=e.target.closest('[data-slot]');
+      if(card) this._pick(card.dataset.slot);
+    });
+    const close=document.getElementById('savesClose');
+    if(close) close.addEventListener('click', ()=>this.close());
+  },
+};
+
 // ===== src/world-map.js =====
 // ====================== WORLD MAP ======================
 // The between-levels campaign screen. After a level is cleared (update.js checkWin),
 // this overlay shows the whole journey as a trail of environment nodes (see
 // data/campaign.js), marks how far you've come, parks the dog on the current biome, and
 // offers Continue (to the next real level) or Main Menu.
+//
+// Tapping a biome opens a drill-down card: its levels, then one level's detail (chests
+// looted, NPCs and their tasks, enemies left, quest progress) with a "Travel here"
+// button. Travelling back into a place you've already been restores it exactly as you
+// left it (level-state.js) — that's how you get back to a shopkeeper or a quest-giver.
 //
 // It renders to its own <canvas> with its own requestAnimationFrame (like the char-
 // select breed previews), so it animates independently of the frozen game loop.
@@ -7242,37 +7762,60 @@ const WorldMap = {
   _nodes: [],
   _focusIndex: 0,     // which environment the dog is standing on
   _nextId: null,      // next real level to Continue into (null = no more content yet)
+  _detailEnv: null,   // biome whose level list the drill-down card is showing
+  _detailLevel: null, // level id whose detail the card is showing (null = list view)
   _wired: false,
 
-  // Show the map after finishing `finishedLevelId`.
+  // Show the map after finishing (or revisiting and re-exiting) `finishedLevelId`.
   showAfter(finishedLevelId){
     Progress.markComplete(finishedLevelId);
-    const lvl = (typeof Levels!=='undefined') && Levels.get(finishedLevelId);
-    this._nextId = (lvl && lvl.next && Levels.get(lvl.next)) ? lvl.next : null;
+    this._nextId = this._nextUncleared(finishedLevelId);
     const focusLevel = this._nextId || finishedLevelId;
     this._focusIndex = Campaign.envIndexOfLevel(focusLevel);
+    this._detailEnv = null; this._detailLevel = null;
 
     this.canvas = document.getElementById('worldMapCanvas');
     this.g = this.canvas ? this.canvas.getContext('2d') : null;
     this._layout();
     this._configButtons();
-    if(typeof UI!=='undefined') UI._show('worldMapScreen', true);
+    this._renderDetail();
+    if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
     this._wire();
     this._start();
   },
 
-  hide(){ this._stop(); if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); } },
+  // Where "Continue" should lead: the first real level you haven't cleared, in campaign
+  // order. (Just following level.next would send you back to level 2 after you revisit
+  // level 1 late in the run.) Falls back to the finished level's own `next`.
+  _nextUncleared(finishedLevelId){
+    for(const env of Campaign.environments){
+      for(const l of env.levels){
+        if(!l.real || !Levels.get(l.id)) continue;
+        if(!Progress.isDone(l.id)) return l.id;
+      }
+    }
+    const lvl = Levels.get(finishedLevelId);
+    return (lvl && lvl.next && Levels.get(lvl.next)) ? lvl.next : null;
+  },
+
+  hide(){
+    this._stop();
+    this._detailEnv=null; this._detailLevel=null;
+    if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); }
+  },
 
   // Continue into the next real level.
-  advance(){
-    const id = this._nextId;
+  advance(){ if(this._nextId) this.travelTo(this._nextId); },
+
+  // Walk into any level you're allowed to enter — the next one along, or somewhere you've
+  // already been (which comes back exactly as you left it).
+  travelTo(id){
+    if(!id || typeof LevelManager==='undefined' || !LevelManager.goTo) return;
     this.hide();
-    if(id && typeof LevelManager!=='undefined' && LevelManager.goTo){
-      LevelManager.goTo(id);
-      Game.state = SCENES.PLAYING;
-      if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
-      if(typeof startMusic==='function') startMusic();
-    }
+    LevelManager.goTo(id);
+    Game.state = SCENES.PLAYING;
+    if(typeof updateHUD==='function') updateHUD();   // hotbar shows once PLAYING
+    if(typeof startMusic==='function') startMusic();
   },
 
   // ---------- layout ----------
@@ -7363,18 +7906,27 @@ const WorldMap = {
     this._drawPips(g, env, n.x, n.y+R+26);
   },
 
+  // Per-level pips under a biome: gold = cleared, tan = visited but unfinished, cream =
+  // playable and untouched, faded = not built yet. A green ring marks where you are.
   _drawPips(g, env, cx, cy){
     const lv=env.levels, n=lv.length, gap=11, startX=cx-((n-1)*gap)/2;
+    const cur=(typeof LevelManager!=='undefined') && LevelManager.current;
     lv.forEach((l,i)=>{
       const x=startX+i*gap, done=Progress.isDone(l.id), real=!!l.real;
+      const seen=(typeof LevelState!=='undefined') && LevelState.has(l.id);
+      const here=cur && cur.id===l.id;
       if(l.kind==='boss'){
         g.beginPath(); g.moveTo(x,cy-4); g.lineTo(x+4,cy); g.lineTo(x,cy+4); g.lineTo(x-4,cy); g.closePath();
-        g.fillStyle = done ? '#E6B24A' : (real ? '#C8B48A' : '#DDD2BE'); g.fill();
+        g.fillStyle = done ? '#E6B24A' : (seen ? '#D8C69A' : (real ? '#C8B48A' : '#DDD2BE')); g.fill();
         g.lineWidth=1; g.strokeStyle='#8A7A5A'; g.stroke();
       } else {
         g.beginPath(); g.arc(x,cy,3.4,0,Math.PI*2);
-        g.fillStyle = done ? '#E6B24A' : (real ? '#FFF7E6' : '#E6DCC8');
+        g.fillStyle = done ? '#E6B24A' : (seen ? '#D8C69A' : (real ? '#FFF7E6' : '#E6DCC8'));
         g.fill(); g.lineWidth=1.2; g.strokeStyle = real ? '#8A7A5A' : '#C6BAA2'; g.stroke();
+      }
+      if(here){
+        g.beginPath(); g.arc(x,cy,6,0,Math.PI*2);
+        g.lineWidth=1.6; g.strokeStyle='#4FAE54'; g.stroke();
       }
     });
   },
@@ -7406,13 +7958,91 @@ const WorldMap = {
     }
   },
 
-  // Tapping a node tells you what levels that biome holds.
-  _announce(env){
-    if(typeof showToast!=='function') return;
-    const cleared=Progress.countDone(env.levels.map(l=>l.id));
-    const real=env.levels.some(l=>l.real);
-    const tail = real ? `${cleared}/${env.levels.length} cleared` : 'coming soon';
-    showToast(`${env.icon} ${env.name} — 👑 ${env.boss} · ${tail}`, 2600);
+  // ---------- drill-down card ----------
+  // Where a level stands right now: what its row (and the Travel button) says.
+  //   'soon'    — not built yet          'here'    — the level you're standing in
+  //   'cleared' — finished               'visited' — been there, not finished
+  //   'next'    — the level Continue leads to (enterable for the first time)
+  //   'locked'  — real, but not reachable yet
+  _statusOfLevel(l){
+    if(!l.real || !(typeof Levels!=='undefined' && Levels.get(l.id))) return 'soon';
+    const cur=(typeof LevelManager!=='undefined') && LevelManager.current;
+    if(cur && cur.id===l.id) return 'here';
+    if(Progress.isDone(l.id)) return 'cleared';
+    if(typeof LevelState!=='undefined' && LevelState.has(l.id)) return 'visited';
+    if(this._nextId===l.id) return 'next';
+    return 'locked';
+  },
+  _canTravel(status){ return status==='cleared' || status==='visited' || status==='next'; },
+
+  _chipFor(status){
+    return { soon:'· soon', here:'▶ you are here', cleared:'✓ cleared',
+             visited:'👣 visited', next:'✨ next stop', locked:'🔒 locked' }[status] || '';
+  },
+
+  openDetail(env){ this._detailEnv=env; this._detailLevel=null; this._renderDetail(); },
+  closeDetail(){ this._detailEnv=null; this._detailLevel=null; this._renderDetail(); },
+
+  _renderDetail(){
+    const box=document.getElementById('wmDetail'); if(!box) return;
+    if(!this._detailEnv){ box.style.display='none'; return; }
+    box.style.display='flex';
+    const head=document.getElementById('wmDetailHead');
+    const body=document.getElementById('wmDetailBody');
+    const acts=document.getElementById('wmDetailActions');
+    const env=this._detailEnv;
+
+    if(!this._detailLevel){
+      // --- level list for this biome ---
+      const cleared=Progress.countDone(env.levels.map(l=>l.id));
+      if(head) head.innerHTML=`${env.icon} ${env.name} <span class="wm-chip">👑 ${env.boss} · ${cleared}/${env.levels.length} cleared</span>`;
+      if(body) body.innerHTML=env.levels.map(l=>{
+        const st=this._statusOfLevel(l);
+        const cls=st==='cleared'?' cleared':(st==='here'?' here':(st==='soon'?' soon':''));
+        const tag=l.kind==='boss'?'👑 ':'';
+        return `<button class="wm-lvl${cls}"${st==='soon'?'':` data-lvl="${l.id}"`}>
+          <span>${tag}${l.name}</span><span class="wm-chip">${this._chipFor(st)}</span></button>`;
+      }).join('');
+      if(acts) acts.innerHTML=`<button class="modebtn secondary" data-wm="close">✕ Close map card</button>`;
+      return;
+    }
+
+    // --- one level's detail ---
+    const l=env.levels.find(x=>x.id===this._detailLevel);
+    const st=this._statusOfLevel(l);
+    const s=(typeof LevelState!=='undefined') ? LevelState.summary(l.id) : { visited:false };
+    if(head) head.innerHTML=`${l.kind==='boss'?'👑 ':'📍 '}${l.name} <span class="wm-chip">${this._chipFor(st)}</span>`;
+
+    let rows;
+    if(st==='soon') rows=`<div class="wm-stat">This part of the trail hasn't been blazed yet — coming soon!</div>`;
+    else if(s.current) rows=`<div class="wm-stat">You're standing here right now. 🐾</div>`
+      + `<div class="wm-stat">${this._liveLine()}</div>`;
+    else if(!s.visited) rows=`<div class="wm-stat">❓ Not yet explored — no telling what's waiting.</div>`;
+    else {
+      const npcTxt = s.npcs.length
+        ? s.npcs.map(n=>`${n.name}${n.shop?' 🛒':''}${n.quest?` (${{available:'has a task',active:'task in progress',done:'task done'}[n.quest]||n.quest})`:''}`).join(', ')
+        : 'nobody about';
+      rows = `<div class="wm-stat">📦 Chests: <b>${s.chests.looted}/${s.chests.total}</b> looted</div>`
+           + `<div class="wm-stat">👤 NPCs: <b>${npcTxt}</b></div>`
+           + `<div class="wm-stat">👹 Enemies left: <b>${s.enemies}</b> · 🐿️ Critters: <b>${s.critters}</b></div>`
+           + `<div class="wm-stat">💛 Friends cheered: <b>${s.friends.cheered}/${s.friends.total}</b> · 🦴 Treats left: <b>${s.treatsLeft}</b></div>`
+           + `<div class="wm-stat">${s.cleared ? '✓ Quest complete — the portal is still humming there.' : '… quest still in progress.'}</div>`;
+    }
+    if(body) body.innerHTML=rows;
+    if(acts) acts.innerHTML =
+      (this._canTravel(st) ? `<button class="modebtn" data-travel="${l.id}">🐾 Travel here</button>` : '')
+      + `<button class="modebtn secondary" data-wm="back">← Back</button>`;
+  },
+
+  // One-line summary of the level you're currently standing in (its state isn't
+  // snapshotted until you leave, so read it live).
+  _liveLine(){
+    const chests=(typeof entities!=='undefined'?entities:[]).filter(e=>e.kind==='chest');
+    const looted=chests.filter(c=>c.state==='open').length;
+    const cheered=(typeof friends!=='undefined'?friends:[]).filter(f=>f.cheered).length;
+    const total=(typeof friends!=='undefined'?friends:[]).length;
+    const foes=(typeof entities!=='undefined'?entities:[]).filter(e=>e.kind==='enemy'||e.kind==='wolf').length;
+    return `📦 ${looted}/${chests.length} chests · 💛 ${cheered}/${total} friends · 👹 ${foes} enemies`;
   },
 
   _onClick(ev){
@@ -7422,7 +8052,16 @@ const WorldMap = {
     const sx=WM_W/r.width, sy=WM_H/r.height;
     const mx=(ev.clientX-r.left)*sx, my=(ev.clientY-r.top)*sy;
     const hit=this._nodes.find(n=>Math.hypot(n.x-mx,n.y-my)<26);
-    if(hit) this._announce(hit.env);
+    if(hit) this.openDetail(hit.env);
+  },
+
+  _onDetailClick(ev){
+    const trav=ev.target.closest('[data-travel]');
+    if(trav){ this.travelTo(trav.dataset.travel); return; }
+    const act=ev.target.closest('[data-wm]');
+    if(act){ (act.dataset.wm==='back' && this._detailLevel) ? (this._detailLevel=null, this._renderDetail()) : this.closeDetail(); return; }
+    const row=ev.target.closest('[data-lvl]');
+    if(row){ this._detailLevel=row.dataset.lvl; this._renderDetail(); }
   },
 
   _wire(){
@@ -7430,6 +8069,8 @@ const WorldMap = {
     const on=(id,fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click',fn); };
     on('wmContinue', ()=>this.advance());
     on('wmMenu',     ()=>{ this.hide(); if(typeof UI!=='undefined') UI.quitToMenu(); });
+    const det=document.getElementById('wmDetail');
+    if(det) det.addEventListener('click', e=>this._onDetailClick(e));
     if(this.canvas) this.canvas.addEventListener('click', e=>this._onClick(e));
   },
 };
@@ -7725,6 +8366,14 @@ function buildSelectScreen(){
 
   ${buildStatsPanel()}
 
+  <div class="cs-seed">
+    <label for="csSeed">🌱 Seed</label>
+    <input id="csSeed" type="text" maxlength="24" spellcheck="false" autocomplete="off"
+           placeholder="leave blank for a surprise" value="${Run.seedText||''}">
+    <button id="csSeedRoll" title="Roll a new seed">🎲</button>
+  </div>
+  <div class="cs-seed-hint">The seed builds every level — same seed, same world.</div>
+
   <div class="cs-actions">
     <button class="modebtn secondary" id="csBack">← Back</button>
     <button class="modebtn" id="csNext">▶ Play!</button>
@@ -7746,6 +8395,16 @@ function showCharSelect(){
       // re-render the cards so the selection highlight moves
       showCharSelect();
     });
+  });
+
+  // Seed box. The screen re-renders whenever a breed card is clicked, so what's typed is
+  // parked on Run.seedText (the input is repopulated from it above) rather than lost.
+  const seedIn=document.getElementById('csSeed');
+  if(seedIn) seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+  const seedRoll=document.getElementById('csSeedRoll');
+  if(seedRoll) seedRoll.addEventListener('click', ()=>{
+    Run.newRandom();
+    if(seedIn) seedIn.value=Run.seedText;
   });
 
   // Play button
@@ -7790,6 +8449,10 @@ function renderBreedPreviews(){
 
 function launchGame(){
   if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
+  // Lock in the run seed BEFORE the first level is built: typed text wins, blank rolls a
+  // fresh random run (core/run.js).
+  const typed=document.getElementById('csSeed');
+  Run.setFromText(typed ? typed.value : Run.seedText);
   // HUD dot takes the chosen breed's accent colour
   const dot = document.querySelector('#hud .dot');
   if(dot) dot.style.background = Breeds.get(dogConfig.breed).color;
@@ -7809,8 +8472,12 @@ function launchGame(){
 // to rebuild whatever level is current (used by Play Again after a game over).
 function resetGame(cfg, levelId){
   stopMusic();
-  // A brand-new game (levelId given = starting at level 1) wipes campaign progress.
-  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id) Progress.reset();
+  // A brand-new game (levelId given = starting at level 1) wipes campaign progress and
+  // everything remembered about previously-visited levels.
+  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id){
+    Progress.reset();
+    if(typeof LevelState!=='undefined') LevelState.clear();
+  }
   if(levelId) LevelManager.load(levelId);   // regenerate a specific level
   else LevelManager.reload();               // rebuild the current level
   Abilities.reset();

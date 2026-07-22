@@ -58,13 +58,28 @@
       <div id="worldMapScreen" style="display:none;">
         <h2>🗺️ Your Journey</h2>
         <canvas id="worldMapCanvas" width="600" height="250"></canvas>
+        <div id="wmSeed" class="wm-seed" title="Click to copy this run's seed">🌱 seed</div>
         <div id="wmNote" class="wm-note">Your journey continues!</div>
         <div class="wm-actions">
           <button class="modebtn" id="wmContinue">Continue →</button>
           <button class="modebtn secondary" id="wmMastery">🎓 Mastery</button>
           <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
         </div>
-        <div class="overlay-hint">Tap a region to see what's ahead · upgrade abilities in 🎓 Mastery</div>
+        <div class="overlay-hint">Tap a region to see its levels · revisit any place you've been</div>
+
+        <!-- Drill-down card: biome → its levels → one level's detail + travel -->
+        <div id="wmDetail" style="display:none;">
+          <div id="wmDetailHead"></div>
+          <div id="wmDetailBody"></div>
+          <div id="wmDetailActions"></div>
+        </div>
+      </div>
+
+      <div id="savesScreen" style="display:none;">
+        <h2 id="savesTitle">📂 Load Game</h2>
+        <div id="savesBody"></div>
+        <button class="modebtn secondary" id="savesClose">✕ Close</button>
+        <div class="overlay-hint" id="savesHint">Pick a save to load · 🗑 removes one</div>
       </div>
 
       <div id="devScreen" style="display:none;">
@@ -90,6 +105,7 @@
         <button class="modebtn secondary" id="btnLoad">📂 Load Game</button>
         <button class="modebtn secondary" id="btnPauseOptions">⚙️ Options</button>
         <button class="modebtn secondary" id="btnQuit">🏠 Quit to Menu</button>
+        <div id="pauseSeed" class="wm-seed" title="Click to copy this run's seed">🌱 seed</div>
         <div class="overlay-hint">Esc to resume</div>
       </div>
 

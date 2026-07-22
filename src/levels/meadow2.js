@@ -30,7 +30,7 @@ Levels.register({
       for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!isWater(fx,fy,4)) break; }
       if(isWater(fx,fy,4)) continue;   // keep wildflowers on dry land
       worldObjects.push({kind:'flower', x:fx, y:fy,
-        hue:hues[Math.floor(Math.random()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
+        hue:hues[Math.floor(rnd()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
     }
     worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 

@@ -18,7 +18,13 @@ const CHEER_TOTAL=5;
 // Raw key state (`keys`) and listeners moved to core/input.js.
 
 // ---------- HELPERS ----------
-function rand(a,b){ return a+Math.random()*(b-a); }
+// `rnd()` is the game's random source: inside a level-generation window (RNG.beginGen,
+// see core/rng.js + core/run.js) it draws from the run's seeded stream, everywhere else
+// it's plain Math.random(). LEVEL GENERATORS MUST USE rnd()/rand(), NEVER Math.random() —
+// revisiting a level regenerates its terrain from the seed (level-state.js), so anything
+// unseeded would move under the entities restored on top of it.
+function rnd(){ return RNG.rnd(); }
+function rand(a,b){ return a+rnd()*(b-a); }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 
 // ---------- COLLIDERS ----------
@@ -100,7 +106,7 @@ function buildWorld(){
       ok = !inWater(p.x,p.y,Math.max(w,h)/2+24) && ellipseClearOfRiver(p.x,p.y,w,h,22);
     }
     taken.push(p);
-    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:Math.random()*100,blobSeed:Math.floor(Math.random()*9999)});
+    worldObjects.push({kind:'pond',x:p.x,y:p.y,w,h,seed:rnd()*100,blobSeed:Math.floor(rnd()*9999)});
   }
 
   // ---- FENCE border ----
@@ -113,7 +119,7 @@ function buildWorld(){
   for(let i=0;i<22;i++){
     const p=safePt(40,40,WORLD_W-40,WORLD_H-40,100,taken,55);
     taken.push(p);
-    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(Math.random()*3)});
+    worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(rnd()*3)});
     addCollider(p.x-7,p.y+19,14,13);
   }
 
@@ -129,7 +135,7 @@ function buildWorld(){
   for(let i=0;i<18;i++){
     const p=safePt(60,60,WORLD_W-60,WORLD_H-60,60,taken,40);
     taken.push(p);
-    const big=Math.random()<0.35;
+    const big=rnd()<0.35;
     worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
     if(big) addCollider(p.x-12,p.y+2,24,12);
   }
@@ -138,7 +144,7 @@ function buildWorld(){
   for(let i=0;i<6;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,120,taken,45);
     taken.push(p);
-    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-24,p.y-2,48,16);
   }
 
@@ -149,14 +155,14 @@ function buildWorld(){
       p=rand2(30,30,WORLD_W-30,WORLD_H-30,40,taken.filter((_,j)=>j%3===0));
       if(!inWater(p.x,p.y,30)) break;
     }
-    worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:Math.random()*100});
+    worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100});
   }
 
   // ---- BUSHES ----
   for(let i=0;i<24;i++){
     const p=safePt(50,50,WORLD_W-50,WORLD_H-50,70,taken,40);
     taken.push(p);
-    const variant=Math.floor(Math.random()*2);
+    const variant=Math.floor(rnd()*2);
     worldObjects.push({kind:'bush',x:p.x,y:p.y,variant});
     addCollider(p.x-12,p.y+3,24,13);
   }
@@ -168,7 +174,7 @@ function buildWorld(){
     for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!inWater(fx,fy,4)) break; }
     if(inWater(fx,fy,4)) continue;   // no dry spot found this try — skip rather than float on water
     worldObjects.push({kind:'flower',x:fx,y:fy,
-      hue:flowerHues[Math.floor(Math.random()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
+      hue:flowerHues[Math.floor(rnd()*flowerHues.length)],sway:rand(0,Math.PI*2),size:rand(0.7,1.3)});
   }
 
   // ---- WILLOW TREES ----
@@ -186,14 +192,14 @@ function buildWorld(){
       p=rand2(40,40,WORLD_W-40,WORLD_H-40,30,taken.filter((_,j)=>j%4===0));
       if(!inWater(p.x,p.y,25)) break;
     }
-    worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:Math.random()<0.3});
+    worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.3});
   }
 
   // ---- MUSHROOM RINGS ----
   for(let i=0;i<4;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,45);
     taken.push(p);
-    worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100});
   }
 
   // ---- CATTAILS / REEDS along the pond shores (no collider) ----
@@ -201,7 +207,7 @@ function buildWorld(){
     const n=Math.floor(rand(3,6));
     for(let k=0;k<n;k++){
       const ang=rand(0,Math.PI*2);
-      worldObjects.push({kind:'cattail', seed:Math.random()*100,
+      worldObjects.push({kind:'cattail', seed:rnd()*100,
         x:pond.x+Math.cos(ang)*(pond.w/2+rand(2,10)),
         y:pond.y+Math.sin(ang)*(pond.h/2+rand(2,10))});
     }
@@ -211,7 +217,7 @@ function buildWorld(){
   for(let i=0;i<5;i++){
     const p=safePt(80,80,WORLD_W-80,WORLD_H-80,90,taken,40);
     taken.push(p);
-    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'log',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-16,p.y-1,32,9);
   }
 
@@ -219,7 +225,7 @@ function buildWorld(){
   for(let i=0;i<5;i++){
     const p=safePt(70,70,WORLD_W-70,WORLD_H-70,80,taken,35);
     taken.push(p);
-    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:Math.random()*100});
+    worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:rnd()*100});
     addCollider(p.x-8,p.y-1,16,10);
   }
 
@@ -227,7 +233,7 @@ function buildWorld(){
   const bflyHues=['#FFFFFF','#FFD93D','#FF9E6E','#8FD4E8','#C9A6FF','#FF8FB0'];
   for(let i=0;i<14;i++){
     worldObjects.push({kind:'butterfly', x:rand(60,WORLD_W-60), y:rand(60,WORLD_H-60),
-      hue:bflyHues[Math.floor(Math.random()*bflyHues.length)], seed:Math.random()*1000});
+      hue:bflyHues[Math.floor(rnd()*bflyHues.length)], seed:rnd()*1000});
   }
 
   // ---- STONE PATHS ----
@@ -267,7 +273,7 @@ function makeCollectibles(){
     const baseX=rand(120,WORLD_W-120);
     items.push({
       type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
-      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(Math.random()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
       x:baseX, y:riverY(baseX)
     });
   }
@@ -317,8 +323,8 @@ function makeRiverPebbles(){
   const list=[];
   for(let x=40;x<WORLD_W-40;){
     const w=riverWidthAt(x), cy=riverY(x);
-    const side=Math.random()<0.5?-1:1;
-    list.push({x, y:cy+side*(w/2+rand(2,9)), big:Math.random()<0.3});
+    const side=rnd()<0.5?-1:1;
+    list.push({x, y:cy+side*(w/2+rand(2,9)), big:rnd()<0.3});
     x+=rand(26,46);
   }
   return list;

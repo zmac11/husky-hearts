@@ -23,6 +23,7 @@ HTML = ROOT / 'index.html'
 LOAD_ORDER = [
     'init.js',            # canvas + ctx
     'core/rng.js',        # seeded RNG (mulberry32) — used by world gen + save
+    'core/run.js',        # the run seed: every level's layout derives from it
     'core/state.js',      # SCENES enum + Game/World state facades
     'core/input.js',      # keys, control maps, ESC hook
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
@@ -66,11 +67,13 @@ LOAD_ORDER = [
     'abilities/scream.js',      # Lolla E: piercing AOE scream
     'abilities/innerMonster.js',# Ťapka Q: feral melee transform + lifesteal
     'abilities/scurry.js',      # Ťapka E: evasive dash + i-frames
-    'level-manager.js',   # LevelManager.load (build world + themed ground)
+    'level-state.js',     # per-level dynamic state so visited levels stay as you left them
+    'level-manager.js',   # LevelManager.load/enter (build world + themed ground)
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
     'toast.js',           # showToast
     'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
     'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)
+    'save-ui.js',         # save-slot picker overlay (needs UI._show)
     'world-map.js',       # between-levels campaign map (needs UI/Levels/LevelManager/Progress)
     'main.js',            # main loop + start
     'fullscreen.js',      # fullscreen button

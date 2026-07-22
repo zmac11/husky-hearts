@@ -18,7 +18,9 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
   - Ability slots show a live cooldown sweep on the hotbar; using one early tells you how long is left.
 - 💰 **Buried treasure chests** — chests are hidden underground; your dog **sniffs them out** (scent wisps that pulse faster as you close in — smarter dogs smell farther) and **digs them up** (Ťapka the ratter digs fastest). Rarities run 🟫 Wooden → ⬜ Iron → 🩶 Silver (**locked — needs a 🗝️ Key**) → 🟨 Golden, each with its own loot table of treats, consumables, wearables and chest-exclusive items (Golden Bone, Feast, and the 👑 Crown from golden chests).
 - 🌀 **Exit portals** — clearing a level's quest opens a **biome-themed portal** you walk into to continue (instead of the map auto-opening). Finishing a biome's last level also drops a **golden chest** beside the portal.
-- 🗺️ **Campaign world map** — a "Your Journey" map shows your progress across the biomes (cleared ✓ / current / locked). The world is designed as **environments of 3 levels + a boss** each; tap a region to preview what's ahead.
+- 🗺️ **Campaign world map & revisiting** — a "Your Journey" map shows your progress across the biomes (cleared ✓ / visited 👣 / current / locked). Tap a region to see its levels, then a level for its **detail card** — chests looted, which NPCs live there and whether they have a task, enemies left, friends cheered, treats still lying around — and **🐾 Travel here** to walk back in. A revisited level comes back **exactly as you left it**, so you can return to a shopkeeper or a quest-giver later. The world is designed as **environments of 3 levels + a boss** each.
+- 🌱 **Seeded worlds** — every run has a seed, and every level's layout is built from it. Type your own on the character-select screen (`husky`, `12345`, anything) or leave it blank for a surprise, and the seed is shown on the pause menu and the map — click to copy and replay or share the same world.
+- 💾 **Six save slots + autosave** — save into any of 6 slots from the pause menu, each card showing the dog, its level, where you are, the run's seed and when you saved. A separate autosave updates every time you arrive in a level. Saves are tiny because worlds regenerate from the seed.
 - 🏞️ **Four playable levels so far** — the **Sunny Meadows** learning biome (*Sunny Meadow* → *Wildflower Field*, an enemy-free field introducing friendly wildlife → *Old Orchard Path*, which eases in a slow enemy and a river crossing), then the tougher **Rocky Mountains**: a Canadian-Rockies valley with snow-veined peaks, turquoise glacial lakes, waterfalls, evergreen forest, a river, and a prowling wolf pack. More biomes (Whispering Woods, Seashell Cove, Golden Dunes, Frostfang Tundra, Cloud Kingdom…) are stubbed on the map as *coming soon*.
 - ⚔️ **Enemies that fight back — and can be defeated** — the grumpy badger and mountain wolves chase, lunge and bite; abilities damage and knock them back, and defeated enemies poof (with a chance to drop a treat). A howl briefly makes you louder, pulling enemies from farther — and a startled enemy pops a **"!"** when it first hears you.
 - 🫎 **Friendly wildlife** — peaceful moose, beavers, loons, ducks and squirrels roam the world; greet them (action key) for a cheerful hello, sparkles, and a treat gift the first time. They never attack. Land animals (and enemies) **swim** when they enter water.
@@ -98,7 +100,8 @@ husky-hearts/
 ├── src/                ← editable JS modules
 │   ├── init.js              canvas & ctx setup
 │   ├── core/
-│   │   ├── rng.js           seeded RNG (mulberry32)
+│   │   ├── rng.js           seeded RNG (mulberry32) + generation window (beginGen/rnd)
+│   │   ├── run.js           the run seed — every level's layout derives from it
 │   │   ├── state.js         SCENES enum + Game/World facades + dt-scaling
 │   │   └── input.js         key state, rebindable action bindings, hotkey hooks
 │   ├── data/
@@ -119,7 +122,8 @@ husky-hearts/
 │   │   ├── meadow2.js       Sunny Meadows 2 — Wildflower Field (wildlife intro, no enemies)
 │   │   ├── meadow3.js       Sunny Meadows 3 — Old Orchard Path (gentle enemy + river)
 │   │   └── rocky.js         Rocky Mountains (Canadian valley: lakes/waterfalls/peaks/wolves)
-│   ├── level-manager.js     LevelManager.load — build world + themed ground
+│   ├── level-state.js       per-level dynamic state so visited levels stay as you left them
+│   ├── level-manager.js     LevelManager.load/enter — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()
 │   ├── world-draw.js        tree/rock/pond/mountain renderers + drawWorld (theme-aware)
 │   ├── collectibles.js      drawCollectible (glow badge + plain ground items)
@@ -147,10 +151,11 @@ husky-hearts/
 │   ├── minimap.js           top-right corner minimap (theme-aware)
 │   ├── update.js            updatePlayer, tryCollect/Deliver/Interact, checkWin
 │   ├── toast.js             on-screen message popups
-│   ├── save.js              save/load a run to localStorage (world snapshot)
+│   ├── save.js              save slots (1–6 + autosave) in localStorage (seed + level state)
 │   ├── ui.js                HUD + panels (inventory / journal / skill tree / dialog / pause) + hotbar
+│   ├── save-ui.js           save-slot picker overlay (save / load / delete)
 │   ├── options.js           options screen: key rebinding + sound volume/mute
-│   ├── world-map.js         between-levels campaign map (progress + Continue)
+│   ├── world-map.js         between-levels campaign map (progress, level detail, travel)
 │   ├── main.js              main rAF loop (scene-gated) + startup LevelManager.load
 │   ├── fullscreen.js        canvas sizing + fullscreen (native + iOS fallback) + UI scaling
 │   ├── mobile-controls.js   touch d-pad binding
@@ -180,7 +185,9 @@ extensions are additive:
   apply its effect in `Skills.apply(p)`.
 - **New level** → add a file in `src/levels/` declaring `size`, `theme`, `generate()`, and
   `quest`, then `Levels.register(...)`. Call `Chests.spawnForLevel(id)` from `generate()`
-  to bury treasure.
+  to bury treasure. Generators must draw randomness from `rand()`/`rnd()` and never
+  `Math.random()` — a level's terrain is rebuilt from the run seed every time you walk
+  back into it (`level-state.js` restores only the dynamic half on top).
 - **New enemy / NPC / world actor** → register a kind in `src/entities/` (with
   `update`/`draw`/`onInteract`, and `hp` if it should be damageable) and `Entities.spawn()`
   it from a level's `generate()`.
