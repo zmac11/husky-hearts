@@ -12,7 +12,7 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 - 📊 **Stat bars that actually matter** — clicking a dog on the select screen shows 1–5 bars for **Health, Speed, Swimming, Noise, and Smarts**, and every one is real: *Noise* scales how far enemies detect you (and howling makes you louder), *Smarts* discounts shop prices and boosts quest rewards. The numbers are derived from the bars, so display and gameplay can never drift.
 - 💥 **Floating combat numbers** — every hit pops a number where it landed: **gold** for damage your dog deals, **red** for damage it takes, green for healing, and mint **+XP** as orbs are picked up. A level-up blooms golden rings around the dog with a ⭐ LEVEL banner.
 - 🌳 **Upgrade trees a click away** — 🌳 Skills and 🎓 Mastery buttons sit in the corner of the game frame and **glow with a count badge** whenever points are waiting to be spent. Step through a cleared level's portal and the skill tree opens itself on the journey map, so fresh points never sit forgotten — both trees are reachable there from 🌳 Skills / 🎓 Mastery.
-- 🌳 **Skill tree** — spend levels on shared character upgrades (Vitality, Swift Paws, Keen Nose, Soft Steps) and per-dog ability upgrades (up to level 3 each). Open it with **K** or the 🌳 button in the inventory. *(Point-earning is a future step — for now you can level freely and respec to experiment.)*
+- 🌳 **Two upgrade trees** — a shared **Skill tree** of character stats (Vitality, Swift Paws, Keen Nose, Soft Steps), with points earned by **clearing levels**, and a per-dog **Mastery tree** that ranks abilities up (to level 3), with points earned by **leveling up**. Open Skills with **K**, the 🌳 button, or from the inventory; respec freely to experiment.
 - ⚡ **Active abilities with cooldowns** — each dog carries two abilities on **Q / E** plus a reserved **Ultimate** slot on **R**:
   - **Dinno** — *Storm Fang* (transform into a storm-wolf: rain, screen-darkening, lightning bolts that strike enemies, a fear aura, and a speed boost) and *Spirit of the Storm* (summon a spectral wolf that hunts on its own).
   - **Lolla** — *Ball Cannon* (place an auto-turret, load it with 🎾 balls from your hotbar, it fires at enemies and drops recyclable ammo) and *Piercing Scream* (a mobile AOE of damage + knockback, with a chance to frighten enemies at higher levels).
@@ -221,6 +221,10 @@ Remember to add any new **JS** file to `LOAD_ORDER` in `build.py` (dependency or
 ## Tech notes
 
 - **No external dependencies.** No npm, no bundler, no audio assets — just the browser.
+- **Content is data-driven.** Levels, loot tables, shop wares, quest rewards and item stats
+  live in `src/config/*.json`. `build.py` validates each file and bakes it into the bundle as
+  a global, so retuning the game is a JSON edit + rebuild — and the offline single-file build
+  needs no runtime fetch.
 - **All audio is synthesized.** Oscillator-driven soundtracks route through separate music
   and SFX buses (so volume/mute can be controlled independently); SFX are short oscillator envelopes.
 - **All graphics are drawn at runtime** as pixel-art via 2D canvas calls. The ground is
