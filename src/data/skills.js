@@ -1,15 +1,18 @@
-// ====================== SKILLS (data) ======================
-// The skill tree: per-dog upgrades for the character itself plus the breed's active
-// abilities. Every dog shares the "character" nodes; ability nodes are per breed
-// (Lolla's Ball Cannon is the first — Dinno's and Ťapka's are future placeholders).
+// ====================== SKILLS + MASTERY (data) ======================
+// Two separate upgrade tracks:
+//   • Skills  — CHARACTER stat nodes (shared by every dog), spent from p.skillPoints
+//     (earned by clearing levels). Editable anytime via the skill tree (K).
+//   • Mastery — per-breed ABILITY nodes, spent from p.masteryPoints (earned by dog
+//     level-ups). Editable only BETWEEN levels via the mastery tree (world map).
 //
-// Player state is plain data (save-friendly): p.skills = { nodeId: level }, plus
-// p.skillPoints (reserved — EARNING points is future work; while that's unbuilt the
-// tree levels freely and the − button refunds, so tuning can be playtested).
+// Player state is plain data (save-friendly): p.skills / p.mastery = { nodeId: level },
+// with p.skillPoints / p.masteryPoints as the spendable pools. Skills.level(p, id)
+// routes reads to the right map, so the ability modules (which call Skills.level with
+// their skillNode) need no change.
 //
-// Skills.apply(p) is the single place skill effects become numbers: it recomputes
-// p.maxHp / p.speed / p.stats from the breed's base values + current skill levels.
-// It must be called after any level change (UI), at makePlayer, and on save-load.
+// Skills.apply(p) is the single place stat effects become numbers: it recomputes
+// p.maxHp / p.speed / p.stats from the breed's base + current stat-node levels.
+// It must be called after any change (UI), at makePlayer, and on save-load.
 
 const SKILL_NODES = {
   // ---- character nodes (every dog) ----
@@ -72,21 +75,31 @@ const SKILL_NODES = {
   },
 };
 
+// All ability-node ids (across breeds) — used to route Skills.level reads to p.mastery.
+const _ABILITY_NODE_IDS = new Set();
+Object.values(SKILL_NODES.byBreed).forEach(list => list.forEach(n => { if(n.ability) _ABILITY_NODE_IDS.add(n.id); }));
+
 const Skills = {
-  // All nodes shown for a breed, character nodes first.
-  nodesFor(breed){
-    return SKILL_NODES.common.concat(SKILL_NODES.byBreed[breed] || []);
+  // The skill tree shows CHARACTER (stat) nodes only now; abilities live in Mastery.
+  nodesFor(){ return SKILL_NODES.common.slice(); },
+  node(id){ return SKILL_NODES.common.find(n=>n.id===id) || null; },
+
+  // Route reads: ability nodes → p.mastery, stat nodes → p.skills.
+  level(p, id){
+    if(!p) return 0;
+    if(_ABILITY_NODE_IDS.has(id)) return (p.mastery && p.mastery[id]) || 0;
+    return (p.skills && p.skills[id]) || 0;
   },
-  node(breed, id){ return this.nodesFor(breed).find(n=>n.id===id) || null; },
 
-  level(p, id){ return (p && p.skills && p.skills[id]) || 0; },
-
+  // Stat nodes cost 1 skill point per rank; − refunds.
   addPoint(p, id){
-    const n=this.node(p.breed, id);
+    const n=this.node(id);
     if(!n || n.locked) return false;
+    if((p.skillPoints||0) <= 0) return false;
     const cur=this.level(p, id);
     if(cur>=n.max) return false;
     (p.skills || (p.skills={}))[id]=cur+1;
+    p.skillPoints--;
     this.apply(p);
     return true;
   },
@@ -94,6 +107,7 @@ const Skills = {
     const cur=this.level(p, id);
     if(cur<=0) return false;
     p.skills[id]=cur-1;
+    p.skillPoints=(p.skillPoints||0)+1;
     this.apply(p);
     return true;
   },
@@ -105,17 +119,62 @@ const Skills = {
     if(!p) return;
     const base=Breeds.get(p.breed);
     const lv=id=>this.level(p, id);
+    // Equipment stat bonuses (data/items.js `mods`), summed once.
+    const eq=(typeof Equip!=='undefined') ? Equip.statMods(p) : { maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
     const wasMax = p.hp>=p.maxHp;
-    p.maxHp = (base.hp||20) + 2*lv('vitality');
+    p.maxHp = (base.hp||20) + 2*lv('vitality') + eq.maxHp;
     if(wasMax) p.hp=p.maxHp; else p.hp=Math.min(p.hp, p.maxHp);
-    p.speed = +(base.stats.speed + 0.06*lv('swift')).toFixed(2);
+    p.speed = +(base.stats.speed + 0.06*lv('swift') + eq.speed).toFixed(2);
     p.stats = Object.assign({}, base.stats, {
       speed:    p.speed,
-      scentR:   base.stats.scentR + 20*lv('nose'),
-      noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft'))).toFixed(3),
+      scentR:   base.stats.scentR + 20*lv('nose') + eq.scentR,
+      noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft')) + eq.noiseMul).toFixed(3),
+      priceMul: +(base.stats.priceMul + eq.priceMul).toFixed(3),
     });
     // NOTE: no UI calls here — apply() runs during initial module evaluation
     // (makePlayer at world.js load), before ui.js's `const UI` exists. Callers
     // that change levels at runtime refresh the HUD themselves.
+  },
+};
+
+// Ability mastery — a separate track spent from p.masteryPoints, editable only between
+// levels (the mastery tree on the world map). Costs rise per rank: 1 / 1 / 2 mp.
+const Mastery = {
+  COST: [1, 1, 2],   // mastery points to reach rank 1 / 2 / 3
+  nodesFor(breed){ return (SKILL_NODES.byBreed[breed] || []).slice(); },
+  node(breed, id){ return this.nodesFor(breed).find(n=>n.id===id) || null; },
+  level(p, id){ return (p && p.mastery && p.mastery[id]) || 0; },
+  costFor(cur){ return this.COST[cur] || 1; },   // cost to go cur → cur+1
+
+  addPoint(p, id){
+    const n=this.node(p.breed, id);
+    if(!n || n.locked) return false;
+    const cur=this.level(p, id);
+    if(cur>=n.max) return false;
+    const cost=this.costFor(cur);
+    if((p.masteryPoints||0) < cost) return false;
+    (p.mastery || (p.mastery={}))[id]=cur+1;
+    p.masteryPoints-=cost;
+    return true;
+  },
+  removePoint(p, id){
+    const cur=this.level(p, id);
+    if(cur<=0) return false;
+    p.mastery[id]=cur-1;
+    p.masteryPoints=(p.masteryPoints||0)+this.costFor(cur-1);   // refund that rank's cost
+    return true;
+  },
+
+  // Migrate ability levels saved under the old unified p.skills map into p.mastery
+  // (one-time, on load) so pre-split saves keep their unlocked abilities.
+  migrate(p){
+    if(!p || !p.skills) return;
+    this.nodesFor(p.breed).forEach(n=>{
+      if(p.skills[n.id]!=null){
+        p.mastery=p.mastery||{};
+        p.mastery[n.id]=Math.max(p.mastery[n.id]||0, p.skills[n.id]);
+        delete p.skills[n.id];
+      }
+    });
   },
 };

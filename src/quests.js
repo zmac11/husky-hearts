@@ -106,6 +106,7 @@ const Quests = {
       p.treats=(p.treats||0)+treats; rewardStr=`+${treats} treats`;
     }
     else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    if(typeof Progression!=='undefined') Progression.award(p, Progression.QUEST_XP, 'quest');
     if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
     if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);
     return rewardStr;

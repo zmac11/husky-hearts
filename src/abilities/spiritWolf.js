@@ -22,7 +22,7 @@
   function activate(p){
     const L=lvl(p);
     if(L<1){
-      showToast(`🌳 Learn Spirit of the Storm in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Spirit of the Storm in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'spiritWolf');

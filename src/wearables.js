@@ -22,6 +22,9 @@ const Wearables = {
   isWearable(id){ const d=Items.get(id); return !!(d && d.type==='wearable'); },
   equipped(p, slot){ return (p.equipment && p.equipment[slot]) || null; },
 
+  // Re-derive stats after any equip/unequip so gear bonuses (Items `mods`) take effect.
+  restat(p){ if(typeof Skills!=='undefined') Skills.apply(p); },
+
   // Equip a bag item into its slot; whatever was in that slot returns to the bag.
   equip(p, id){
     const slot=this.slotOf(id);
@@ -31,6 +34,7 @@ const Wearables = {
     Inventory.remove(p, id, 1);
     if(prev) Inventory.add(p, prev, 1);
     eq[slot]=id;
+    this.restat(p);
     return true;
   },
 
@@ -39,6 +43,7 @@ const Wearables = {
     if(Inventory.roomFor(p, eq[slot]) < 1) return false;   // nowhere to put it — bag full
     Inventory.add(p, eq[slot], 1);
     delete eq[slot];
+    this.restat(p);
     return true;
   },
 
@@ -57,6 +62,7 @@ const Wearables = {
       if(!Inventory.at(p, idx)) Inventory.setAt(p, idx, { id:prev, qty:1 });
       else Inventory.add(p, prev, 1);
     }
+    this.restat(p);
     return true;
   },
 
@@ -65,16 +71,17 @@ const Wearables = {
   unequipToSlot(p, wslot, idx){
     const eq=p.equipment; const id=eq && eq[wslot]; if(!id) return false;
     const target=Inventory.at(p, idx);
-    if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; return true; }
-    if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; return true; }
+    if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; this.restat(p); return true; }
+    if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; this.restat(p); return true; }
     const tdef=Items.get(target.id);
     if(tdef && tdef.type==='wearable' && tdef.slot===wslot){   // swap the two wearables
       Inventory.removeAt(p, idx, 1);
       Inventory.setAt(p, idx, { id, qty:1 });
       eq[wslot]=target.id;
+      this.restat(p);
       return true;
     }
-    return this.unequip(p, wslot);                            // occupied → send to bag
+    return this.unequip(p, wslot);                            // occupied → send to bag (calls restat)
   },
 
   // ---- rendering ----
@@ -230,5 +237,35 @@ const Wearables = {
       }
       _wpx(g, a.x-8, y, 2, 2, strap); _wpx(g, a.x+6, y, 2, 2, strap); // strap peeking out
     },
+  },
+};
+
+// Equipment effects: passive stat mods (summed in Skills.apply) and per-ability mods
+// (read by the ability modules). Items declare `mods` / `abilityMods` (data/items.js).
+const Equip = {
+  // Sum the stat deltas across everything the player has equipped.
+  statMods(p){
+    const out={ maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
+    if(!p || !p.equipment || typeof Items==='undefined') return out;
+    for(const slot in p.equipment){
+      const def=Items.get(p.equipment[slot]); const m=def && def.mods; if(!m) continue;
+      if(m.maxHp)       out.maxHp    += m.maxHp;
+      if(m.speed)       out.speed    += m.speed;
+      if(m.scentR)      out.scentR   += m.scentR;
+      if(m.noiseMul)    out.noiseMul += m.noiseMul;
+      if(m.smartsPrice) out.priceMul += m.smartsPrice;
+    }
+    return out;
+  },
+  // Fold equipped abilityMods for one ability node + field into a base value.
+  abilityMod(p, node, field, base){
+    let v=base;
+    if(!p || !p.equipment || typeof Items==='undefined') return v;
+    for(const slot in p.equipment){
+      const def=Items.get(p.equipment[slot]);
+      const am=def && def.abilityMods && def.abilityMods[node];
+      if(am && typeof am[field]==='number') v+=am[field];
+    }
+    return v;
   },
 };

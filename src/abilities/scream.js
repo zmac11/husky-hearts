@@ -21,7 +21,7 @@
 
   function activate(p){
     const L=lvl(p);
-    if(L<1){ showToast(`🌳 Learn Piercing Scream in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    if(L<1){ showToast(`🎓 Unlock Piercing Scream in the Ability Mastery tree (between levels)`, 2200); return; }
     const cd=Abilities.cdLeft(p,'scream');
     if(cd>0){ showToast(`⏳ Scream recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);

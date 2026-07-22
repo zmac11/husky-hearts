@@ -32,14 +32,16 @@
   function activate(p){
     const L=lvl(p);
     if(L<1){
-      showToast(`🌳 Learn Storm Fang in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Storm Fang in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'stormFang');
     if(cd>0){ showToast(`⏳ Storm Fang recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
     p.wolfT=cfg.dur;
-    Abilities.startCd(p,'stormFang',cfg.cdMs);
+    // equipment can shorten the cooldown (e.g. Royal Crown −5s)
+    const cdMs=(typeof Equip!=='undefined') ? Math.max(1000, Equip.abilityMod(p,'stormfang','cdMs', cfg.cdMs)) : cfg.cdMs;
+    Abilities.startCd(p,'stormFang',cdMs);
     boltCd=600;                    // first bolt lands quickly — feels immediate
     flashT=260; nextFlash=rand(1200,2600);
     if(typeof sfxThunder==='function') sfxThunder();

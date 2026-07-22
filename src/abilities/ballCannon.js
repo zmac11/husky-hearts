@@ -24,6 +24,8 @@
   }
   function skillLevel(p){ return (typeof Skills!=='undefined' && p) ? Skills.level(p,'cannon') : 0; }
   function params(p){ return PARAMS[Math.min(3, Math.max(1, skillLevel(p)))]; }
+  // Magazine capacity including equipment abilityMods (e.g. Ball Cap +1).
+  function capOf(p){ return (typeof Equip!=='undefined') ? Equip.abilityMod(p,'cannon','capacity', params(p).cap) : params(p).cap; }
 
   function spawn(){ /* nothing pre-placed — Lolla places the cannon herself */ }
   function reset(){ cannon=null; shots=[]; }
@@ -32,7 +34,7 @@
   function place(p){
     const lvl=skillLevel(p);
     if(lvl<1){
-      showToast(`🌳 Learn Ball Cannon in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Ball Cannon in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'ballCannon');
@@ -54,7 +56,7 @@
   function tryLoadBall(p){
     if(!cannon || !Abilities.playerHas(p,'ballCannon') || skillLevel(p)<1) return false;
     if(Math.hypot(p.x-cannon.x, p.y-cannon.y)>LOAD_R) return false;
-    const cap=params(p).cap;
+    const cap=capOf(p);
     if(cannon.mag>=cap){ showToast(`🎾 Magazine full (${cannon.mag}/${cap})`, 1200); return 'full'; }
     cannon.mag++;
     if(typeof sfxCollect==='function') sfxCollect();
@@ -93,13 +95,14 @@
     if(cannon.fireCd>0) cannon.fireCd=Math.max(0, cannon.fireCd-dt);
 
     // L3: auto-reload from the bag while Lolla stands close
-    if(cfg.autoReload && cannon.mag<cfg.cap && Math.hypot(p.x-cannon.x,p.y-cannon.y)<LOAD_R){
+    const cap=capOf(p);
+    if(cfg.autoReload && cannon.mag<cap && Math.hypot(p.x-cannon.x,p.y-cannon.y)<LOAD_R){
       cannon.reloadCd-=dt;
       if(cannon.reloadCd<=0 && Inventory.count(p,'ball')>0){
         Inventory.remove(p,'ball',1); cannon.mag++;
         cannon.reloadCd=1200;
         if(typeof sfxCollect==='function') sfxCollect();
-        showToast(`🎾 Auto-loaded (${cannon.mag}/${cfg.cap})`, 900);
+        showToast(`🎾 Auto-loaded (${cannon.mag}/${cap})`, 900);
         if(typeof updateHUD==='function') updateHUD();
       }
     } else cannon.reloadCd=0;
@@ -246,8 +249,8 @@
 
     ctx.restore();
 
-    // magazine pips above the cannon (loaded balls / capacity)
-    const cap=cfg.cap;
+    // magazine pips above the cannon (loaded balls / capacity, incl. gear bonuses)
+    const cap=dog?capOf(dog):cfg.cap;
     const pipsW=cap*8-3;
     for(let i=0;i<cap;i++){
       const px0=cx-pipsW/2+i*8, py0=cy+bob-24;

@@ -15,7 +15,9 @@ const Save = {
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
-             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0 };
+             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
+             mastery:Object.assign({}, p.mastery), masteryPoints:p.masteryPoints||0,
+             xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
   save(){
@@ -72,7 +74,12 @@ const Save = {
       pl.equipment = sp.equipment || {};
       pl.skills = sp.skills || {};
       pl.skillPoints = sp.skillPoints || 0;
-      if(typeof Skills!=='undefined') Skills.apply(pl);   // re-derive stats from skills
+      pl.mastery = sp.mastery || {};
+      pl.masteryPoints = sp.masteryPoints || 0;
+      pl.xp = sp.xp || 0;
+      pl.dogLevel = sp.dogLevel || 1;
+      if(typeof Mastery!=='undefined') Mastery.migrate(pl);   // pre-split saves: skills→mastery
+      if(typeof Skills!=='undefined') Skills.apply(pl);       // re-derive stats from skills
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       pl.dead = !!sp.dead;

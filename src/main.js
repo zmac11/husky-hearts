@@ -21,7 +21,7 @@ function loop(now){
     Entities.updateAll(now,dt);
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
     if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
-    updateSparkles();updateCamera();
+    updateSparkles();updateXpOrbs(p1);updateCamera();
     UI.tickCooldowns();   // hotbar ability cooldown sweep
   }
   if(showWorld){
@@ -47,7 +47,7 @@ function loop(now){
       }}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
-    drawSparkles();
+    drawSparkles();drawXpOrbs(now);
     ctx.restore();
     drawMinimap();
   }
