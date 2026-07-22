@@ -1,6 +1,15 @@
 // ====================== LEVELS REGISTRY ======================
-// Levels register themselves here (see levels/meadow.js). Adding a new level =
-// a new file that declares its size/theme/quest/generate and calls Levels.register().
+// Levels are authored as data in src/config/levels.json and registered by
+// levels/from-config.js. The three registries below are the code hooks that data points
+// at by name — terrain generators and decorators (which are procedural, so they stay
+// code) and quest types (completion logic). Level files populate these:
+//   TERRAIN.meadow  = buildWorld        (levels/meadow.js)
+//   AUGMENTS.orchard = function(){...}  (levels/meadow3.js)
+//   QUEST_TYPES['cheer-all'] = {...}    (levels/from-config.js)
+
+const TERRAIN     = {};   // id → function() building worldObjects/colliders/river
+const AUGMENTS    = {};   // id → function() adding extra decoration after terrain
+const QUEST_TYPES = {};   // type → { describe(level), isComplete(level) }
 
 const Levels = {
   _byId: {},

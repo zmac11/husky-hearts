@@ -69,7 +69,7 @@ Entities.register('chest', {
     if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-8, '#FFD93D', 26);
     if(typeof sfxCheer==='function') sfxCheer();
     // Spill the loot in a ring of ordinary pickups around the chest.
-    const loot=def.loot(p);
+    const loot=Chests.roll(e.rarity, p);
     let slot=0, spillCount=0;
     loot.forEach(entry=>{ spillCount += entry.treats ? entry.treats : 1; });
     const drop=(type, qty, isTreat)=>{

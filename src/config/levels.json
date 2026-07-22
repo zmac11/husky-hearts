@@ -1,0 +1,178 @@
+[
+  {
+    "id": "meadow",
+    "name": "Sunny Meadow",
+    "seed": 12345,
+    "size": { "w": 1920, "h": 1280 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "meadow-2",
+    "theme": {
+      "grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88",
+      "dirt": "rgba(190,155,100,0.15)",
+      "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A",
+      "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"
+    },
+    "terrain": "meadow",
+    "collectibles": { "count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6 },
+    "friends": [
+      { "name": "Cat in the tree", "x": 280,  "y": 200,  "need": 3, "kind": "cat",      "msg": "I'm stuck here and lonely... got any treats?" },
+      { "name": "Lonely Bunny",    "x": 1580, "y": 240,  "need": 3, "kind": "bunny",    "msg": "I lost my family's flower patch..." },
+      { "name": "Sad Bird",        "x": 300,  "y": 980,  "need": 3, "kind": "bird",     "msg": "My nest fell apart! Bring me treats?" },
+      { "name": "Shy Hedgehog",    "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?" },
+      { "name": "Old Tortoise",    "x": 960,  "y": 640,  "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately." }
+    ],
+    "npcs": [],
+    "enemies": [],
+    "critters": [],
+    "chests": ["wooden", "wooden"],
+    "quest": { "type": "cheer-all", "label": "Cheer up every lonely friend" }
+  },
+
+  {
+    "id": "meadow-2",
+    "name": "Wildflower Field",
+    "seed": 13579,
+    "size": { "w": 1600, "h": 1120 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "meadow-3",
+    "theme": {
+      "grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98",
+      "dirt": "rgba(210,160,120,0.14)",
+      "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E",
+      "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"
+    },
+    "terrain": "meadow",
+    "augment": "wildflowers",
+    "collectibles": { "count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6 },
+    "friends": [
+      { "name": "Sunny the Cat", "fx": 0.24, "fy": 0.30, "need": 2, "kind": "cat",   "msg": "Ooh, are those treats for me?" },
+      { "name": "Hoppy Bunny",   "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!" },
+      { "name": "Chirpy Bird",   "fx": 0.5,  "fy": 0.74, "need": 3, "kind": "bird",  "msg": "Tweet! Any treats to share?" }
+    ],
+    "npcs": [
+      {
+        "name": "Marla the Merchant", "fx": 0.5, "fy": 0.30,
+        "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.",
+        "wares": [ { "id": "biscuit", "cost": 3 }, { "id": "ribbon", "cost": 5 } ]
+      },
+      {
+        "name": "Nella the Nurse", "look": "tailor", "fx": 0.30, "fy": 0.40,
+        "greeting": "Hello, dear pup!",
+        "quest": {
+          "id": "nella-bones", "type": "give", "give": { "item": "bone", "count": 3 },
+          "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?",
+          "ready": "Three whole bones? You're a darling — may I take them?",
+          "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!",
+          "done": "Bless you! The pups are chewing away happily now. 💛",
+          "reward": { "treats": 6 }
+        }
+      }
+    ],
+    "enemies": [],
+    "critters": [
+      { "species": "duck", "onWater": { "kind": "pond", "index": 0 } },
+      { "species": "duck", "onWater": { "kind": "pond", "index": 1 } },
+      { "species": "squirrel", "fx": 0.68, "fy": 0.62 },
+      { "species": "squirrel", "fx": 0.30, "fy": 0.58 }
+    ],
+    "chests": ["wooden", "wooden", "iron"],
+    "quest": { "type": "cheer-all", "label": "Cheer up every friend in the field" }
+  },
+
+  {
+    "id": "meadow-3",
+    "name": "Old Orchard Path",
+    "seed": 20241,
+    "size": { "w": 1760, "h": 1200 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "rocky",
+    "theme": {
+      "grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982",
+      "dirt": "rgba(196,150,96,0.18)",
+      "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48",
+      "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"
+    },
+    "terrain": "meadow",
+    "augment": "orchard",
+    "collectibles": { "count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6 },
+    "friends": [
+      { "name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?" },
+      { "name": "Shelly the Tortoise",  "fx": 0.80, "fy": 0.30, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?" },
+      { "name": "Clover Bunny",         "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny",    "msg": "These apples aren't ripe yet..." },
+      { "name": "Robin the Bird",       "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird",     "msg": "Chirp! My nest could use some cheer." }
+    ],
+    "npcs": [
+      {
+        "name": "Marla the Merchant", "fx": 0.5, "fy": 0.28,
+        "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!",
+        "wares": [ { "id": "biscuit", "cost": 3 }, { "id": "trailmix", "cost": 4 }, { "id": "ribbon", "cost": 5 } ]
+      },
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5,
+        "greeting": "Heading for the mountains? Let's find you something warm to wear!",
+        "wares": [
+          { "id": "ballcap", "cost": 6 }, { "id": "scarf", "cost": 6 }, { "id": "shades", "cost": 7 },
+          { "id": "raincoat", "cost": 9 }, { "id": "cape", "cost": 10 }
+        ]
+      }
+    ],
+    "enemies": [
+      { "kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90 }
+    ],
+    "critters": [
+      { "species": "squirrel", "fx": 0.4, "fy": 0.4 }
+    ],
+    "chests": ["wooden", "wooden", "iron", "silver"],
+    "quest": { "type": "cheer-all", "label": "Cheer up every friend in the orchard" }
+  },
+
+  {
+    "id": "rocky",
+    "name": "Rocky Mountains",
+    "seed": 24680,
+    "size": { "w": 2400, "h": 1600 },
+    "spawn": { "x": 170, "y": 250 },
+    "next": null,
+    "theme": {
+      "grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79",
+      "dirt": "rgba(122,100,64,0.18)",
+      "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F",
+      "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"
+    },
+    "terrain": "rocky",
+    "collectibles": { "count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160 },
+    "friends": [
+      { "name": "Rusty the Fox",   "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox",     "msg": "The cold nights are so lonely up here..." },
+      { "name": "Old Billy Goat",  "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat",    "msg": "My herd wandered off over the ridge." },
+      { "name": "Hoot the Owl",    "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl",     "msg": "Whoo will keep me company tonight?" },
+      { "name": "Pip the Marmot",  "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot",  "msg": "I burrowed too far from my friends..." },
+      { "name": "Bramble the Cub", "fx": 0.85, "fy": 0.80, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den." },
+      { "name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird",    "msg": "The peaks are quiet and grey today." }
+    ],
+    "npcs": [
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.60, "fy": 0.22,
+        "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.",
+        "wares": [
+          { "id": "beanie", "cost": 6 }, { "id": "snowgoggles", "cost": 8 },
+          { "id": "trailmix", "cost": 4 }, { "id": "biscuit", "cost": 3 },
+          { "id": "cape", "cost": 10 }, { "id": "key", "cost": 8 }
+        ]
+      }
+    ],
+    "enemies": [
+      { "kind": "wolf",  "fx": 0.40, "fy": 0.52, "speed": 1.15 },
+      { "kind": "wolf",  "fx": 0.68, "fy": 0.66, "speed": 1.2 },
+      { "kind": "wolf",  "fx": 0.30, "fy": 0.74, "speed": 1.1, "chaseR": 220 },
+      { "kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0 }
+    ],
+    "critters": [
+      { "species": "loon",   "onWater": { "kind": "lake", "index": 0, "dx": -80 } },
+      { "species": "loon",   "onWater": { "kind": "lake", "index": 2, "dx": 50 } },
+      { "species": "beaver", "onWater": { "kind": "lake", "index": 1, "dyEdge": true, "dy": 16 } },
+      { "species": "moose",  "fx": 0.34, "fy": 0.28 }
+    ],
+    "chests": ["wooden", "iron", "iron", "silver"],
+    "quest": { "type": "cheer-all", "label": "Cheer up every mountain friend" }
+  }
+]

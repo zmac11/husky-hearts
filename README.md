@@ -101,6 +101,10 @@ husky-hearts/
 ├── css/
 │   └── style.css       ← all styles (HUD, panels, skill tree, hotbar, fullscreen)
 ├── src/                ← editable JS modules
+│   ├── config/              ← JSON content configs (edit these to retune the game)
+│   │   ├── items.json       item / wearable definitions → ITEMS_DATA
+│   │   ├── loot.json        chest tables, enemy drops, XP payouts → LOOT_DATA
+│   │   └── levels.json      per-level content (friends/npcs/enemies/critters/chests/quest) → LEVELS_DATA
 │   ├── init.js              canvas & ctx setup
 │   ├── core/
 │   │   ├── rng.js           seeded RNG (mulberry32) + generation window (beginGen/rnd)
@@ -110,8 +114,9 @@ husky-hearts/
 │   ├── data/
 │   │   ├── breeds.js        per-dog 1–5 stat bars → derived stats + abilities
 │   │   ├── skills.js        skill-tree nodes + Skills.apply (character + ability upgrades)
-│   │   ├── items.js         item definitions (collectibles / consumables / wearables / tools)
-│   │   ├── chests.js        treasure-chest rarities, loot tables, per-level spawns
+│   │   ├── items.js         item lookup + tooltip helpers (data from config/items.json)
+│   │   ├── loot.js          rollLoot() — shared drop-table roller (independent chances)
+│   │   ├── chests.js        chest rarities/roll (data from config/loot.json)
 │   │   └── campaign.js      world-map environments (3 levels + boss each) + Progress
 │   ├── inventory.js         positional bag: add/remove/stack/move
 │   ├── wearables.js         equippable cosmetics: equip + per-breed on-dog rendering
@@ -120,11 +125,12 @@ husky-hearts/
 │   ├── audio.js             Web Audio engine, music buses, SFX
 │   ├── world.js             world size, colliders, world objects, makePlayer
 │   ├── levels/
-│   │   ├── index.js         Levels registry
-│   │   ├── meadow.js        Sunny Meadows 1
-│   │   ├── meadow2.js       Sunny Meadows 2 — Wildflower Field (wildlife intro, no enemies)
-│   │   ├── meadow3.js       Sunny Meadows 3 — Old Orchard Path (gentle enemy + river)
-│   │   └── rocky.js         Rocky Mountains (Canadian valley: lakes/waterfalls/peaks/wolves)
+│   │   ├── index.js         Levels registry + TERRAIN / AUGMENTS / QUEST_TYPES hooks
+│   │   ├── from-config.js   builds every level from config/levels.json (generic generate())
+│   │   ├── meadow.js        meadow terrain builder → TERRAIN.meadow
+│   │   ├── meadow2.js       'wildflowers' augment (extra flower scatter)
+│   │   ├── meadow3.js       'orchard' augment (extra oak clusters)
+│   │   └── rocky.js         rocky terrain builder (peaks/lakes/waterfalls) → TERRAIN.rocky
 │   ├── level-state.js       per-level dynamic state so visited levels stay as you left them
 │   ├── level-manager.js     LevelManager.load/enter — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()
@@ -187,18 +193,30 @@ extensions are additive:
   and add a matching node in `src/data/skills.js`. Cooldowns and hotbar gating come for free.
 - **New skill node** → add it to `src/data/skills.js` (`common` for all dogs, or `byBreed`);
   apply its effect in `Skills.apply(p)`.
-- **New level** → add a file in `src/levels/` declaring `size`, `theme`, `generate()`, and
-  `quest`, then `Levels.register(...)`. Call `Chests.spawnForLevel(id)` from `generate()`
-  to bury treasure. Generators must draw randomness from `rand()`/`rnd()` and never
-  `Math.random()` — a level's terrain is rebuilt from the run seed every time you walk
-  back into it (`level-state.js` restores only the dynamic half on top).
+- **Retune content / loot / shops / rewards** → edit the JSON in `src/config/` — no code:
+  - `levels.json` — a level's friends, npcs (+ `wares` shop lists and `quest` + `reward`),
+    enemies (`speed`/`chaseR`/`hp`), critters, buried `chests`, and quest label. Positions
+    are `{x,y}` absolute, `{fx,fy}` fractional, or `{onWater:{kind,index,dx,dy}}`.
+  - `loot.json` — chest tables, per-enemy drops, and XP payouts. Drops use **independent
+    chances**: `{item,chance?}` (omit `chance` = guaranteed) or `{oneOf:[…],chance?}`, plus a
+    guaranteed `treats:[min,max]` spill.
+  - `items.json` — item/wearable definitions (`heal`, `slot`, `mods`, `abilityMods`, `value`).
+  Run `python3 build.py` and reload; the build validates the JSON and bakes it into the bundle.
+- **New level** → add an entry to `config/levels.json`. Reuse an existing `terrain` (`meadow`/
+  `rocky`), or add a builder function in `src/levels/` that assigns `TERRAIN.<name> = fn`
+  (optionally an `AUGMENTS.<name>` decorator). Terrain code must draw randomness from
+  `rand()`/`rnd()`, never `Math.random()` — a level's terrain is rebuilt from the run seed
+  every time you revisit it (`level-state.js` restores only the dynamic half on top).
+- **New quest type** → add `QUEST_TYPES['<type>'] = { describe(), isComplete() }` (see
+  `levels/from-config.js`) and reference it from a level's `quest.type`.
 - **New enemy / NPC / world actor** → register a kind in `src/entities/` (with
-  `update`/`draw`/`onInteract`, and `hp` if it should be damageable) and `Entities.spawn()`
-  it from a level's `generate()`.
-- **New item / chest loot / shop ware** → add to `src/data/items.js` (and a loot table in
-  `src/data/chests.js`); use the `Inventory` API.
+  `update`/`draw`/`onInteract`, and `hp` if it should be damageable); then place instances via
+  the level's `enemies`/`critters`/`npcs` list in `config/levels.json`.
+- **New item** → add it to `config/items.json` (behaviour like `heal`/`mods` is read
+  generically); use the `Inventory` API to grant it.
 
-Remember to add any new file to `LOAD_ORDER` in `build.py` (dependency order).
+Remember to add any new **JS** file to `LOAD_ORDER` in `build.py` (dependency order); new
+`config/*.json` files go in `CONFIG_FILES` there.
 
 ## Tech notes
 

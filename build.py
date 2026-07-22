@@ -11,6 +11,7 @@ Run from project root:
 """
 import os
 import sys
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -18,6 +19,17 @@ SRC = ROOT / 'src'
 DIST = ROOT / 'dist'
 CSS = ROOT / 'css' / 'style.css'
 HTML = ROOT / 'index.html'
+
+# JSON content configs, baked into the bundle as `const <VAR> = {...};` BEFORE any JS
+# module runs. Authors edit these files; the game reads the globals. Embedding (rather
+# than a runtime fetch) is what keeps the single-file standalone build working offline.
+# Each is validated with json.load at build time, so a typo fails the build with the
+# offending file named — you never ship a broken config.
+CONFIG_FILES = [
+    ('config/items.json',  'ITEMS_DATA'),   # item / wearable definitions (data/items.js)
+    ('config/loot.json',   'LOOT_DATA'),    # chest tables, enemy drops, XP payouts (data/loot.js)
+    ('config/levels.json', 'LEVELS_DATA'),  # per-level content (levels/from-config.js)
+]
 
 # Load order matters: shared globals (let/const) must be declared before use.
 LOAD_ORDER = [
@@ -29,8 +41,9 @@ LOAD_ORDER = [
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
     'data/skills.js',     # skill tree nodes + Skills.apply (used by makePlayer)
     'data/progression.js',# XP curve, dog levels, mastery/skill points (Progression)
-    'data/items.js',      # item definitions (inventory / shop)
-    'data/chests.js',     # treasure-chest rarities/loot tables + per-level spawns
+    'data/items.js',      # item definitions (inventory / shop) — reads ITEMS_DATA
+    'data/loot.js',       # rollLoot(): shared drop-table roller (reads LOOT_DATA)
+    'data/chests.js',     # treasure-chest rarities/loot tables (reads LOOT_DATA)
     'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
     'quests.js',          # NPC quest system (give-item + future types)
@@ -39,10 +52,10 @@ LOAD_ORDER = [
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
     'levels/index.js',    # Levels registry
-    'levels/meadow.js',   # Sunny Meadows 1 (size, theme, quest, generate)
-    'levels/meadow2.js',  # Sunny Meadows 2 — Wildflower Field (friendly wildlife intro)
-    'levels/meadow3.js',  # Sunny Meadows 3 — Old Orchard Path (gentle enemy + water)
-    'levels/rocky.js',    # Rocky Mountains — Canadian valley (harder)
+    'levels/meadow.js',   # meadow terrain builder + registration into TERRAIN
+    'levels/meadow2.js',  # 'wildflowers' augment (extra flower scatter)
+    'levels/meadow3.js',  # 'orchard' augment (extra oak clusters)
+    'levels/rocky.js',    # rocky terrain builder (buildRockyWorld) + friends helper
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -68,6 +81,7 @@ LOAD_ORDER = [
     'abilities/scream.js',      # Lolla E: piercing AOE scream
     'abilities/innerMonster.js',# Ťapka Q: feral melee transform + lifesteal
     'abilities/scurry.js',      # Ťapka E: evasive dash + i-frames
+    'levels/from-config.js', # register levels from LEVELS_DATA (needs terrain/augment fns + Chests)
     'level-state.js',     # per-level dynamic state so visited levels stay as you left them
     'level-manager.js',   # LevelManager.load/enter (build world + themed ground)
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
@@ -85,9 +99,29 @@ LOAD_ORDER = [
     'dev.js',             # dev-mode level jumper (needs resetGame/dogConfig/Campaign)
 ]
 
+def build_configs():
+    """Validate each JSON config and emit it as a `const VAR = {...};` bundle part."""
+    parts = []
+    for name, var in CONFIG_FILES:
+        path = SRC / name
+        if not path.exists():
+            print(f"  ✗ MISSING: src/{name}", file=sys.stderr)
+            sys.exit(1)
+        raw = path.read_text()
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            print(f"  ✗ INVALID JSON in src/{name}: {e}", file=sys.stderr)
+            sys.exit(1)
+        # Re-serialize compactly (drops comments/whitespace, guarantees valid JS literal).
+        literal = json.dumps(data, ensure_ascii=False)
+        parts.append(f"// ===== src/{name} =====\nconst {var} = {literal};")
+        print(f"  ✓ src/{name} → {var} ({len(raw)} chars)")
+    return parts
+
 def build_bundle():
     DIST.mkdir(exist_ok=True)
-    parts = []
+    parts = build_configs()   # config globals first — every module below reads them
     for name in LOAD_ORDER:
         path = SRC / name
         if not path.exists():

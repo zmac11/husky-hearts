@@ -48,13 +48,23 @@ const Entities = {
     }
     if(e.hp<=0){
       if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9C9C9', 20);
-      if(Math.random()<0.4){
-        collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
-                            pickupAt:performance.now()+600 });
+      // Loot + XP for this enemy kind come from the config table (LOOT_DATA.enemies).
+      const drops=(typeof LOOT_DATA!=='undefined' && LOOT_DATA.enemies && LOOT_DATA.enemies[e.kind]) || null;
+      if(drops && typeof rollLoot==='function'){
+        rollLoot({ drops:drops.drops }, p1).forEach((entry,i)=>{
+          if(!entry.item) return;
+          const idef=(typeof Items!=='undefined') && Items.get(entry.item);
+          // Treat-type drops (bone/heart/…) count toward p.treats on pickup like any world
+          // treat; gear/consumables don't (they're `dropped`, same as chest item spills).
+          const isTreat=idef && (idef.type==='treat'||idef.type==='toy'||idef.type==='food');
+          collectibles.push({ x:e.x, y:e.y, type:entry.item, qty:entry.qty||1, taken:false,
+                              bob:rand(0,Math.PI*2), dropped:!isTreat, icon:idef?idef.icon:'❓',
+                              pickupAt:performance.now()+600+i*90 });
+        });
       }
       // XP bursts out as green orbs that magnetize to the dog (xporbs.js).
       if(typeof spawnXpOrbs==='function'){
-        const xp=(typeof Progression!=='undefined' && Progression.ENEMY_XP[e.kind]) || 8;
+        const xp=(drops && drops.xp) || 8;
         spawnXpOrbs(e.x, e.y-4, xp);
       }
       this.remove(e);

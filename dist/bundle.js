@@ -1,3 +1,9 @@
+// ===== src/config/items.json =====
+const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
+// ===== src/config/loot.json =====
+const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 8, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 16, "drops": [{"item": "bone", "chance": 0.4}]}}, "chestXp": {"wooden": 5, "iron": 10, "silver": 18, "golden": 35}, "xp": {"quest": 20, "cheer": 12, "level": 40}};
+// ===== src/config/levels.json =====
+const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": null, "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}];
 // ===== src/init.js =====
 // ====================== CANVAS INIT ======================
 const canvas = document.getElementById('game');
@@ -611,12 +617,13 @@ const Progression = {
   // XP needed to go from (level) to (level+1). Gently rising curve.
   xpToNext(level){ return 40 + 25*(Math.max(1,level)-1); },
 
-  // XP handed out by source (tune here). Enemy XP is delivered via orbs, not directly.
-  ENEMY_XP: { enemy:8, wolf:16 },
-  CHEST_XP: { wooden:5, iron:10, silver:18, golden:35 },
-  QUEST_XP: 20,
-  CHEER_XP: 12,
-  LEVEL_XP: 40,
+  // XP handed out by source. Tuned in src/config/loot.json (LOOT_DATA) so combat rewards
+  // sit next to the loot tables. Enemy XP is delivered via orbs (entities/registry.js).
+  get ENEMY_XP(){ const m={}; const es=(typeof LOOT_DATA!=='undefined' && LOOT_DATA.enemies)||{}; for(const k in es) m[k]=es[k].xp; return m; },
+  get CHEST_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.chestXp) || {}; },
+  get QUEST_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.quest) || 20; },
+  get CHEER_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.cheer) || 12; },
+  get LEVEL_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.level) || 40; },
 
   // Grant XP and roll any dog level-ups. Each level grants +1 mastery point.
   award(p, amount, reason){
@@ -651,56 +658,25 @@ const Progression = {
 
 // ===== src/data/items.js =====
 // ====================== ITEMS (data) ======================
-// Definitions for everything that can live in a player's inventory: collectibles,
-// consumables, and wearables. `type` groups items; `value` is a coin/trade worth for
-// the shop seam. The collectible ids here match the collectible `type` strings produced
-// by makeCollectibles() (world.js), so a pickup maps straight in.
+// Item definitions — everything that can live in a player's inventory (collectibles,
+// consumables, wearables) — are authored in src/config/items.json and baked into the
+// ITEMS_DATA global at build time (build.py). This file is the behaviour around that
+// data: lookup + the tooltip/effect-line helpers.
 //
-// type flavours the item and drives UI/behaviour:
-//   'treat'/'toy'/'food'   — plain collectibles (delivery currency lives in p.treats)
-//   'consumable'           — usable from the hotbar (number keys). `heal` (hp) restores
-//                            health when used; consumed on use.
-//   'wearable'             — equippable cosmetic. `slot` is which paper-doll slot it fills
-//                            (head/face/neck/body/back); `render` keys into Wearables'
-//                            draw table so it shows on the dog.
-
-const ITEMS_DATA = {
-  // collectibles found in the world
-  bone:   { name:'Bone',   icon:'🦴', type:'treat', value:1 },
-  heart:  { name:'Heart',  icon:'💛', type:'treat', value:1 },
-  ball:   { name:'Ball',   icon:'🎾', type:'toy',   value:2 },
-  flower: { name:'Flower', icon:'🌸', type:'treat', value:1 },
-  fish:   { name:'Fish',   icon:'🐟', type:'food',  value:2 },
-
-  // consumables — usable from the hotbar
-  biscuit:{ name:'Biscuit', icon:'🍪', type:'consumable', value:3, heal:4 },  // heals 2 hearts
-  ribbon: { name:'Ribbon',  icon:'🎀', type:'wearable',   value:5, slot:'head', render:'ribbon' },
-
-  // wearables — sold by Fenwick the Tailor; shown on the dog when equipped.
-  // `mods` are passive stat bonuses summed in Skills.apply while worn:
-  //   maxHp (+hp), speed (+px/frame), scentR (+px), noiseMul (× — negative = quieter).
-  // `abilityMods` tweak a specific ability's numbers: { <skillNode>: { field:delta } }
-  //   (e.g. cannon capacity +1, stormfang cdMs −5000). Read by the ability modules.
-  tophat:  { name:'Top Hat',    icon:'🎩', type:'wearable', value:8,  slot:'head', render:'tophat',  mods:{ smartsPrice:-0.05 } },
-  ballcap: { name:'Ball Cap',   icon:'🧢', type:'wearable', value:6,  slot:'head', render:'ballcap', abilityMods:{ cannon:{ capacity:1 } } },
-  shades:  { name:'Cool Shades',icon:'🕶️', type:'wearable', value:7,  slot:'face', render:'shades',  mods:{ noiseMul:-0.10 } },
-  scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf',   mods:{ maxHp:2 } },
-  raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat',mods:{ maxHp:4 } },
-  cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape',    mods:{ maxHp:2, speed:0.06 } },
-
-  // rocky-mountain wearables — sold by Rusk the Ranger on level 2
-  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie',      mods:{ maxHp:2 } },
-  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles', mods:{ scentR:30 } },
-  trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
-
-  // treasure-chest loop (data/chests.js): keys open silver chests; the rest is loot
-  key:      { name:'Chest Key',   icon:'🗝️', type:'tool',       value:8 },
-  feast:    { name:'Feast',       icon:'🍖', type:'consumable', value:7, heal:12 },  // heals 6 hearts
-  goldbone: { name:'Golden Bone', icon:'🏅', type:'treat',      value:5 },
-  // golden-chest exclusive — a royal set piece with real power
-  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown',
-              mods:{ maxHp:4, speed:0.06 }, abilityMods:{ stormfang:{ cdMs:-5000 }, monster:{ dmg:1 } } },
-};
+// Field reference (for editing items.json):
+//   type   groups the item and drives UI/behaviour:
+//     'treat'/'toy'/'food'  — plain collectibles (delivery currency lives in p.treats)
+//     'consumable'          — usable from the hotbar (number keys); `heal` restores hp
+//     'wearable'            — equippable cosmetic; `slot` is the paper-doll slot filled
+//                             (head/face/neck/body/back); `render` keys Wearables' draw table
+//   value  coin/trade worth for the shop seam
+//   mods   passive stat bonuses summed in Skills.apply while worn:
+//     maxHp (+hp), speed (+px/frame), scentR (+px), noiseMul (× — negative = quieter),
+//     smartsPrice (× shop price — negative = cheaper)
+//   abilityMods  tweak a specific ability's numbers: { <skillNode>: { field:delta } }
+//     (e.g. cannon capacity +1, stormfang cdMs −5000). Read by the ability modules.
+// The collectible ids (bone/heart/ball/flower/fish) match the collectible `type` strings
+// produced by the level builder, so a world pickup maps straight in.
 
 // --- tooltip helpers: turn an item's numbers into readable effect lines ---
 const _TYPE_LABEL = { treat:'Treat', toy:'Toy', food:'Food', consumable:'Consumable', wearable:'Wearable', tool:'Tool' };
@@ -761,6 +737,37 @@ const Items = {
   },
 };
 
+// ===== src/data/loot.js =====
+// ====================== LOOT ROLLER ======================
+// One shared roller for every drop table in the game — chest loot and enemy drops both
+// go through it. Tables are authored in src/config/loot.json (baked into LOOT_DATA).
+//
+// Drop-table schema (independent probabilities — each entry rolls on its own, so several
+// can drop at once):
+//   { treats:[min,max],           // optional guaranteed spill of that many treats
+//     drops:[ <entry>, ... ] }
+// where each <entry> is one of:
+//   { item:'biscuit', qty?:1, chance?:0.4 }        // chance omitted → guaranteed
+//   { oneOf:['ribbon','scarf'], qty?:1, chance?:0.15 } // roll chance, then pick one id
+//
+// Returns the same {treats:n} | {item, qty} shape the chest/enemy code already spills, so
+// callers don't change. Runtime loot uses Math.random (seeding is only for terrain).
+
+function rollLoot(table, p){
+  const out = [];
+  if(!table) return out;
+  if(table.treats){
+    const a = table.treats[0], b = table.treats[1];
+    out.push({ treats: a + Math.floor(Math.random()*(b - a + 1)) });   // inclusive [a,b]
+  }
+  (table.drops || []).forEach(d => {
+    if(typeof d.chance === 'number' && Math.random() >= d.chance) return;   // failed the roll
+    const item = d.oneOf ? d.oneOf[Math.floor(Math.random()*d.oneOf.length)] : d.item;
+    if(item) out.push({ item, qty: d.qty || 1 });
+  });
+  return out;
+}
+
 // ===== src/data/chests.js =====
 // ====================== CHESTS (data) ======================
 // The treasure-chest loop: chests are buried invisibly around each level. A dog close
@@ -770,71 +777,29 @@ const Items = {
 // chest (never buried) spawns beside the exit portal when a biome's last level is
 // cleared — later this hook moves to "boss defeated" with no chest changes.
 //
-// Loot entries: {treats:n} spills n bone/heart pickups; {item:id, qty?} spills the item.
-// Tables are rolled fresh on open (Math.random, like the rest of the game's spawning).
+// Rarity definitions (visuals + dig time + loot table) live in src/config/loot.json
+// (LOOT_DATA.chests). Loot entries: {treats:n} spills n bone/heart pickups; {item:id,
+// qty?} spills the item. Tables are rolled fresh on open via rollLoot() (data/loot.js).
 
-const CHEST_RARITIES = {
-  wooden: {
-    name:'Wooden Chest', locked:false, digMs:1000,
-    base:'#8B6340', band:'#6B4A28', lid:'#A07040', glow:null,
-    loot(p){
-      const L=[{treats:3+Math.floor(Math.random()*4)}];             // 3–6
-      if(Math.random()<0.40) L.push({item:'biscuit'});
-      if(Math.random()<0.10) L.push({item:'key'});
-      return L;
-    },
-  },
-  iron: {
-    name:'Iron Chest', locked:false, digMs:1400,
-    base:'#9AA0AA', band:'#6A6E78', lid:'#B4BAC4', glow:null,
-    loot(p){
-      const L=[{treats:6+Math.floor(Math.random()*5)}];             // 6–10
-      L.push({item:Math.random()<0.5?'biscuit':'trailmix'});
-      if(Math.random()<0.25) L.push({item:'key'});
-      if(Math.random()<0.15) L.push({item:['ribbon','ballcap','scarf'][Math.floor(Math.random()*3)]});
-      return L;
-    },
-  },
-  silver: {
-    name:'Silver Chest', locked:true, digMs:1800,
-    base:'#D8DCE4', band:'#AAB2C0', lid:'#EAEDF2', glow:'rgba(220,228,240,0.35)',
-    loot(p){
-      const L=[{treats:10+Math.floor(Math.random()*7)}];            // 10–16
-      L.push({item:'feast'});
-      if(Math.random()<0.60) L.push({item:['shades','tophat','raincoat','beanie','snowgoggles'][Math.floor(Math.random()*5)]});
-      if(Math.random()<0.30) L.push({item:'goldbone'});
-      if(Math.random()<0.20) L.push({item:'key'});
-      return L;
-    },
-  },
-  golden: {
-    name:'Golden Chest', locked:false, digMs:0,
-    base:'#F2C94C', band:'#D9A82E', lid:'#F8DC74', glow:'rgba(255,216,80,0.45)',
-    loot(p){
-      const L=[{treats:20}];
-      // the crown is the trophy — once you own/wear one, later goldens pay out in gold bones
-      const hasCrown=p && ((typeof Inventory!=='undefined' && Inventory.count(p,'crown')>0) ||
-                           (p.equipment && p.equipment.head==='crown'));
-      L.push(hasCrown ? {item:'goldbone', qty:2} : {item:'crown'});
-      L.push({item:'feast', qty:2});
-      L.push({item:'goldbone'});
-      L.push({item:'key'});
-      return L;
-    },
-  },
-};
-
-// Which rarities are buried in each level (order doesn't matter).
-const CHEST_SPAWNS = {
-  'meadow':   ['wooden','wooden'],
-  'meadow-2': ['wooden','wooden','iron'],
-  'meadow-3': ['wooden','wooden','iron','silver'],
-  'rocky':    ['wooden','iron','iron','silver'],
-};
+const CHEST_RARITIES = (typeof LOOT_DATA!=='undefined' && LOOT_DATA.chests) ? LOOT_DATA.chests : {};
 
 const Chests = {
   RARITIES: CHEST_RARITIES,
   def(rarity){ return CHEST_RARITIES[rarity] || CHEST_RARITIES.wooden; },
+
+  // Roll a chest's loot. The generic drops come from the config table; golden chests add
+  // one bespoke reward: the 👑 Crown the first time, gold bones once you already own/wear
+  // one (the crown is a one-per-run trophy — a rule kept in code, flagged by crownReward).
+  roll(rarity, p){
+    const d=this.def(rarity);
+    const loot=rollLoot(d && d.loot, p);
+    if(d && d.crownReward){
+      const hasCrown = p && ((typeof Inventory!=='undefined' && Inventory.count(p,'crown')>0) ||
+                             (p.equipment && p.equipment.head==='crown'));
+      loot.unshift(hasCrown ? {item:'goldbone', qty:2} : {item:'crown'});
+    }
+    return loot;
+  },
 
   // Find a dry, walkable, out-of-the-way burial spot: never in ponds/lakes/rivers
   // (digging underwater is nonsense), clear of colliders (visibility), away from the
@@ -851,9 +816,10 @@ const Chests = {
     return null;   // crowded level — better to skip a chest than bury it badly
   },
 
-  // Called from each level's generate() after terrain + entities exist.
-  spawnForLevel(levelId){
-    const plan=CHEST_SPAWNS[levelId]; if(!plan) return;
+  // Called from each level's generate() after terrain + entities exist. `plan` is the
+  // level's chest list (rarity ids) from levels.json — passed in by the config builder.
+  spawnForLevel(levelId, plan){
+    if(!plan || !plan.length) return;
     const spawn=(typeof Levels!=='undefined' && Levels.get(levelId) && Levels.get(levelId).spawn) || {x:200,y:200};
     const placed=[];
     plan.forEach(rarity=>{
@@ -2186,8 +2152,17 @@ function spawnSparkles(x,y,color,count=14){
 
 // ===== src/levels/index.js =====
 // ====================== LEVELS REGISTRY ======================
-// Levels register themselves here (see levels/meadow.js). Adding a new level =
-// a new file that declares its size/theme/quest/generate and calls Levels.register().
+// Levels are authored as data in src/config/levels.json and registered by
+// levels/from-config.js. The three registries below are the code hooks that data points
+// at by name — terrain generators and decorators (which are procedural, so they stay
+// code) and quest types (completion logic). Level files populate these:
+//   TERRAIN.meadow  = buildWorld        (levels/meadow.js)
+//   AUGMENTS.orchard = function(){...}  (levels/meadow3.js)
+//   QUEST_TYPES['cheer-all'] = {...}    (levels/from-config.js)
+
+const TERRAIN     = {};   // id → function() building worldObjects/colliders/river
+const AUGMENTS    = {};   // id → function() adding extra decoration after terrain
+const QUEST_TYPES = {};   // type → { describe(level), isComplete(level) }
 
 const Levels = {
   _byId: {},
@@ -2204,148 +2179,38 @@ const Levels = {
 };
 
 // ===== src/levels/meadow.js =====
-// ====================== LEVEL: SUNNY MEADOW ======================
-// Level 1. Wraps the existing world generators (buildWorld / makeCollectibles /
-// makeFriends) so the current layout logic is unchanged — the level system just
-// gives it a name, size, visual theme, and a completion quest. A second level is
-// now a sibling file: declare a different theme/generate/quest and register it.
+// ====================== TERRAIN: MEADOW ======================
+// The base meadow world — river, ponds, trees, rocks, flowers, bridges. Built by
+// buildWorld() in world.js (procedural, so it stays code). Levels that use this terrain
+// name it "meadow" in src/config/levels.json; meadow-2/3 layer an augment on top.
 
-Levels.register({
-  id: 'meadow',
-  name: 'Sunny Meadow',
-  seed: 12345,                 // reserved for future seeded generation (LevelManager reseeds RNG)
-  size: { w: 1920, h: 1280 },
-  spawn: { x: 200, y: 200 },   // where the dogs start on this level
-  next: 'meadow-2',            // on through the Sunny Meadows learning biome
-
-  // Visual palette — moved out of world-draw.js so different levels look different.
-  theme: {
-    grass:'#9ED87A', grassDark:'#8DCF6A', grassLight:'#AADE88',
-    dirt:'rgba(190,155,100,0.15)',
-    fenceA:'#8B6340', fenceB:'#A07040', rail:'#C4904A',
-    minimapGrass:'#4A9A3A', minimapWater:'#4AACDC',
-  },
-
-  // Populate world objects + colliders + entities. Runs after WORLD_W/H are set and
-  // RNG is reseeded (see level-manager.js).
-  generate(){
-    buildWorld();
-    collectibles = makeCollectibles();
-    friends = makeFriends();
-
-    // The very first level is pure basics — just wander, collect treats, and cheer up
-    // friends. No merchants and no enemies yet; those are introduced in later levels
-    // (shops in Wildflower Field, a first gentle enemy in Old Orchard Path).
-    Entities.clear();
-    Chests.spawnForLevel('meadow');   // a couple of buried wooden chests to sniff out
-  },
-
-  // Completion condition (the "quest"). checkWin() consults this.
-  quest: {
-    id: 'cheer-all',
-    label: 'Cheer up every lonely friend',
-    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
-    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
-  },
-});
+TERRAIN.meadow = buildWorld;
 
 // ===== src/levels/meadow2.js =====
-// ====================== LEVEL: WILDFLOWER FIELD (Sunny Meadows 2) ======================
-// The second step of the friendly Sunny Meadows biome — a bright, safe flower field with
-// NO enemies. Its teaching job is the gentle stuff: keep practising collect→deliver, and
-// meet the FRIENDLY WILDLIFE for the first time (ducks on the ponds, squirrels in the
-// grass) so the player learns the positive "greet" interaction before it matters in the
-// mountains. Reuses the meadow terrain generator (buildWorld) and carpets it in flowers.
+// ====================== AUGMENT: WILDFLOWERS ======================
+// Decoration layered on the meadow terrain for the Wildflower Field (see the "meadow-2"
+// entry in src/config/levels.json). Carpets the field in extra wildflowers on dry land.
+// Runs after the terrain builder, inside the seeded generation window, so it uses rnd()/
+// rand() like the rest of world generation.
 
-Levels.register({
-  id: 'meadow-2',
-  name: 'Wildflower Field',
-  seed: 13579,
-  size: { w: 1600, h: 1120 },        // cozy and easy to explore
-  spawn: { x: 200, y: 200 },
-  next: 'meadow-3',
-
-  // Bright spring palette.
-  theme: {
-    grass:'#A6DE86', grassDark:'#96D573', grassLight:'#BCEA98',
-    dirt:'rgba(210,160,120,0.14)',
-    fenceA:'#9A7048', fenceB:'#B0824E', rail:'#D4A45E',
-    minimapGrass:'#5AAA46', minimapWater:'#4AACDC',
-  },
-
-  generate(){
-    buildWorld();
-    // Carpet the field in extra wildflowers — this is the wildflower field, after all.
-    const hues=['#FF8FA3','#FFD93D','#C9A6FF','#FFB199','#FF6B81','#A8E6CF','#FF9EC0','#B6E36A','#FFE066'];
-    for(let i=0;i<130;i++){
-      let fx,fy;
-      for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!isWater(fx,fy,4)) break; }
-      if(isWater(fx,fy,4)) continue;   // keep wildflowers on dry land
-      worldObjects.push({kind:'flower', x:fx, y:fy,
-        hue:hues[Math.floor(rnd()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
-    }
-    worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
-
-    collectibles = makeCollectibles();
-
-    // Just three friends, each needing only a couple of treats — an easy, encouraging clear.
-    friends = [
-      {name:'Sunny the Cat',  x:WORLD_W*0.24, y:WORLD_H*0.30, need:2,given:0,cheered:false,kind:'cat',   msg:"Ooh, are those treats for me?"},
-      {name:'Hoppy Bunny',    x:WORLD_W*0.78, y:WORLD_H*0.34, need:2,given:0,cheered:false,kind:'bunny', msg:"I'd love a snack, thank you!"},
-      {name:'Chirpy Bird',    x:WORLD_W*0.5,  y:WORLD_H*0.74, need:3,given:0,cheered:false,kind:'bird',  msg:"Tweet! Any treats to share?"},
-    ];
-
-    Entities.clear();
-    // A friendly merchant to reinforce the shop.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.30,
-      name: 'Marla the Merchant',
-      greeting: "Lovely day for a stroll! Fresh biscuits and ribbons here.",
-      wares: [ {id:'biscuit', cost:3}, {id:'ribbon', cost:5} ],
-    });
-
-    // A quest-giver (yellow "!"): bring her some bones and she rewards you with treats.
-    // This is the first of a growing set of quest types — see src/quests.js.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.30, y: WORLD_H*0.40,
-      name: 'Nella the Nurse',
-      look: 'tailor',
-      greeting: "Hello, dear pup!",
-      quest: {
-        id: 'nella-bones', type: 'give', give: { item:'bone', count:3 },
-        offer:    "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?",
-        ready:    "Three whole bones? You're a darling — may I take them?",
-        progress: "Still hunting for bones? I need 3 in all. Thank you, pup!",
-        done:     "Bless you! The pups are chewing away happily now. 💛",
-        reward:   { treats: 6 },
-      },
-    });
-
-    // Friendly wildlife — walk up and press the action key to greet them. No enemies here.
-    const ponds = worldObjects.filter(o=>o.kind==='pond');
-    if(ponds[0]) Entities.spawn('critter', { species:'duck', x:ponds[0].x, y:ponds[0].y });
-    if(ponds[1]) Entities.spawn('critter', { species:'duck', x:ponds[1].x, y:ponds[1].y });
-    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.68, y:WORLD_H*0.62 });
-    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.30, y:WORLD_H*0.58 });
-
-    Chests.spawnForLevel('meadow-2');   // buried treasure — first iron chest
-  },
-
-  quest: {
-    id: 'cheer-all-meadow2',
-    label: 'Cheer up every friend in the field',
-    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
-    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
-  },
-});
+AUGMENTS.wildflowers = function(){
+  const hues=['#FF8FA3','#FFD93D','#C9A6FF','#FFB199','#FF6B81','#A8E6CF','#FF9EC0','#B6E36A','#FFE066'];
+  for(let i=0;i<130;i++){
+    let fx,fy;
+    for(let a=0;a<20;a++){ fx=rand(30,WORLD_W-30); fy=rand(30,WORLD_H-30); if(!isWater(fx,fy,4)) break; }
+    if(isWater(fx,fy,4)) continue;   // keep wildflowers on dry land
+    worldObjects.push({kind:'flower', x:fx, y:fy,
+      hue:hues[Math.floor(rnd()*hues.length)], sway:rand(0,Math.PI*2), size:rand(0.7,1.4)});
+  }
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+};
 
 // ===== src/levels/meadow3.js =====
-// ====================== LEVEL: OLD ORCHARD PATH (Sunny Meadows 3) ======================
-// The last friendly step before the mountains. Still cozy, but it eases the player toward
-// the tougher biome ahead: reinforces the shop + wearables (both merchants are here), a
-// single SLOW badger reminds them enemies exist and hearts matter, and the meadow's ponds
-// + bridges give a low-stakes place to practise crossing water. Reuses the meadow terrain
-// generator (buildWorld) and plants extra oak "orchard" clusters over it.
+// ====================== AUGMENT: ORCHARD ======================
+// Decoration layered on the meadow terrain for the Old Orchard Path (see the "meadow-3"
+// entry in src/config/levels.json). Dots the field with extra oak clusters — each an oak
+// (with a trunk collider) and often a toadstool at its base — kept out of the water.
+// Runs after the terrain builder, inside the seeded generation window.
 
 // Keep augment-planted oaks out of the water (buildWorld's own placement already does this
 // for its objects; ours needs the same guard).
@@ -2355,92 +2220,27 @@ function _orchardClearOfWater(x, y, m){
     ((x-o.x)/(o.w/2+m))**2 + ((y-o.y)/(o.h/2+m))**2 < 1);
 }
 
-Levels.register({
-  id: 'meadow-3',
-  name: 'Old Orchard Path',
-  seed: 20241,
-  size: { w: 1760, h: 1200 },
-  spawn: { x: 200, y: 200 },
-  next: 'rocky',                      // the trail out of the meadows climbs into the mountains
-
-  // Warmer, late-summer palette.
-  theme: {
-    grass:'#9CCB6E', grassDark:'#8ABF5C', grassLight:'#B0D982',
-    dirt:'rgba(196,150,96,0.18)',
-    fenceA:'#7E5632', fenceB:'#946439', rail:'#BE8C48',
-    minimapGrass:'#4E9838', minimapWater:'#4AACDC',
-  },
-
-  generate(){
-    buildWorld();
-    // Orchard clusters — extra oaks (with a toadstool or two at the base) dotted around.
-    for(let i=0;i<10;i++){
-      let x, y, ok=false;
-      for(let a=0;a<30 && !ok; a++){
-        x=rand(90,WORLD_W-90); y=rand(90,WORLD_H-90);
-        ok=_orchardClearOfWater(x,y,40);
-      }
-      worldObjects.push({kind:'oak', x, y, variant:Math.floor(rnd()*3)});
-      addCollider(x-7, y+19, 14, 13);
-      if(rnd()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:rnd()<0.3});
+AUGMENTS.orchard = function(){
+  for(let i=0;i<10;i++){
+    let x, y, ok=false;
+    for(let a=0;a<30 && !ok; a++){
+      x=rand(90,WORLD_W-90); y=rand(90,WORLD_H-90);
+      ok=_orchardClearOfWater(x,y,40);
     }
-    worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
-
-    collectibles = makeCollectibles();
-
-    // Four friends needing three treats each — a small step up from the field.
-    friends = [
-      {name:'Prickle the Hedgehog', x:WORLD_W*0.22, y:WORLD_H*0.28, need:3,given:0,cheered:false,kind:'hedgehog', msg:"Oh! You startled me... got a treat?"},
-      {name:'Shelly the Tortoise',  x:WORLD_W*0.80, y:WORLD_H*0.30, need:3,given:0,cheered:false,kind:'tortoise', msg:"Slow day in the orchard, isn't it?"},
-      {name:'Clover Bunny',         x:WORLD_W*0.28, y:WORLD_H*0.78, need:3,given:0,cheered:false,kind:'bunny',    msg:"These apples aren't ripe yet..."},
-      {name:'Robin the Bird',       x:WORLD_W*0.76, y:WORLD_H*0.76, need:3,given:0,cheered:false,kind:'bird',     msg:"Chirp! My nest could use some cheer."},
-    ];
-
-    Entities.clear();
-    // Both merchants — reinforce buying treats/consumables and trying on wearables.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.5, y: WORLD_H*0.28,
-      name: 'Marla the Merchant',
-      greeting: "Stock up before the trail, pup — biscuits keep your hearts full!",
-      wares: [ {id:'biscuit', cost:3}, {id:'trailmix', cost:4}, {id:'ribbon', cost:5} ],
-    });
-    Entities.spawn('npc', {
-      x: WORLD_W*0.62, y: WORLD_H*0.5,
-      name: 'Fenwick the Tailor',
-      look: 'tailor',
-      greeting: "Heading for the mountains? Let's find you something warm to wear!",
-      wares: [
-        {id:'ballcap', cost:6}, {id:'scarf', cost:6}, {id:'shades', cost:7},
-        {id:'raincoat',cost:9}, {id:'cape',  cost:10},
-      ],
-    });
-    // One slow, easy badger — a gentle reminder that enemies (and hearts) exist.
-    Entities.spawn('enemy', { x: WORLD_W*0.5, y: WORLD_H*0.6, speed:0.8, chaseR:90 });
-    // A friendly squirrel keeps the orchard cheerful.
-    Entities.spawn('critter', { species:'squirrel', x:WORLD_W*0.4, y:WORLD_H*0.4 });
-
-    Chests.spawnForLevel('meadow-3');   // buried treasure — first (locked) silver chest
-  },
-
-  quest: {
-    id: 'cheer-all-meadow3',
-    label: 'Cheer up every friend in the orchard',
-    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
-    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
-  },
-});
+    worldObjects.push({kind:'oak', x, y, variant:Math.floor(rnd()*3)});
+    addCollider(x-7, y+19, 14, 13);
+    if(rnd()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:rnd()<0.3});
+  }
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+};
 
 // ===== src/levels/rocky.js =====
-// ====================== LEVEL 2: ROCKY MOUNTAINS ======================
-// The trail out of the Sunny Meadow climbs into a lush Canadian-Rockies valley: a
-// forested green basin ringed by jagged snow-veined peaks, dotted with vivid turquoise
-// glacial lakes, fed by cascading waterfalls, with a river winding through and a pack of
-// wolves on the prowl. Reached by clearing level 1 (meadow.next → 'rocky'); final level.
-//
-// Like meadow.js this is a thin declaration: a bigger `size`, an alpine `theme`, a
-// `generate()` that lays down the terrain / animals / actors, and a `quest`. Visuals
-// (mountains, lakes, waterfalls, evergreens, boulders, campfires) live in world-draw.js;
-// new animals in friends.js; the wolf in entities/.
+// ====================== TERRAIN: ROCKY MOUNTAINS ======================
+// A lush Canadian-Rockies valley: a forested green basin ringed by jagged snow-veined
+// peaks, dotted with turquoise glacial lakes, fed by waterfalls, with a river winding
+// through. Built by buildRockyWorld() (procedural, so it stays code); the level that uses
+// it names terrain "rocky" in src/config/levels.json. Visuals (mountains, lakes,
+// waterfalls, evergreens, boulders, campfires) live in world-draw.js.
 
 // ---- world generation (alpine valley: peaks, glacial lakes, waterfalls, a river) ----
 function buildRockyWorld(){
@@ -2581,99 +2381,7 @@ function buildRockyWorld(){
   worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 }
 
-// Treats are scarcer per-square-metre than the meadow (bigger map, same-ish count), so
-// you have to roam to gather enough — part of what makes this level harder.
-function makeRockyCollectibles(){
-  const types=['bone','heart','ball','flower'];
-  const items=[];
-  for(let i=0;i<30;i++){
-    items.push({ x:rand(80,WORLD_W-80), y:rand(240,WORLD_H-80),
-      type:types[i%types.length], taken:false, bob:rand(0,Math.PI*2) });
-  }
-  // fish darting in the stream
-  for(let i=0;i<6;i++){
-    const baseX=rand(160,WORLD_W-160);
-    items.push({ type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
-      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
-      x:baseX, y:riverY(baseX) });
-  }
-  return items;
-}
-
-// Six lonely mountain animals (one more than the meadow), each needing more treats, and
-// several stranded across the stream so you have to use the crossings.
-function makeRockyFriends(){
-  const W=WORLD_W, H=WORLD_H;
-  return [
-    {name:'Rusty the Fox',    x:W*0.17, y:H*0.28, need:4,given:0,cheered:false,kind:'fox',     msg:"The cold nights are so lonely up here..."},
-    {name:'Old Billy Goat',   x:W*0.84, y:H*0.26, need:4,given:0,cheered:false,kind:'goat',    msg:"My herd wandered off over the ridge."},
-    {name:'Hoot the Owl',     x:W*0.52, y:H*0.16, need:4,given:0,cheered:false,kind:'owl',      msg:"Whoo will keep me company tonight?"},
-    {name:'Pip the Marmot',   x:W*0.15, y:H*0.82, need:5,given:0,cheered:false,kind:'marmot',   msg:"I burrowed too far from my friends..."},
-    {name:'Bramble the Cub',  x:W*0.85, y:H*0.80, need:5,given:0,cheered:false,kind:'bearcub',  msg:"I can't find my way back to the den."},
-    {name:'Ridge the Raven',  x:W*0.52, y:H*0.78, need:4,given:0,cheered:false,kind:'bird',     msg:"The peaks are quiet and grey today."},
-  ];
-}
-
-Levels.register({
-  id: 'rocky',
-  name: 'Rocky Mountains',
-  seed: 24680,
-  size: { w: 2400, h: 1600 },      // a bigger world = more ground to cover
-  spawn: { x: 170, y: 250 },       // start on the lower-left plateau, below the peaks
-  next: null,                      // final level
-
-  // Lush alpine-valley palette (green basin, log-fence border, turquoise water on map).
-  theme: {
-    grass:'#86A867', grassDark:'#71934F', grassLight:'#9BBC79',
-    dirt:'rgba(122,100,64,0.18)',
-    fenceA:'#6B4A2E', fenceB:'#7C5636', rail:'#A9793F',
-    minimapGrass:'#5E8A46', minimapWater:'#3FC8C0',
-  },
-
-  generate(){
-    buildRockyWorld();
-    collectibles = makeRockyCollectibles();
-    friends = makeRockyFriends();
-
-    Entities.clear();
-    // Rusk the Ranger — a park-ranger guide/merchant by the lakeside camp, stocking
-    // outdoor gear and a hearty snack.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.60, y: WORLD_H*0.22,
-      name: 'Rusk the Ranger',
-      look: 'ranger',
-      greeting: "Welcome to the valley, pup! Gear up before the wolves catch your scent.",
-      wares: [
-        {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
-        {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
-        {id:'cape',     cost:10}, {id:'key',        cost:8},
-      ],
-    });
-    // A prowling wolf pack — the teeth of the level.
-    Entities.spawn('wolf', { x: WORLD_W*0.40, y: WORLD_H*0.52, speed:1.15 });
-    Entities.spawn('wolf', { x: WORLD_W*0.68, y: WORLD_H*0.66, speed:1.2  });
-    Entities.spawn('wolf', { x: WORLD_W*0.30, y: WORLD_H*0.74, speed:1.1, chaseR:220 });
-    // A grumpy badger still lurks too.
-    Entities.spawn('enemy', { x: WORLD_W*0.78, y: WORLD_H*0.44, speed:1.0 });
-
-    // Friendly Canadian wildlife — peaceful, greet them for a positive reward. Loons
-    // ride on the lakes, the beaver keeps to a lakeshore, the moose roams the forest.
-    const lk = worldObjects.filter(o=>o.kind==='lake');
-    if(lk[0]) Entities.spawn('critter', { species:'loon',   x: lk[0].x-80, y: lk[0].y });
-    if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
-    if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
-    Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
-
-    Chests.spawnForLevel('rocky');   // buried treasure in the valley
-  },
-
-  quest: {
-    id: 'cheer-all-rocky',
-    label: 'Cheer up every mountain friend',
-    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
-    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
-  },
-});
+TERRAIN.rocky = buildRockyWorld;
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
@@ -3947,13 +3655,23 @@ const Entities = {
     }
     if(e.hp<=0){
       if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9C9C9', 20);
-      if(Math.random()<0.4){
-        collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
-                            pickupAt:performance.now()+600 });
+      // Loot + XP for this enemy kind come from the config table (LOOT_DATA.enemies).
+      const drops=(typeof LOOT_DATA!=='undefined' && LOOT_DATA.enemies && LOOT_DATA.enemies[e.kind]) || null;
+      if(drops && typeof rollLoot==='function'){
+        rollLoot({ drops:drops.drops }, p1).forEach((entry,i)=>{
+          if(!entry.item) return;
+          const idef=(typeof Items!=='undefined') && Items.get(entry.item);
+          // Treat-type drops (bone/heart/…) count toward p.treats on pickup like any world
+          // treat; gear/consumables don't (they're `dropped`, same as chest item spills).
+          const isTreat=idef && (idef.type==='treat'||idef.type==='toy'||idef.type==='food');
+          collectibles.push({ x:e.x, y:e.y, type:entry.item, qty:entry.qty||1, taken:false,
+                              bob:rand(0,Math.PI*2), dropped:!isTreat, icon:idef?idef.icon:'❓',
+                              pickupAt:performance.now()+600+i*90 });
+        });
       }
       // XP bursts out as green orbs that magnetize to the dog (xporbs.js).
       if(typeof spawnXpOrbs==='function'){
-        const xp=(typeof Progression!=='undefined' && Progression.ENEMY_XP[e.kind]) || 8;
+        const xp=(drops && drops.xp) || 8;
         spawnXpOrbs(e.x, e.y-4, xp);
       }
       this.remove(e);
@@ -4597,7 +4315,7 @@ Entities.register('chest', {
     if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-8, '#FFD93D', 26);
     if(typeof sfxCheer==='function') sfxCheer();
     // Spill the loot in a ring of ordinary pickups around the chest.
-    const loot=def.loot(p);
+    const loot=Chests.roll(e.rarity, p);
     let slot=0, spillCount=0;
     loot.forEach(entry=>{ spillCount += entry.treats ? entry.treats : 1; });
     const drop=(type, qty, isTreat)=>{
@@ -6244,6 +5962,131 @@ const Abilities = {
   }
 
   Abilities.register('scurry', { name:'Scurry', icon:'💨', skillNode:'scurry', spawn, reset, update, speedMul });
+})();
+
+// ===== src/levels/from-config.js =====
+// ====================== LEVELS FROM CONFIG ======================
+// Turns each entry in src/config/levels.json (baked into LEVELS_DATA) into a registered
+// level. The data says WHAT a level contains — its terrain/augment by name, collectibles,
+// friends, npcs (+ shop wares / quest), enemies, critters, buried chests, and its quest —
+// and this file is the generic generate() that reads that data and spawns it. Terrain and
+// decoration stay code (procedural), referenced by name through TERRAIN / AUGMENTS
+// (levels/index.js), populated by the level files (meadow.js, rocky.js, …).
+//
+// Levels/LevelManager APIs are unchanged, so save, world-map, dev-jump and level-state
+// keep working exactly as before.
+
+// ---- quest types: completion logic a level's quest.type points at ----
+// (all shipped levels are 'cheer-all'; add a type here to introduce a new objective.)
+QUEST_TYPES['cheer-all'] = {
+  describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
+  isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
+};
+
+// ---- helpers ----
+// Resolve a placement to absolute world coords. Supports absolute {x,y}, fractional
+// {fx,fy} (of the current WORLD_W/H), and {onWater:{kind,index,dx,dy,dyEdge}} which pins
+// to a pond/lake — returns null if that water body doesn't exist (spawn is skipped).
+function _resolvePos(spec){
+  if(spec.onWater){
+    const w=spec.onWater;
+    const body=worldObjects.filter(o=>o.kind===w.kind)[w.index||0];
+    if(!body) return null;
+    const y=body.y + (w.dyEdge ? body.h/2 : 0) + (w.dy||0);
+    return { x:body.x + (w.dx||0), y };
+  }
+  if(typeof spec.fx==='number' || typeof spec.fy==='number'){
+    return { x:WORLD_W*(spec.fx||0), y:WORLD_H*(spec.fy||0) };
+  }
+  return { x:spec.x||0, y:spec.y||0 };
+}
+
+// Build the level's collectibles from a small spec: N items cycling `types` + `fish` fish
+// darting along the river. Generalizes the old makeCollectibles / makeRockyCollectibles.
+function buildCollectibles(spec){
+  spec = spec || {};
+  const types = spec.types || ['bone','heart','ball','flower'];
+  const n = spec.count || 24;
+  const xM = spec.xMargin || 80, yMin = spec.yMin || 80, yM = spec.yMargin || 80;
+  const items = [];
+  for(let i=0;i<n;i++){
+    items.push({ x:rand(xM, WORLD_W-xM), y:rand(yMin, WORLD_H-yM),
+      type:types[i%types.length], taken:false, bob:rand(0,Math.PI*2) });
+  }
+  const fishN = (spec.fish!=null) ? spec.fish : 6, fishM = spec.fishMargin || 120;
+  for(let i=0;i<fishN;i++){
+    const baseX=rand(fishM, WORLD_W-fishM);
+    items.push({ type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
+      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
+      x:baseX, y:riverY(baseX) });
+  }
+  return items;
+}
+
+// ---- register every configured level ----
+(function registerConfiguredLevels(){
+  const list = (typeof LEVELS_DATA!=='undefined' && Array.isArray(LEVELS_DATA)) ? LEVELS_DATA : [];
+  list.forEach(cfg=>{
+    const qt = QUEST_TYPES[cfg.quest && cfg.quest.type] || QUEST_TYPES['cheer-all'];
+    Levels.register({
+      id: cfg.id,
+      name: cfg.name,
+      seed: cfg.seed,
+      size: cfg.size,
+      spawn: cfg.spawn,
+      next: cfg.next || null,
+      theme: cfg.theme,
+
+      generate(){
+        // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
+        const terrain = TERRAIN[cfg.terrain];
+        if(terrain) terrain(); else console.warn('Level '+cfg.id+': unknown terrain '+cfg.terrain);
+        if(cfg.augment && AUGMENTS[cfg.augment]) AUGMENTS[cfg.augment]();
+
+        // 2) collectibles
+        collectibles = buildCollectibles(cfg.collectibles);
+
+        // 3) friends (lonely animals to cheer)
+        friends = (cfg.friends||[]).map(f=>{
+          const p=_resolvePos(f) || { x:0, y:0 };
+          return { name:f.name, x:p.x, y:p.y, need:f.need, given:0, cheered:false,
+                   kind:f.kind, msg:f.msg };
+        });
+
+        // 4) actors — npcs (shops / quest-givers), enemies, critters
+        Entities.clear();
+        (cfg.npcs||[]).forEach(n=>{
+          const p=_resolvePos(n); if(!p) return;
+          const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
+          if(n.look) e.look=n.look;
+          if(n.wares) e.wares=n.wares;
+          if(n.quest) e.quest=JSON.parse(JSON.stringify(n.quest));   // fresh per build (state mutates)
+          Entities.spawn('npc', e);
+        });
+        (cfg.enemies||[]).forEach(en=>{
+          const p=_resolvePos(en); if(!p) return;
+          const e={ x:p.x, y:p.y };
+          for(const k in en){ if(k!=='kind'&&k!=='x'&&k!=='y'&&k!=='fx'&&k!=='fy'&&k!=='onWater') e[k]=en[k]; }
+          Entities.spawn(en.kind||'enemy', e);
+        });
+        (cfg.critters||[]).forEach(c=>{
+          const p=_resolvePos(c); if(!p) return;
+          Entities.spawn('critter', { species:c.species, x:p.x, y:p.y });
+        });
+
+        // 5) buried treasure — rarity list from the config
+        if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);
+      },
+
+      quest: {
+        id: 'quest-'+cfg.id,
+        type: (cfg.quest && cfg.quest.type) || 'cheer-all',
+        label: (cfg.quest && cfg.quest.label) || 'Cheer up every friend',
+        describe(){ return qt.describe(); },
+        isComplete(){ return qt.isComplete(); },
+      },
+    });
+  });
 })();
 
 // ===== src/level-state.js =====
