@@ -9,6 +9,7 @@ const UI = {
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
   skillsOpen: false,  // skill tree — same non-blocking overlay pattern
+  masteryOpen: false, // ability mastery tree (only from the world map, between levels)
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -19,6 +20,13 @@ const UI = {
   updateHUD(){
     const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
     set('p1count', p1 ? p1.treats : 0);
+    // Dog level + XP bar
+    set('dogLevel', p1 ? (p1.dogLevel||1) : 1);
+    const xf=this.$('xpFill');
+    if(xf && p1 && typeof Progression!=='undefined'){
+      const need=Progression.xpToNext(p1.dogLevel||1);
+      xf.style.width = Math.max(0, Math.min(100, ((p1.xp||0)/need)*100)) + '%';
+    }
     set('cheerCount', Game.cheeredCount);
     set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
@@ -94,33 +102,28 @@ const UI = {
     const body=this.$('skillBody'); if(!body) return;
     const p=p1; if(!p){ body.innerHTML=''; return; }
     const b=Breeds.get(p.breed);
-    const nodes=Skills.nodesFor(p.breed);
+    const sp=p.skillPoints||0;
+    const nodes=Skills.nodesFor();
     const row=n=>{
       const lvl=Skills.level(p,n.id);
-      const pips=n.max>0
-        ? `<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`
-        : '';
-      const lvlDesc=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
-      const nextDesc=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next: ${n.levels[lvl]}</div>` : '';
-      return `<div class="sk-node${n.locked?' locked':''}">
+      const pips=`<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`;
+      return `<div class="sk-node">
         <div class="sk-head">
           <span class="sk-name">${n.icon} ${n.name}</span>
           ${pips}
           <span class="sk-btns">
             <button class="sk-btn" data-act="skdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
-            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(n.locked||lvl>=n.max)?'disabled':''}>+</button>
+            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(lvl>=n.max||sp<=0)?'disabled':''}>+</button>
           </span>
         </div>
         <div class="sk-desc">${n.desc}</div>
-        ${lvlDesc}${nextDesc}
       </div>`;
     };
     body.innerHTML=`
-      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · Skill points: <b>free</b> <span class="sk-note">(earning them comes later — level as you wish!)</span></div>
-      <div class="q-sect">Character</div>
-      ${nodes.filter(n=>!n.ability).map(row).join('')}
-      <div class="q-sect">Ability</div>
-      ${nodes.filter(n=>n.ability).map(row).join('')}`;
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · 🧠 Skill points: <b>${sp}</b> <span class="sk-note">(earned by clearing levels)</span></div>
+      <div class="q-sect">Character stats</div>
+      ${nodes.map(row).join('')}
+      <div class="sk-note" style="margin-top:6px;">Abilities are unlocked in the 🎓 Mastery tree between levels.</div>`;
   },
 
   _onSkillClick(ev){
@@ -136,6 +139,57 @@ const UI = {
       Skills.removePoint(p,id);
     }
     this.updateHUD();   // hearts/hotbar + re-renders the open tree
+  },
+
+  // ---------- mastery tree (between levels, from the world map): unlock/rank abilities ----------
+  openMastery(){
+    this.masteryOpen=true;
+    this.renderMastery();
+    this._show('masteryScreen', true);
+  },
+  closeMastery(){
+    this.masteryOpen=false;
+    this._show('masteryScreen', false);
+  },
+  renderMastery(){
+    const body=this.$('masteryBody'); if(!body) return;
+    const p=p1; if(!p){ body.innerHTML=''; return; }
+    const b=Breeds.get(p.breed);
+    const mp=p.masteryPoints||0;
+    const nodes=Mastery.nodesFor(p.breed);
+    const row=n=>{
+      const lvl=Mastery.level(p,n.id);
+      const pips=`<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`;
+      const nextCost=lvl<n.max ? Mastery.costFor(lvl) : 0;
+      const cur=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
+      const next=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next (${nextCost} 🎓): ${n.levels[lvl]}</div>` : '';
+      return `<div class="sk-node${n.locked?' locked':''}">
+        <div class="sk-head">
+          <span class="sk-name">${n.icon} ${n.name}${lvl===0?' <span class="sk-lock">🔒</span>':''}</span>
+          ${pips}
+          <span class="sk-btns">
+            <button class="sk-btn" data-act="mdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
+            <button class="sk-btn" data-act="mup" data-node="${n.id}" ${(n.locked||lvl>=n.max||mp<nextCost)?'disabled':''}>+</button>
+          </span>
+        </div>
+        <div class="sk-desc">${n.desc}</div>
+        ${cur}${next}
+      </div>`;
+    };
+    body.innerHTML=`
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · 🎓 Mastery points: <b>${mp}</b> <span class="sk-note">(earned by leveling up)</span></div>
+      ${nodes.map(row).join('')}`;
+  },
+  _onMasteryClick(ev){
+    const btn=ev.target.closest('[data-act]'); if(!btn || btn.disabled) return;
+    const p=p1; if(!p) return;
+    const id=btn.dataset.node;
+    if(btn.dataset.act==='mup'){
+      if(Mastery.addPoint(p,id)){ if(typeof sfxLevelUp==='function') sfxLevelUp(); }
+    } else if(btn.dataset.act==='mdown'){
+      Mastery.removePoint(p,id);
+    }
+    this.renderMastery();
   },
 
   renderJournal(){
@@ -241,6 +295,50 @@ const UI = {
     this._show('pauseScreen', true);
   },
 
+  // ---------- item tooltip (hover in inventory / shop / quest) ----------
+  showItemTip(id, clientX, clientY){
+    if(this._dragging) return;                 // don't cover items mid drag-drop
+    const el=this.$('itemTip'); if(!el || typeof Items==='undefined') return;
+    const d=Items.describe(id); if(!d){ this.hideItemTip(); return; }
+    el.innerHTML=`<div class="tip-name">${d.icon} ${d.name}</div>`
+      + `<div class="tip-type">${d.typeLabel}</div>`
+      + d.effects.map(e=>`<div class="tip-eff${e.bad?' bad':''}">${e.text}</div>`).join('')
+      + d.flavor.map(f=>`<div class="tip-flav">${f}</div>`).join('')
+      + (d.value?`<div class="tip-val">Value: ${d.value} 🦴</div>`:'');
+    el.style.display='block';
+    this._moveItemTip(clientX, clientY);
+  },
+  _moveItemTip(clientX, clientY){
+    const el=this.$('itemTip'); if(!el || el.style.display==='none') return;
+    const w=el.offsetWidth, h=el.offsetHeight;
+    let x=clientX+14, y=clientY+16;
+    if(x+w>window.innerWidth-6) x=clientX-w-14;   // flip left near the right edge
+    if(y+h>window.innerHeight-6) y=clientY-h-16;   // flip up near the bottom
+    el.style.left=Math.max(4,x)+'px'; el.style.top=Math.max(4,y)+'px';
+  },
+  hideItemTip(){ const el=this.$('itemTip'); if(el) el.style.display='none'; },
+
+  // Ability tooltip (hotbar Q/E/R slots + mastery nodes). Shows the current-level
+  // effect and what the next rank adds, from the ability's mastery node.
+  showAbilityTip(node, clientX, clientY){
+    if(this._dragging) return;
+    const el=this.$('itemTip'); if(!el) return;
+    const p=p1;
+    const nd=(typeof Mastery!=='undefined' && p) ? Mastery.node(p.breed, node) : null;
+    if(!nd){ this.hideItemTip(); return; }
+    const lvl=(typeof Skills!=='undefined' && p) ? Skills.level(p, node) : 0;
+    const cur=(nd.levels && lvl>0) ? nd.levels[Math.min(lvl, nd.levels.length)-1] : null;
+    const next=(nd.levels && lvl<nd.max) ? nd.levels[lvl] : null;
+    el.innerHTML=`<div class="tip-name">${nd.icon} ${nd.name}</div>`
+      + `<div class="tip-type">Ability · ${lvl>0?`Level ${lvl}/${nd.max}`:'Locked 🔒'}</div>`
+      + `<div class="tip-flav">${nd.desc}</div>`
+      + (cur?`<div class="tip-eff">Now: ${cur}</div>`:'')
+      + (next?`<div class="tip-val">Next: ${next}</div>`:'')
+      + (lvl===0?`<div class="tip-flav">Unlock in the 🎓 Mastery tree (between levels)</div>`:'');
+    el.style.display='block';
+    this._moveItemTip(clientX, clientY);
+  },
+
   // ---------- inventory + stats ----------
   // Inventory is a non-blocking overlay: it does NOT change Game.state, so the world
   // keeps simulating while it's open, and it docks over part of the frame (see CSS).
@@ -291,7 +389,7 @@ const UI = {
       const id=Wearables.equipped(p,slot);
       const def=id?Items.get(id):null;
       const label=Wearables.SLOT_LABEL[slot];
-      return `<button class="doll-slot slot-${slot}${id?' filled':''}" data-act="unequip" data-drop="equip" data-slot="${slot}" ${id?'draggable="true" data-drag="equip"':''} title="${label}${id?': '+def.name+' — drag off or click to remove':' (drop a '+label.toLowerCase()+' item here)'}">`
+      return `<button class="doll-slot slot-${slot}${id?' filled':''}" data-act="unequip" data-drop="equip" data-slot="${slot}" ${id?`draggable="true" data-drag="equip" data-item="${id}"`:''} title="${label}${id?': drag off or click to remove':' (drop a '+label.toLowerCase()+' item here)'}">`
         + (def?`<span class="slot-icon">${def.icon}</span>`:`<span class="slot-tag">${label}</span>`)
         + `</button>`;
     };
@@ -307,7 +405,7 @@ const UI = {
       const t=def&&def.type;
       const kind = c ? (t==='wearable'?' wearable' : t==='consumable'?' consumable' : t==='toy'?' toy' : '') : '';
       cells+=`<div class="inv-tile${hb?' hb':''}${c?' filled'+kind:' empty'}" data-drop="slot" data-idx="${i}"`
-        + (c?` draggable="true" data-drag="slot" data-act="item" title="${def?def.name:c.id}"`:'')
+        + (c?` draggable="true" data-drag="slot" data-act="item" data-item="${c.id}"`:'')
         + `>`
         + (hb?`<span class="tile-key">${i+1}</span>`:'')
         + (c?`<span class="tile-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="tile-qty">${c.qty}</span>`:''}`:'')
@@ -376,15 +474,15 @@ const UI = {
       const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      // An ability the dog carries but hasn't learned yet (skill-tree level 0) shows
-      // as an empty slot pointing at the tree. Gating is data-driven via def.skillNode.
+      // An ability the dog carries but hasn't unlocked yet (mastery level 0) shows as
+      // an empty slot pointing at the mastery tree. Gating is data-driven via def.skillNode.
       const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
       const learned=def && lvl>0;
       const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
       const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — learn it in the Skill Tree (${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])})`
+                : def ? `${def.name} — unlock it in the 🎓 Mastery tree (between levels)`
                 : emptyLabel;
-      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" title="${title}">`
+      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
         + (learned?`<span class="hb-icon">${def.icon||'✨'}</span>`:(ult?'<span class="hb-icon hb-ult-mark">★</span>':''))
         + (learned?`<span class="hb-cd" data-ability="${id}"><i></i><b></b></span>`:'')
@@ -394,7 +492,7 @@ const UI = {
     const cells=p1?Inventory.cells(p1):[];
     for(let i=0;i<Inventory.HOTBAR;i++){
       const c=cells[i], def=c?Items.get(c.id):null;
-      html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${def?`title="${def.name} — press ${i+1}"`:''}>`
+      html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${c?`data-item="${c.id}"`:''} ${def?`title="${def.name} — press ${i+1}"`:''}>`
         + `<span class="hb-key">${i+1}</span>`
         + (c?`<span class="hb-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="hb-qty">${c.qty}</span>`:''}`:'')
         + `</button>`;
@@ -573,15 +671,16 @@ const UI = {
     const npc=d.npc, p=d.player, q=npc.quest;
     this.$('dialogName').textContent=npc.name;
     const choices=this.$('dialogChoices'); choices.innerHTML='';
-    const add=(label,fn)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; b.addEventListener('click',fn); choices.appendChild(b); };
+    const add=(label,fn,item)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; if(item) b.dataset.item=item; b.addEventListener('click',fn); choices.appendChild(b); };
+    const reqItem=q.give && q.give.item;   // the quest's required item, for hover tooltips
     const st=Quests.stateOf(q);
     if(st==='available'){
       this.$('dialogText').textContent = q.offer || `Could you help me? I need ${Quests.summary(q)}.`;
-      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); });
+      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); }, reqItem);
       add(`🐾 Maybe later`, ()=>this.closePanel());
     } else if(Quests.canComplete(q, p)){
       this.$('dialogText').textContent = q.ready || `You've got ${Quests.summary(q)} — hand them over?`;
-      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); });
+      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); }, reqItem);
       add(`🐾 Not yet`, ()=>this.closePanel());
     } else {
       this.$('dialogText').textContent = Quests.progressText(q, p);
@@ -608,6 +707,7 @@ const UI = {
       const btn=document.createElement('button');
       btn.className='dialog-choice'+(afford?'':' disabled');
       btn.textContent=`${def.icon} Buy ${def.name} — ${price} 🦴`;
+      btn.dataset.item=w.id;   // hover for effects/stats
       btn.addEventListener('click',()=>{
         if(d.player.treats<price){ this.renderDialog("You don't have enough treats for that."); return; }
         if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
@@ -698,6 +798,20 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    // Mastery tree (world-map only): the body's +/- buttons, its Done button, and the
+    // world-map "Mastery" button that opens it.
+    // Hover tooltips — one delegated handler covers items (inventory tiles, doll slots,
+    // hotbar item slots, shop/quest buttons → [data-item]) and abilities (hotbar Q/E/R
+    // slots → [data-ability]).
+    const SEL='[data-item],[data-ability]';
+    const tipFor=(el, x, y)=>{ if(el.dataset.ability) this.showAbilityTip(el.dataset.ability, x, y); else this.showItemTip(el.dataset.item, x, y); };
+    document.addEventListener('mouseover', e=>{ const el=e.target.closest(SEL); if(el) tipFor(el, e.clientX, e.clientY); });
+    document.addEventListener('mousemove', e=>{ if(this.$('itemTip').style.display!=='none'){ if(e.target.closest(SEL)) this._moveItemTip(e.clientX, e.clientY); else this.hideItemTip(); } });
+    document.addEventListener('mouseout', e=>{ const el=e.target.closest(SEL); if(el && !el.contains(e.relatedTarget)) this.hideItemTip(); });
+
+    const mb=this.$('masteryBody'); if(mb) mb.addEventListener('click', e=>this._onMasteryClick(e));
+    const mDone=this.$('masteryDone'); if(mDone) mDone.addEventListener('click', ()=>this.closeMastery());
+    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.openMastery());
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){

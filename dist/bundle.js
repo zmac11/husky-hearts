@@ -325,18 +325,21 @@ const Breeds = {
 };
 
 // ===== src/data/skills.js =====
-// ====================== SKILLS (data) ======================
-// The skill tree: per-dog upgrades for the character itself plus the breed's active
-// abilities. Every dog shares the "character" nodes; ability nodes are per breed
-// (Lolla's Ball Cannon is the first — Dinno's and Ťapka's are future placeholders).
+// ====================== SKILLS + MASTERY (data) ======================
+// Two separate upgrade tracks:
+//   • Skills  — CHARACTER stat nodes (shared by every dog), spent from p.skillPoints
+//     (earned by clearing levels). Editable anytime via the skill tree (K).
+//   • Mastery — per-breed ABILITY nodes, spent from p.masteryPoints (earned by dog
+//     level-ups). Editable only BETWEEN levels via the mastery tree (world map).
 //
-// Player state is plain data (save-friendly): p.skills = { nodeId: level }, plus
-// p.skillPoints (reserved — EARNING points is future work; while that's unbuilt the
-// tree levels freely and the − button refunds, so tuning can be playtested).
+// Player state is plain data (save-friendly): p.skills / p.mastery = { nodeId: level },
+// with p.skillPoints / p.masteryPoints as the spendable pools. Skills.level(p, id)
+// routes reads to the right map, so the ability modules (which call Skills.level with
+// their skillNode) need no change.
 //
-// Skills.apply(p) is the single place skill effects become numbers: it recomputes
-// p.maxHp / p.speed / p.stats from the breed's base values + current skill levels.
-// It must be called after any level change (UI), at makePlayer, and on save-load.
+// Skills.apply(p) is the single place stat effects become numbers: it recomputes
+// p.maxHp / p.speed / p.stats from the breed's base + current stat-node levels.
+// It must be called after any change (UI), at makePlayer, and on save-load.
 
 const SKILL_NODES = {
   // ---- character nodes (every dog) ----
@@ -399,21 +402,31 @@ const SKILL_NODES = {
   },
 };
 
+// All ability-node ids (across breeds) — used to route Skills.level reads to p.mastery.
+const _ABILITY_NODE_IDS = new Set();
+Object.values(SKILL_NODES.byBreed).forEach(list => list.forEach(n => { if(n.ability) _ABILITY_NODE_IDS.add(n.id); }));
+
 const Skills = {
-  // All nodes shown for a breed, character nodes first.
-  nodesFor(breed){
-    return SKILL_NODES.common.concat(SKILL_NODES.byBreed[breed] || []);
+  // The skill tree shows CHARACTER (stat) nodes only now; abilities live in Mastery.
+  nodesFor(){ return SKILL_NODES.common.slice(); },
+  node(id){ return SKILL_NODES.common.find(n=>n.id===id) || null; },
+
+  // Route reads: ability nodes → p.mastery, stat nodes → p.skills.
+  level(p, id){
+    if(!p) return 0;
+    if(_ABILITY_NODE_IDS.has(id)) return (p.mastery && p.mastery[id]) || 0;
+    return (p.skills && p.skills[id]) || 0;
   },
-  node(breed, id){ return this.nodesFor(breed).find(n=>n.id===id) || null; },
 
-  level(p, id){ return (p && p.skills && p.skills[id]) || 0; },
-
+  // Stat nodes cost 1 skill point per rank; − refunds.
   addPoint(p, id){
-    const n=this.node(p.breed, id);
+    const n=this.node(id);
     if(!n || n.locked) return false;
+    if((p.skillPoints||0) <= 0) return false;
     const cur=this.level(p, id);
     if(cur>=n.max) return false;
     (p.skills || (p.skills={}))[id]=cur+1;
+    p.skillPoints--;
     this.apply(p);
     return true;
   },
@@ -421,6 +434,7 @@ const Skills = {
     const cur=this.level(p, id);
     if(cur<=0) return false;
     p.skills[id]=cur-1;
+    p.skillPoints=(p.skillPoints||0)+1;
     this.apply(p);
     return true;
   },
@@ -432,18 +446,113 @@ const Skills = {
     if(!p) return;
     const base=Breeds.get(p.breed);
     const lv=id=>this.level(p, id);
+    // Equipment stat bonuses (data/items.js `mods`), summed once.
+    const eq=(typeof Equip!=='undefined') ? Equip.statMods(p) : { maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
     const wasMax = p.hp>=p.maxHp;
-    p.maxHp = (base.hp||20) + 2*lv('vitality');
+    p.maxHp = (base.hp||20) + 2*lv('vitality') + eq.maxHp;
     if(wasMax) p.hp=p.maxHp; else p.hp=Math.min(p.hp, p.maxHp);
-    p.speed = +(base.stats.speed + 0.06*lv('swift')).toFixed(2);
+    p.speed = +(base.stats.speed + 0.06*lv('swift') + eq.speed).toFixed(2);
     p.stats = Object.assign({}, base.stats, {
       speed:    p.speed,
-      scentR:   base.stats.scentR + 20*lv('nose'),
-      noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft'))).toFixed(3),
+      scentR:   base.stats.scentR + 20*lv('nose') + eq.scentR,
+      noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft')) + eq.noiseMul).toFixed(3),
+      priceMul: +(base.stats.priceMul + eq.priceMul).toFixed(3),
     });
     // NOTE: no UI calls here — apply() runs during initial module evaluation
     // (makePlayer at world.js load), before ui.js's `const UI` exists. Callers
     // that change levels at runtime refresh the HUD themselves.
+  },
+};
+
+// Ability mastery — a separate track spent from p.masteryPoints, editable only between
+// levels (the mastery tree on the world map). Costs rise per rank: 1 / 1 / 2 mp.
+const Mastery = {
+  COST: [1, 1, 2],   // mastery points to reach rank 1 / 2 / 3
+  nodesFor(breed){ return (SKILL_NODES.byBreed[breed] || []).slice(); },
+  node(breed, id){ return this.nodesFor(breed).find(n=>n.id===id) || null; },
+  level(p, id){ return (p && p.mastery && p.mastery[id]) || 0; },
+  costFor(cur){ return this.COST[cur] || 1; },   // cost to go cur → cur+1
+
+  addPoint(p, id){
+    const n=this.node(p.breed, id);
+    if(!n || n.locked) return false;
+    const cur=this.level(p, id);
+    if(cur>=n.max) return false;
+    const cost=this.costFor(cur);
+    if((p.masteryPoints||0) < cost) return false;
+    (p.mastery || (p.mastery={}))[id]=cur+1;
+    p.masteryPoints-=cost;
+    return true;
+  },
+  removePoint(p, id){
+    const cur=this.level(p, id);
+    if(cur<=0) return false;
+    p.mastery[id]=cur-1;
+    p.masteryPoints=(p.masteryPoints||0)+this.costFor(cur-1);   // refund that rank's cost
+    return true;
+  },
+
+  // Migrate ability levels saved under the old unified p.skills map into p.mastery
+  // (one-time, on load) so pre-split saves keep their unlocked abilities.
+  migrate(p){
+    if(!p || !p.skills) return;
+    this.nodesFor(p.breed).forEach(n=>{
+      if(p.skills[n.id]!=null){
+        p.mastery=p.mastery||{};
+        p.mastery[n.id]=Math.max(p.mastery[n.id]||0, p.skills[n.id]);
+        delete p.skills[n.id];
+      }
+    });
+  },
+};
+
+// ===== src/data/progression.js =====
+// ====================== PROGRESSION (data) ======================
+// The dog's RPG progression: XP → dog level → mastery points, plus skill points from
+// clearing levels. Two upgrade tracks feed off these:
+//   • skillPoints  → character stats  (skill tree, K, anytime)   — +2 per level cleared
+//   • masteryPoints → abilities       (mastery tree, between levels) — +1 per dog level
+// XP itself comes from defeating enemies (as pickup orbs — see xporbs.js), opening
+// chests, completing quests, cheering friends and clearing levels.
+//
+// All progression fields live on the player (makePlayer) and persist in the save.
+
+const Progression = {
+  // XP needed to go from (level) to (level+1). Gently rising curve.
+  xpToNext(level){ return 40 + 25*(Math.max(1,level)-1); },
+
+  // XP handed out by source (tune here). Enemy XP is delivered via orbs, not directly.
+  ENEMY_XP: { enemy:8, wolf:16 },
+  CHEST_XP: { wooden:5, iron:10, silver:18, golden:35 },
+  QUEST_XP: 20,
+  CHEER_XP: 12,
+  LEVEL_XP: 40,
+
+  // Grant XP and roll any dog level-ups. Each level grants +1 mastery point.
+  award(p, amount, reason){
+    if(!p || !(amount>0)) return;
+    p.xp = (p.xp||0) + amount;
+    let leveled=0;
+    while(p.xp >= this.xpToNext(p.dogLevel||1)){
+      p.xp -= this.xpToNext(p.dogLevel||1);
+      p.dogLevel = (p.dogLevel||1) + 1;
+      p.masteryPoints = (p.masteryPoints||0) + 1;
+      leveled++;
+    }
+    if(leveled>0){
+      if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
+      if(typeof sfxLevelUp==='function') sfxLevelUp();
+      showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
+    }
+    if(typeof updateHUD==='function') updateHUD();
+  },
+
+  // Called once per cleared level (checkWin): grant skill points for the stat tree.
+  onLevelCleared(p){
+    if(!p) return;
+    p.skillPoints = (p.skillPoints||0) + 2;
+    this.award(p, this.LEVEL_XP, 'level');
+    if(typeof updateHUD==='function') updateHUD();
   },
 };
 
@@ -474,30 +583,89 @@ const ITEMS_DATA = {
   biscuit:{ name:'Biscuit', icon:'🍪', type:'consumable', value:3, heal:4 },  // heals 2 hearts
   ribbon: { name:'Ribbon',  icon:'🎀', type:'wearable',   value:5, slot:'head', render:'ribbon' },
 
-  // wearables — sold by Fenwick the Tailor; shown on the dog when equipped
-  tophat:  { name:'Top Hat',    icon:'🎩', type:'wearable', value:8,  slot:'head', render:'tophat' },
-  ballcap: { name:'Ball Cap',   icon:'🧢', type:'wearable', value:6,  slot:'head', render:'ballcap' },
-  shades:  { name:'Cool Shades',icon:'🕶️', type:'wearable', value:7,  slot:'face', render:'shades' },
-  scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf' },
-  raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat' },
-  cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape' },
+  // wearables — sold by Fenwick the Tailor; shown on the dog when equipped.
+  // `mods` are passive stat bonuses summed in Skills.apply while worn:
+  //   maxHp (+hp), speed (+px/frame), scentR (+px), noiseMul (× — negative = quieter).
+  // `abilityMods` tweak a specific ability's numbers: { <skillNode>: { field:delta } }
+  //   (e.g. cannon capacity +1, stormfang cdMs −5000). Read by the ability modules.
+  tophat:  { name:'Top Hat',    icon:'🎩', type:'wearable', value:8,  slot:'head', render:'tophat',  mods:{ smartsPrice:-0.05 } },
+  ballcap: { name:'Ball Cap',   icon:'🧢', type:'wearable', value:6,  slot:'head', render:'ballcap', abilityMods:{ cannon:{ capacity:1 } } },
+  shades:  { name:'Cool Shades',icon:'🕶️', type:'wearable', value:7,  slot:'face', render:'shades',  mods:{ noiseMul:-0.10 } },
+  scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf',   mods:{ maxHp:2 } },
+  raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat',mods:{ maxHp:4 } },
+  cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape',    mods:{ maxHp:2, speed:0.06 } },
 
   // rocky-mountain wearables — sold by Rusk the Ranger on level 2
-  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie' },
-  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles' },
+  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie',      mods:{ maxHp:2 } },
+  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles', mods:{ scentR:30 } },
   trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
 
   // treasure-chest loop (data/chests.js): keys open silver chests; the rest is loot
   key:      { name:'Chest Key',   icon:'🗝️', type:'tool',       value:8 },
   feast:    { name:'Feast',       icon:'🍖', type:'consumable', value:7, heal:12 },  // heals 6 hearts
   goldbone: { name:'Golden Bone', icon:'🏅', type:'treat',      value:5 },
-  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown' },  // golden-chest exclusive
+  // golden-chest exclusive — a royal set piece with real power
+  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown',
+              mods:{ maxHp:4, speed:0.06 }, abilityMods:{ stormfang:{ cdMs:-5000 }, monster:{ dmg:1 } } },
 };
+
+// --- tooltip helpers: turn an item's numbers into readable effect lines ---
+const _TYPE_LABEL = { treat:'Treat', toy:'Toy', food:'Food', consumable:'Consumable', wearable:'Wearable', tool:'Tool' };
+
+// Friendly name for an ability skill-node (data/skills.js SKILL_NODES), for abilityMods.
+function _abilityNodeName(node){
+  if(typeof SKILL_NODES!=='undefined'){
+    for(const breed in SKILL_NODES.byBreed){
+      const n=SKILL_NODES.byBreed[breed].find(x=>x.id===node);
+      if(n) return n.name;
+    }
+  }
+  return node;
+}
+function _abilityModLabel(field, v){
+  if(field==='capacity') return `+${v} magazine`;
+  if(field==='cdMs')     return `${v<0?'−':'+'}${Math.abs(v/1000)}s cooldown`;
+  if(field==='dmg')      return `+${v} damage`;
+  if(field==='range')    return `+${v} range`;
+  return `${field} ${v>0?'+':''}${v}`;
+}
+function _statLine(k, v){
+  switch(k){
+    case 'maxHp':       return `+${v} max health (${v/2>0?'+':''}${v/2} heart${Math.abs(v/2)!==1?'s':''})`;
+    case 'speed':       return `${v>0?'+':''}${v} speed`;
+    case 'scentR':      return `+${v} treasure scent range`;
+    case 'noiseMul':    return `${Math.round(v*100)}% enemy detection`;   // negative = sneakier
+    case 'smartsPrice': return `${Math.round(v*100)}% shop prices`;       // negative = cheaper
+    default:            return `${k} ${v>0?'+':''}${v}`;
+  }
+}
 
 const Items = {
   all: ITEMS_DATA,
   get(id){ return ITEMS_DATA[id] || null; },
   list(){ return Object.keys(ITEMS_DATA).map(id => Object.assign({ id }, ITEMS_DATA[id])); },
+
+  // Structured description for tooltips (inventory / shop / quest). Returns null for
+  // unknown ids. `effects` are {text,bad} lines; `flavor` is grey italic text.
+  describe(id){
+    const d=ITEMS_DATA[id]; if(!d) return null;
+    const effects=[], flavor=[];
+    if(d.heal) effects.push({ text:`Restores ${d.heal} HP (${d.heal/2} heart${d.heal/2!==1?'s':''})` });
+    if(d.slot) flavor.push(`Worn: ${d.slot}`);
+    if(d.mods) for(const k in d.mods){ const v=d.mods[k]; if(!v) continue;
+      const bad=(k==='noiseMul' && v>0) || (k==='smartsPrice' && v>0);   // louder / pricier
+      effects.push({ text:_statLine(k, v), bad });
+    }
+    if(d.abilityMods) for(const node in d.abilityMods){
+      const am=d.abilityMods[node];
+      for(const f in am) effects.push({ text:`${_abilityNodeName(node)}: ${_abilityModLabel(f, am[f])}` });
+    }
+    if(!effects.length && !flavor.length){
+      if(d.type==='treat' || d.type==='food' || d.type==='toy') flavor.push('A gift lonely friends love');
+      else if(id==='key') flavor.push('Opens a locked 🩶 Silver chest');
+    }
+    return { id, name:d.name, icon:d.icon, typeLabel:_TYPE_LABEL[d.type]||'Item', effects, flavor, value:d.value||0 };
+  },
 };
 
 // ===== src/data/chests.js =====
@@ -913,6 +1081,7 @@ const Quests = {
       p.treats=(p.treats||0)+treats; rewardStr=`+${treats} treats`;
     }
     else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
+    if(typeof Progression!=='undefined') Progression.award(p, Progression.QUEST_XP, 'quest');
     if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);
     if(typeof showToast==='function') showToast(`✅ Task complete!${rewardStr?' '+rewardStr:''}`, 2600);
     return rewardStr;
@@ -1009,6 +1178,9 @@ const Wearables = {
   isWearable(id){ const d=Items.get(id); return !!(d && d.type==='wearable'); },
   equipped(p, slot){ return (p.equipment && p.equipment[slot]) || null; },
 
+  // Re-derive stats after any equip/unequip so gear bonuses (Items `mods`) take effect.
+  restat(p){ if(typeof Skills!=='undefined') Skills.apply(p); },
+
   // Equip a bag item into its slot; whatever was in that slot returns to the bag.
   equip(p, id){
     const slot=this.slotOf(id);
@@ -1018,6 +1190,7 @@ const Wearables = {
     Inventory.remove(p, id, 1);
     if(prev) Inventory.add(p, prev, 1);
     eq[slot]=id;
+    this.restat(p);
     return true;
   },
 
@@ -1026,6 +1199,7 @@ const Wearables = {
     if(Inventory.roomFor(p, eq[slot]) < 1) return false;   // nowhere to put it — bag full
     Inventory.add(p, eq[slot], 1);
     delete eq[slot];
+    this.restat(p);
     return true;
   },
 
@@ -1044,6 +1218,7 @@ const Wearables = {
       if(!Inventory.at(p, idx)) Inventory.setAt(p, idx, { id:prev, qty:1 });
       else Inventory.add(p, prev, 1);
     }
+    this.restat(p);
     return true;
   },
 
@@ -1052,16 +1227,17 @@ const Wearables = {
   unequipToSlot(p, wslot, idx){
     const eq=p.equipment; const id=eq && eq[wslot]; if(!id) return false;
     const target=Inventory.at(p, idx);
-    if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; return true; }
-    if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; return true; }
+    if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; this.restat(p); return true; }
+    if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; this.restat(p); return true; }
     const tdef=Items.get(target.id);
     if(tdef && tdef.type==='wearable' && tdef.slot===wslot){   // swap the two wearables
       Inventory.removeAt(p, idx, 1);
       Inventory.setAt(p, idx, { id, qty:1 });
       eq[wslot]=target.id;
+      this.restat(p);
       return true;
     }
-    return this.unequip(p, wslot);                            // occupied → send to bag
+    return this.unequip(p, wslot);                            // occupied → send to bag (calls restat)
   },
 
   // ---- rendering ----
@@ -1217,6 +1393,36 @@ const Wearables = {
       }
       _wpx(g, a.x-8, y, 2, 2, strap); _wpx(g, a.x+6, y, 2, 2, strap); // strap peeking out
     },
+  },
+};
+
+// Equipment effects: passive stat mods (summed in Skills.apply) and per-ability mods
+// (read by the ability modules). Items declare `mods` / `abilityMods` (data/items.js).
+const Equip = {
+  // Sum the stat deltas across everything the player has equipped.
+  statMods(p){
+    const out={ maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
+    if(!p || !p.equipment || typeof Items==='undefined') return out;
+    for(const slot in p.equipment){
+      const def=Items.get(p.equipment[slot]); const m=def && def.mods; if(!m) continue;
+      if(m.maxHp)       out.maxHp    += m.maxHp;
+      if(m.speed)       out.speed    += m.speed;
+      if(m.scentR)      out.scentR   += m.scentR;
+      if(m.noiseMul)    out.noiseMul += m.noiseMul;
+      if(m.smartsPrice) out.priceMul += m.smartsPrice;
+    }
+    return out;
+  },
+  // Fold equipped abilityMods for one ability node + field into a base value.
+  abilityMod(p, node, field, base){
+    let v=base;
+    if(!p || !p.equipment || typeof Items==='undefined') return v;
+    for(const slot in p.equipment){
+      const def=Items.get(p.equipment[slot]);
+      const am=def && def.abilityMods && def.abilityMods[node];
+      if(am && typeof am[field]==='number') v+=am[field];
+    }
+    return v;
   },
 };
 
@@ -1413,6 +1619,10 @@ function sfxRoar(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspend
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
   o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
 }
+// XP orb pickup: a tiny bright blip.
+function sfxXp(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'triangle',noteHz(N.C6),0.14,sfxBus,t,0.06); }
+// Dog level-up: a short rising three-note fanfare.
+function sfxLevelUp(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C6].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.09,0.2)); }
 // Scurry dash: a quick airy whoosh.
 function sfxDash(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
   const o=ac.createOscillator(),g=ac.createGain();
@@ -1854,7 +2064,9 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const p={id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
-    skills:{},skillPoints:0,   // skill-tree levels + reserved points (data/skills.js)
+    skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
+    mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
+    xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
   if(typeof Skills!=='undefined') Skills.apply(p);   // derive stats fresh (never share def.stats)
@@ -3632,6 +3844,11 @@ const Entities = {
         collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
                             pickupAt:performance.now()+600 });
       }
+      // XP bursts out as green orbs that magnetize to the dog (xporbs.js).
+      if(typeof spawnXpOrbs==='function'){
+        const xp=(typeof Progression!=='undefined' && Progression.ENEMY_XP[e.kind]) || 8;
+        spawnXpOrbs(e.x, e.y-4, xp);
+      }
       this.remove(e);
       if(typeof sfxDeliver==='function') sfxDeliver();
       showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);
@@ -4293,6 +4510,7 @@ Entities.register('chest', {
       if(entry.treats){ for(let i=0;i<entry.treats;i++) drop(Math.random()<0.7?'bone':'heart', 1, true); }
       else drop(entry.item, entry.qty||1, false);
     });
+    if(typeof Progression!=='undefined') Progression.award(p, Progression.CHEST_XP[e.rarity]||5, 'chest');
     showToast(`✨ ${def.name} opened!`, 1800);
   },
 
@@ -4924,6 +5142,77 @@ function drawSparkles(){
 }
 
 
+// ===== src/xporbs.js =====
+// ====================== XP ORBS ======================
+// Minecraft-style experience pickups: defeated enemies burst a few small green orbs
+// that pop out, settle, then magnetize toward the dog when it's nearby and grant XP on
+// pickup. A lightweight non-saved system (mirrors sparkles.js) — transient combat drops
+// don't belong in the save snapshot. Updated + drawn from the main loop's world pass.
+
+let xpOrbs = [];
+
+// Split `amount` XP into a few orbs bursting from (x,y).
+function spawnXpOrbs(x, y, amount){
+  if(!(amount>0)) return;
+  const n = Math.max(1, Math.min(6, Math.round(amount/3)));   // ~3 xp per orb, capped
+  const base = Math.floor(amount/n), extra = amount - base*n;
+  for(let i=0;i<n;i++){
+    const ang = Math.random()*Math.PI*2, spd = rand(1.2, 2.6);
+    xpOrbs.push({
+      x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 1.2,
+      xp: base + (i<extra?1:0),
+      bob: rand(0,Math.PI*2), life: 12000,   // orbs expire after a while if unreachable
+    });
+  }
+}
+
+function updateXpOrbs(p){
+  if(!xpOrbs.length) return;
+  const MAG=64, PICK=14;
+  for(const o of xpOrbs){
+    o.life -= dtScale*16;
+    const dx=(p&&!p.dead)?p.x-o.x:0, dy=(p&&!p.dead)?p.y-o.y:0;
+    const d=Math.hypot(dx,dy);
+    if(p && !p.dead && d<MAG){
+      // magnetize: accelerate toward the dog, faster the closer it is
+      const pull=0.5+ (1-d/MAG)*1.4;
+      o.vx += (dx/(d||1))*pull*dtScale;
+      o.vy += (dy/(d||1))*pull*dtScale;
+    } else {
+      o.vy += 0.12*dtScale;                 // gentle settle when not being pulled
+    }
+    o.vx*=Math.pow(0.86,dtScale); o.vy*=Math.pow(0.86,dtScale);
+    o.x += o.vx*dtScale; o.y += o.vy*dtScale;
+    if(p && !p.dead && d<PICK){
+      o.collected=true;
+      if(typeof Progression!=='undefined') Progression.award(p, o.xp, 'orb');
+      if(typeof sfxXp==='function') sfxXp();
+    }
+  }
+  xpOrbs = xpOrbs.filter(o=>!o.collected && o.life>0);
+}
+
+function drawXpOrbs(t){
+  if(!xpOrbs.length) return;
+  ctx.save();
+  for(const o of xpOrbs){
+    const x=Math.round(o.x), y=Math.round(o.y + Math.sin(t/220+o.bob)*2);
+    const fade=o.life<1200 ? Math.max(0.1,o.life/1200) : 1;
+    ctx.globalAlpha=0.35*fade;                        // glow
+    ctx.fillStyle='#8FF0A8';
+    ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=fade;
+    ctx.fillStyle='#3FBF66';
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#DFFFE8';
+    ctx.beginPath(); ctx.arc(x-1,y-1,1,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Cleared per level so orbs don't linger across a load/level change.
+function resetXpOrbs(){ xpOrbs = []; }
+
 // ===== src/minimap.js =====
 // ====================== MINIMAP ======================
 function drawMinimap(){
@@ -5060,6 +5349,8 @@ const Abilities = {
   }
   function skillLevel(p){ return (typeof Skills!=='undefined' && p) ? Skills.level(p,'cannon') : 0; }
   function params(p){ return PARAMS[Math.min(3, Math.max(1, skillLevel(p)))]; }
+  // Magazine capacity including equipment abilityMods (e.g. Ball Cap +1).
+  function capOf(p){ return (typeof Equip!=='undefined') ? Equip.abilityMod(p,'cannon','capacity', params(p).cap) : params(p).cap; }
 
   function spawn(){ /* nothing pre-placed — Lolla places the cannon herself */ }
   function reset(){ cannon=null; shots=[]; }
@@ -5068,7 +5359,7 @@ const Abilities = {
   function place(p){
     const lvl=skillLevel(p);
     if(lvl<1){
-      showToast(`🌳 Learn Ball Cannon in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Ball Cannon in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'ballCannon');
@@ -5090,7 +5381,7 @@ const Abilities = {
   function tryLoadBall(p){
     if(!cannon || !Abilities.playerHas(p,'ballCannon') || skillLevel(p)<1) return false;
     if(Math.hypot(p.x-cannon.x, p.y-cannon.y)>LOAD_R) return false;
-    const cap=params(p).cap;
+    const cap=capOf(p);
     if(cannon.mag>=cap){ showToast(`🎾 Magazine full (${cannon.mag}/${cap})`, 1200); return 'full'; }
     cannon.mag++;
     if(typeof sfxCollect==='function') sfxCollect();
@@ -5129,13 +5420,14 @@ const Abilities = {
     if(cannon.fireCd>0) cannon.fireCd=Math.max(0, cannon.fireCd-dt);
 
     // L3: auto-reload from the bag while Lolla stands close
-    if(cfg.autoReload && cannon.mag<cfg.cap && Math.hypot(p.x-cannon.x,p.y-cannon.y)<LOAD_R){
+    const cap=capOf(p);
+    if(cfg.autoReload && cannon.mag<cap && Math.hypot(p.x-cannon.x,p.y-cannon.y)<LOAD_R){
       cannon.reloadCd-=dt;
       if(cannon.reloadCd<=0 && Inventory.count(p,'ball')>0){
         Inventory.remove(p,'ball',1); cannon.mag++;
         cannon.reloadCd=1200;
         if(typeof sfxCollect==='function') sfxCollect();
-        showToast(`🎾 Auto-loaded (${cannon.mag}/${cfg.cap})`, 900);
+        showToast(`🎾 Auto-loaded (${cannon.mag}/${cap})`, 900);
         if(typeof updateHUD==='function') updateHUD();
       }
     } else cannon.reloadCd=0;
@@ -5282,8 +5574,8 @@ const Abilities = {
 
     ctx.restore();
 
-    // magazine pips above the cannon (loaded balls / capacity)
-    const cap=cfg.cap;
+    // magazine pips above the cannon (loaded balls / capacity, incl. gear bonuses)
+    const cap=dog?capOf(dog):cfg.cap;
     const pipsW=cap*8-3;
     for(let i=0;i<cap;i++){
       const px0=cx-pipsW/2+i*8, py0=cy+bob-24;
@@ -5342,14 +5634,16 @@ const Abilities = {
   function activate(p){
     const L=lvl(p);
     if(L<1){
-      showToast(`🌳 Learn Storm Fang in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Storm Fang in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'stormFang');
     if(cd>0){ showToast(`⏳ Storm Fang recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
     p.wolfT=cfg.dur;
-    Abilities.startCd(p,'stormFang',cfg.cdMs);
+    // equipment can shorten the cooldown (e.g. Royal Crown −5s)
+    const cdMs=(typeof Equip!=='undefined') ? Math.max(1000, Equip.abilityMod(p,'stormfang','cdMs', cfg.cdMs)) : cfg.cdMs;
+    Abilities.startCd(p,'stormFang',cdMs);
     boltCd=600;                    // first bolt lands quickly — feels immediate
     flashT=260; nextFlash=rand(1200,2600);
     if(typeof sfxThunder==='function') sfxThunder();
@@ -5499,7 +5793,7 @@ const Abilities = {
   function activate(p){
     const L=lvl(p);
     if(L<1){
-      showToast(`🌳 Learn Spirit of the Storm in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200);
+      showToast(`🎓 Unlock Spirit of the Storm in the Ability Mastery tree (between levels)`, 2200);
       return;
     }
     const cd=Abilities.cdLeft(p,'spiritWolf');
@@ -5555,7 +5849,7 @@ const Abilities = {
 
   function activate(p){
     const L=lvl(p);
-    if(L<1){ showToast(`🌳 Learn Piercing Scream in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    if(L<1){ showToast(`🎓 Unlock Piercing Scream in the Ability Mastery tree (between levels)`, 2200); return; }
     const cd=Abilities.cdLeft(p,'scream');
     if(cd>0){ showToast(`⏳ Scream recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -5639,7 +5933,7 @@ const Abilities = {
 
   function activate(p){
     const L=lvl(p);
-    if(L<1){ showToast(`🌳 Learn Inner Monster in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    if(L<1){ showToast(`🎓 Unlock Inner Monster in the Ability Mastery tree (between levels)`, 2200); return; }
     const cd=Abilities.cdLeft(p,'innerMonster');
     if(cd>0){ showToast(`⏳ Inner Monster recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -5680,7 +5974,9 @@ const Abilities = {
       if(e){
         const cfg=params(p);
         p.meleeCd=BITE_CD;
-        Entities.hurt(e, cfg.dmg, p.x, p.y, 12);
+        // equipment can add bite damage (e.g. Royal Crown +1)
+        const dmg=(typeof Equip!=='undefined') ? Equip.abilityMod(p,'monster','dmg', cfg.dmg) : cfg.dmg;
+        Entities.hurt(e, dmg, p.x, p.y, 12);
         spawnSparkles(e.x, e.y-6, '#FF6040', 8);
         if(typeof Health!=='undefined'){ const got=Health.heal(p, cfg.heal); if(got>0) spawnSparkles(p.x, p.y-10, '#FF9E9E', 5); }
       }
@@ -5717,7 +6013,7 @@ const Abilities = {
 
   function activate(p){
     const L=lvl(p);
-    if(L<1){ showToast(`🌳 Learn Scurry in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    if(L<1){ showToast(`🎓 Unlock Scurry in the Ability Mastery tree (between levels)`, 2200); return; }
     const cd=Abilities.cdLeft(p,'scurry');
     if(cd>0){ showToast(`⏳ Scurry recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
     const cfg=params(p);
@@ -5780,8 +6076,9 @@ const LevelManager = {
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
 
-    // Fresh quest progress for the new level.
+    // Fresh quest progress for the new level; drop any leftover XP orbs.
     Game.cheeredCount = 0;
+    if(typeof resetXpOrbs==='function') resetXpOrbs();
     return level;
   },
 
@@ -5888,25 +6185,35 @@ function dropItemOnGround(p, id, qty){
     dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
+// Cheer lonely friends by GIFTING them treat ITEMS from the bag (bone/heart/flower/…).
+// Treats-the-currency (p.treats) are money now and are never spent here. Throttled so
+// holding the action key feeds ~one treat every 220ms rather than the whole bag at once.
 function tryDeliver(p){
   if(!Input.held('action'))return;
-  friends.forEach(f=>{
-    if(f.cheered)return;
-    if(Math.hypot(p.x-f.x,p.y-f.y)<44&&p.treats>0){
-      const give=Math.min(p.treats,f.need-f.given);
-      if(give>0){
-        p.treats-=give;f.given+=give;
-        spawnSparkles(f.x,f.y-10,'#FF8FA3',8);updateHUD();
-        if(f.given>=f.need){
-          f.cheered=true;cheeredCount++;
-          spawnSparkles(f.x,f.y-10,'#FFD93D',30);sfxCheer();
-          showToast(`${f.name} is so happy now! 🎉`);updateHUD();checkWin();
-        } else {
-          sfxDeliver();showToast(`${f.name}: "${f.msg}"`,1800);
-        }
-      }
+  const now=performance.now();
+  if(p._deliverAt && now-p._deliverAt<220) return;
+  for(const f of friends){
+    if(f.cheered) continue;
+    if(Math.hypot(p.x-f.x,p.y-f.y)>=44) continue;
+    // find a treat-type item in the bag to give
+    const cell=Inventory.cells(p).find(c=>c && Items.get(c.id) && Items.get(c.id).type==='treat');
+    if(!cell){
+      if(!p._noGiftAt || now-p._noGiftAt>2200){ showToast(`${f.name} would love a treat — go collect some! 🦴`,1600); p._noGiftAt=now; }
+      return;
     }
-  });
+    p._deliverAt=now;
+    Inventory.remove(p, cell.id, 1); f.given++;
+    spawnSparkles(f.x,f.y-10,'#FF8FA3',8); updateHUD();
+    if(f.given>=f.need){
+      f.cheered=true; cheeredCount++;
+      spawnSparkles(f.x,f.y-10,'#FFD93D',30); sfxCheer();
+      if(typeof Progression!=='undefined') Progression.award(p, Progression.CHEER_XP, 'cheer');
+      showToast(`${f.name} is so happy now! 🎉`); updateHUD(); checkWin();
+    } else {
+      sfxDeliver(); showToast(`${f.name}: ${f.need-f.given} more treat${f.need-f.given>1?'s':''} to go 🦴`,1400);
+    }
+    return;   // one gift per throttled tick
+  }
 }
 
 // Interact with the nearest interactable entity (NPC) on an action-key press.
@@ -5934,6 +6241,9 @@ function checkWin(){
   if(!done) return;
   if(entities.some(e=>e.kind==='portal')) return;   // exit already spawned
   sfxWin();
+  // Clearing the level grants skill points (stats) + level-clear XP — fires once, here,
+  // guarded by the portal check above.
+  if(typeof Progression!=='undefined') Progression.onLevelCleared(p1);
   // The world keeps playing: a biome-themed exit portal appears near the dog, and the
   // player walks into it to reveal the journey map (portal.js runs the old flow).
   // On a biome's final level a golden chest materialises beside it.
@@ -5985,7 +6295,9 @@ const Save = {
              treats:p.treats,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
-             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0 };
+             skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
+             mastery:Object.assign({}, p.mastery), masteryPoints:p.masteryPoints||0,
+             xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
   save(){
@@ -6042,7 +6354,12 @@ const Save = {
       pl.equipment = sp.equipment || {};
       pl.skills = sp.skills || {};
       pl.skillPoints = sp.skillPoints || 0;
-      if(typeof Skills!=='undefined') Skills.apply(pl);   // re-derive stats from skills
+      pl.mastery = sp.mastery || {};
+      pl.masteryPoints = sp.masteryPoints || 0;
+      pl.xp = sp.xp || 0;
+      pl.dogLevel = sp.dogLevel || 1;
+      if(typeof Mastery!=='undefined') Mastery.migrate(pl);   // pre-split saves: skills→mastery
+      if(typeof Skills!=='undefined') Skills.apply(pl);       // re-derive stats from skills
       if(typeof sp.maxHp==='number') pl.maxHp = sp.maxHp;
       if(typeof sp.hp==='number') pl.hp = Math.min(sp.hp, pl.maxHp);
       pl.dead = !!sp.dead;
@@ -6083,6 +6400,7 @@ const UI = {
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
   skillsOpen: false,  // skill tree — same non-blocking overlay pattern
+  masteryOpen: false, // ability mastery tree (only from the world map, between levels)
   _dialog: null,      // { npc, player }
   _invPlayer: 0,      // which player the inventory paper-doll is showing (tab index)
 
@@ -6093,6 +6411,13 @@ const UI = {
   updateHUD(){
     const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
     set('p1count', p1 ? p1.treats : 0);
+    // Dog level + XP bar
+    set('dogLevel', p1 ? (p1.dogLevel||1) : 1);
+    const xf=this.$('xpFill');
+    if(xf && p1 && typeof Progression!=='undefined'){
+      const need=Progression.xpToNext(p1.dogLevel||1);
+      xf.style.width = Math.max(0, Math.min(100, ((p1.xp||0)/need)*100)) + '%';
+    }
     set('cheerCount', Game.cheeredCount);
     set('cheerTotal', (typeof friends!=='undefined' && friends) ? friends.length : CHEER_TOTAL);
     const lvl=(typeof LevelManager!=='undefined') && LevelManager.current;
@@ -6168,33 +6493,28 @@ const UI = {
     const body=this.$('skillBody'); if(!body) return;
     const p=p1; if(!p){ body.innerHTML=''; return; }
     const b=Breeds.get(p.breed);
-    const nodes=Skills.nodesFor(p.breed);
+    const sp=p.skillPoints||0;
+    const nodes=Skills.nodesFor();
     const row=n=>{
       const lvl=Skills.level(p,n.id);
-      const pips=n.max>0
-        ? `<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`
-        : '';
-      const lvlDesc=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
-      const nextDesc=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next: ${n.levels[lvl]}</div>` : '';
-      return `<div class="sk-node${n.locked?' locked':''}">
+      const pips=`<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`;
+      return `<div class="sk-node">
         <div class="sk-head">
           <span class="sk-name">${n.icon} ${n.name}</span>
           ${pips}
           <span class="sk-btns">
             <button class="sk-btn" data-act="skdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
-            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(n.locked||lvl>=n.max)?'disabled':''}>+</button>
+            <button class="sk-btn" data-act="skup" data-node="${n.id}" ${(lvl>=n.max||sp<=0)?'disabled':''}>+</button>
           </span>
         </div>
         <div class="sk-desc">${n.desc}</div>
-        ${lvlDesc}${nextDesc}
       </div>`;
     };
     body.innerHTML=`
-      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · Skill points: <b>free</b> <span class="sk-note">(earning them comes later — level as you wish!)</span></div>
-      <div class="q-sect">Character</div>
-      ${nodes.filter(n=>!n.ability).map(row).join('')}
-      <div class="q-sect">Ability</div>
-      ${nodes.filter(n=>n.ability).map(row).join('')}`;
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · 🧠 Skill points: <b>${sp}</b> <span class="sk-note">(earned by clearing levels)</span></div>
+      <div class="q-sect">Character stats</div>
+      ${nodes.map(row).join('')}
+      <div class="sk-note" style="margin-top:6px;">Abilities are unlocked in the 🎓 Mastery tree between levels.</div>`;
   },
 
   _onSkillClick(ev){
@@ -6210,6 +6530,57 @@ const UI = {
       Skills.removePoint(p,id);
     }
     this.updateHUD();   // hearts/hotbar + re-renders the open tree
+  },
+
+  // ---------- mastery tree (between levels, from the world map): unlock/rank abilities ----------
+  openMastery(){
+    this.masteryOpen=true;
+    this.renderMastery();
+    this._show('masteryScreen', true);
+  },
+  closeMastery(){
+    this.masteryOpen=false;
+    this._show('masteryScreen', false);
+  },
+  renderMastery(){
+    const body=this.$('masteryBody'); if(!body) return;
+    const p=p1; if(!p){ body.innerHTML=''; return; }
+    const b=Breeds.get(p.breed);
+    const mp=p.masteryPoints||0;
+    const nodes=Mastery.nodesFor(p.breed);
+    const row=n=>{
+      const lvl=Mastery.level(p,n.id);
+      const pips=`<span class="sk-pips">${Array.from({length:n.max},(_,i)=>`<span class="st-pip${i<lvl?' on':''}"></span>`).join('')}</span>`;
+      const nextCost=lvl<n.max ? Mastery.costFor(lvl) : 0;
+      const cur=(n.levels && lvl>0) ? `<div class="sk-lvldesc">${n.levels[Math.min(lvl,n.levels.length)-1]}</div>` : '';
+      const next=(n.levels && lvl<n.max) ? `<div class="sk-lvldesc next">Next (${nextCost} 🎓): ${n.levels[lvl]}</div>` : '';
+      return `<div class="sk-node${n.locked?' locked':''}">
+        <div class="sk-head">
+          <span class="sk-name">${n.icon} ${n.name}${lvl===0?' <span class="sk-lock">🔒</span>':''}</span>
+          ${pips}
+          <span class="sk-btns">
+            <button class="sk-btn" data-act="mdown" data-node="${n.id}" ${lvl<=0?'disabled':''}>−</button>
+            <button class="sk-btn" data-act="mup" data-node="${n.id}" ${(n.locked||lvl>=n.max||mp<nextCost)?'disabled':''}>+</button>
+          </span>
+        </div>
+        <div class="sk-desc">${n.desc}</div>
+        ${cur}${next}
+      </div>`;
+    };
+    body.innerHTML=`
+      <div class="sk-meta">${b.emoji} <b>${b.name}</b> · 🎓 Mastery points: <b>${mp}</b> <span class="sk-note">(earned by leveling up)</span></div>
+      ${nodes.map(row).join('')}`;
+  },
+  _onMasteryClick(ev){
+    const btn=ev.target.closest('[data-act]'); if(!btn || btn.disabled) return;
+    const p=p1; if(!p) return;
+    const id=btn.dataset.node;
+    if(btn.dataset.act==='mup'){
+      if(Mastery.addPoint(p,id)){ if(typeof sfxLevelUp==='function') sfxLevelUp(); }
+    } else if(btn.dataset.act==='mdown'){
+      Mastery.removePoint(p,id);
+    }
+    this.renderMastery();
   },
 
   renderJournal(){
@@ -6315,6 +6686,50 @@ const UI = {
     this._show('pauseScreen', true);
   },
 
+  // ---------- item tooltip (hover in inventory / shop / quest) ----------
+  showItemTip(id, clientX, clientY){
+    if(this._dragging) return;                 // don't cover items mid drag-drop
+    const el=this.$('itemTip'); if(!el || typeof Items==='undefined') return;
+    const d=Items.describe(id); if(!d){ this.hideItemTip(); return; }
+    el.innerHTML=`<div class="tip-name">${d.icon} ${d.name}</div>`
+      + `<div class="tip-type">${d.typeLabel}</div>`
+      + d.effects.map(e=>`<div class="tip-eff${e.bad?' bad':''}">${e.text}</div>`).join('')
+      + d.flavor.map(f=>`<div class="tip-flav">${f}</div>`).join('')
+      + (d.value?`<div class="tip-val">Value: ${d.value} 🦴</div>`:'');
+    el.style.display='block';
+    this._moveItemTip(clientX, clientY);
+  },
+  _moveItemTip(clientX, clientY){
+    const el=this.$('itemTip'); if(!el || el.style.display==='none') return;
+    const w=el.offsetWidth, h=el.offsetHeight;
+    let x=clientX+14, y=clientY+16;
+    if(x+w>window.innerWidth-6) x=clientX-w-14;   // flip left near the right edge
+    if(y+h>window.innerHeight-6) y=clientY-h-16;   // flip up near the bottom
+    el.style.left=Math.max(4,x)+'px'; el.style.top=Math.max(4,y)+'px';
+  },
+  hideItemTip(){ const el=this.$('itemTip'); if(el) el.style.display='none'; },
+
+  // Ability tooltip (hotbar Q/E/R slots + mastery nodes). Shows the current-level
+  // effect and what the next rank adds, from the ability's mastery node.
+  showAbilityTip(node, clientX, clientY){
+    if(this._dragging) return;
+    const el=this.$('itemTip'); if(!el) return;
+    const p=p1;
+    const nd=(typeof Mastery!=='undefined' && p) ? Mastery.node(p.breed, node) : null;
+    if(!nd){ this.hideItemTip(); return; }
+    const lvl=(typeof Skills!=='undefined' && p) ? Skills.level(p, node) : 0;
+    const cur=(nd.levels && lvl>0) ? nd.levels[Math.min(lvl, nd.levels.length)-1] : null;
+    const next=(nd.levels && lvl<nd.max) ? nd.levels[lvl] : null;
+    el.innerHTML=`<div class="tip-name">${nd.icon} ${nd.name}</div>`
+      + `<div class="tip-type">Ability · ${lvl>0?`Level ${lvl}/${nd.max}`:'Locked 🔒'}</div>`
+      + `<div class="tip-flav">${nd.desc}</div>`
+      + (cur?`<div class="tip-eff">Now: ${cur}</div>`:'')
+      + (next?`<div class="tip-val">Next: ${next}</div>`:'')
+      + (lvl===0?`<div class="tip-flav">Unlock in the 🎓 Mastery tree (between levels)</div>`:'');
+    el.style.display='block';
+    this._moveItemTip(clientX, clientY);
+  },
+
   // ---------- inventory + stats ----------
   // Inventory is a non-blocking overlay: it does NOT change Game.state, so the world
   // keeps simulating while it's open, and it docks over part of the frame (see CSS).
@@ -6365,7 +6780,7 @@ const UI = {
       const id=Wearables.equipped(p,slot);
       const def=id?Items.get(id):null;
       const label=Wearables.SLOT_LABEL[slot];
-      return `<button class="doll-slot slot-${slot}${id?' filled':''}" data-act="unequip" data-drop="equip" data-slot="${slot}" ${id?'draggable="true" data-drag="equip"':''} title="${label}${id?': '+def.name+' — drag off or click to remove':' (drop a '+label.toLowerCase()+' item here)'}">`
+      return `<button class="doll-slot slot-${slot}${id?' filled':''}" data-act="unequip" data-drop="equip" data-slot="${slot}" ${id?`draggable="true" data-drag="equip" data-item="${id}"`:''} title="${label}${id?': drag off or click to remove':' (drop a '+label.toLowerCase()+' item here)'}">`
         + (def?`<span class="slot-icon">${def.icon}</span>`:`<span class="slot-tag">${label}</span>`)
         + `</button>`;
     };
@@ -6381,7 +6796,7 @@ const UI = {
       const t=def&&def.type;
       const kind = c ? (t==='wearable'?' wearable' : t==='consumable'?' consumable' : t==='toy'?' toy' : '') : '';
       cells+=`<div class="inv-tile${hb?' hb':''}${c?' filled'+kind:' empty'}" data-drop="slot" data-idx="${i}"`
-        + (c?` draggable="true" data-drag="slot" data-act="item" title="${def?def.name:c.id}"`:'')
+        + (c?` draggable="true" data-drag="slot" data-act="item" data-item="${c.id}"`:'')
         + `>`
         + (hb?`<span class="tile-key">${i+1}</span>`:'')
         + (c?`<span class="tile-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="tile-qty">${c.qty}</span>`:''}`:'')
@@ -6450,15 +6865,15 @@ const UI = {
       const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      // An ability the dog carries but hasn't learned yet (skill-tree level 0) shows
-      // as an empty slot pointing at the tree. Gating is data-driven via def.skillNode.
+      // An ability the dog carries but hasn't unlocked yet (mastery level 0) shows as
+      // an empty slot pointing at the mastery tree. Gating is data-driven via def.skillNode.
       const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
       const learned=def && lvl>0;
       const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
       const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — learn it in the Skill Tree (${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])})`
+                : def ? `${def.name} — unlock it in the 🎓 Mastery tree (between levels)`
                 : emptyLabel;
-      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" title="${title}">`
+      html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
         + (learned?`<span class="hb-icon">${def.icon||'✨'}</span>`:(ult?'<span class="hb-icon hb-ult-mark">★</span>':''))
         + (learned?`<span class="hb-cd" data-ability="${id}"><i></i><b></b></span>`:'')
@@ -6468,7 +6883,7 @@ const UI = {
     const cells=p1?Inventory.cells(p1):[];
     for(let i=0;i<Inventory.HOTBAR;i++){
       const c=cells[i], def=c?Items.get(c.id):null;
-      html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${def?`title="${def.name} — press ${i+1}"`:''}>`
+      html+=`<button class="hb-slot${c?' filled':''}" data-act="hotbar" data-idx="${i}" ${c?`data-item="${c.id}"`:''} ${def?`title="${def.name} — press ${i+1}"`:''}>`
         + `<span class="hb-key">${i+1}</span>`
         + (c?`<span class="hb-icon">${def?def.icon:'❓'}</span>${c.qty>1?`<span class="hb-qty">${c.qty}</span>`:''}`:'')
         + `</button>`;
@@ -6647,15 +7062,16 @@ const UI = {
     const npc=d.npc, p=d.player, q=npc.quest;
     this.$('dialogName').textContent=npc.name;
     const choices=this.$('dialogChoices'); choices.innerHTML='';
-    const add=(label,fn)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; b.addEventListener('click',fn); choices.appendChild(b); };
+    const add=(label,fn,item)=>{ const b=document.createElement('button'); b.className='dialog-choice'; b.textContent=label; if(item) b.dataset.item=item; b.addEventListener('click',fn); choices.appendChild(b); };
+    const reqItem=q.give && q.give.item;   // the quest's required item, for hover tooltips
     const st=Quests.stateOf(q);
     if(st==='available'){
       this.$('dialogText').textContent = q.offer || `Could you help me? I need ${Quests.summary(q)}.`;
-      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); });
+      add(`✔ Sure, I'll help!`, ()=>{ Quests.accept(q); if(typeof sfxDeliver==='function') sfxDeliver(); this.renderQuest(); }, reqItem);
       add(`🐾 Maybe later`, ()=>this.closePanel());
     } else if(Quests.canComplete(q, p)){
       this.$('dialogText').textContent = q.ready || `You've got ${Quests.summary(q)} — hand them over?`;
-      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); });
+      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); }, reqItem);
       add(`🐾 Not yet`, ()=>this.closePanel());
     } else {
       this.$('dialogText').textContent = Quests.progressText(q, p);
@@ -6682,6 +7098,7 @@ const UI = {
       const btn=document.createElement('button');
       btn.className='dialog-choice'+(afford?'':' disabled');
       btn.textContent=`${def.icon} Buy ${def.name} — ${price} 🦴`;
+      btn.dataset.item=w.id;   // hover for effects/stats
       btn.addEventListener('click',()=>{
         if(d.player.treats<price){ this.renderDialog("You don't have enough treats for that."); return; }
         if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
@@ -6772,6 +7189,20 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    // Mastery tree (world-map only): the body's +/- buttons, its Done button, and the
+    // world-map "Mastery" button that opens it.
+    // Hover tooltips — one delegated handler covers items (inventory tiles, doll slots,
+    // hotbar item slots, shop/quest buttons → [data-item]) and abilities (hotbar Q/E/R
+    // slots → [data-ability]).
+    const SEL='[data-item],[data-ability]';
+    const tipFor=(el, x, y)=>{ if(el.dataset.ability) this.showAbilityTip(el.dataset.ability, x, y); else this.showItemTip(el.dataset.item, x, y); };
+    document.addEventListener('mouseover', e=>{ const el=e.target.closest(SEL); if(el) tipFor(el, e.clientX, e.clientY); });
+    document.addEventListener('mousemove', e=>{ if(this.$('itemTip').style.display!=='none'){ if(e.target.closest(SEL)) this._moveItemTip(e.clientX, e.clientY); else this.hideItemTip(); } });
+    document.addEventListener('mouseout', e=>{ const el=e.target.closest(SEL); if(el && !el.contains(e.relatedTarget)) this.hideItemTip(); });
+
+    const mb=this.$('masteryBody'); if(mb) mb.addEventListener('click', e=>this._onMasteryClick(e));
+    const mDone=this.$('masteryDone'); if(mDone) mDone.addEventListener('click', ()=>this.closeMastery());
+    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.openMastery());
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){
@@ -6830,7 +7261,7 @@ const WorldMap = {
     this._start();
   },
 
-  hide(){ this._stop(); if(typeof UI!=='undefined') UI._show('worldMapScreen', false); },
+  hide(){ this._stop(); if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); } },
 
   // Continue into the next real level.
   advance(){
@@ -7027,7 +7458,7 @@ function loop(now){
     Entities.updateAll(now,dt);
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
     if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
-    updateSparkles();updateCamera();
+    updateSparkles();updateXpOrbs(p1);updateCamera();
     UI.tickCooldowns();   // hotbar ability cooldown sweep
   }
   if(showWorld){
@@ -7053,7 +7484,7 @@ function loop(now){
       }}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
-    drawSparkles();
+    drawSparkles();drawXpOrbs(now);
     ctx.restore();
     drawMinimap();
   }

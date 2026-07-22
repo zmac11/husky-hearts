@@ -403,7 +403,9 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const p={id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
     treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
-    skills:{},skillPoints:0,   // skill-tree levels + reserved points (data/skills.js)
+    skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
+    mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
+    xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
   if(typeof Skills!=='undefined') Skills.apply(p);   // derive stats fresh (never share def.stats)

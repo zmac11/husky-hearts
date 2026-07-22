@@ -89,6 +89,7 @@ Entities.register('chest', {
       if(entry.treats){ for(let i=0;i<entry.treats;i++) drop(Math.random()<0.7?'bone':'heart', 1, true); }
       else drop(entry.item, entry.qty||1, false);
     });
+    if(typeof Progression!=='undefined') Progression.award(p, Progression.CHEST_XP[e.rarity]||5, 'chest');
     showToast(`✨ ${def.name} opened!`, 1800);
   },
 

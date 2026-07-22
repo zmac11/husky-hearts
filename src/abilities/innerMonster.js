@@ -23,7 +23,7 @@
 
   function activate(p){
     const L=lvl(p);
-    if(L<1){ showToast(`🌳 Learn Inner Monster in the Skill Tree [${Input.keyName(Input.bindings.skills[0]||Input.bindings.skills[1])}]`, 2200); return; }
+    if(L<1){ showToast(`🎓 Unlock Inner Monster in the Ability Mastery tree (between levels)`, 2200); return; }
     const cd=Abilities.cdLeft(p,'innerMonster');
     if(cd>0){ showToast(`⏳ Inner Monster recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -64,7 +64,9 @@
       if(e){
         const cfg=params(p);
         p.meleeCd=BITE_CD;
-        Entities.hurt(e, cfg.dmg, p.x, p.y, 12);
+        // equipment can add bite damage (e.g. Royal Crown +1)
+        const dmg=(typeof Equip!=='undefined') ? Equip.abilityMod(p,'monster','dmg', cfg.dmg) : cfg.dmg;
+        Entities.hurt(e, dmg, p.x, p.y, 12);
         spawnSparkles(e.x, e.y-6, '#FF6040', 8);
         if(typeof Health!=='undefined'){ const got=Health.heal(p, cfg.heal); if(got>0) spawnSparkles(p.x, p.y-10, '#FF9E9E', 5); }
       }

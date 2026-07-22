@@ -33,8 +33,9 @@ const LevelManager = {
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
 
-    // Fresh quest progress for the new level.
+    // Fresh quest progress for the new level; drop any leftover XP orbs.
     Game.cheeredCount = 0;
+    if(typeof resetXpOrbs==='function') resetXpOrbs();
     return level;
   },
 

@@ -49,6 +49,11 @@ const Entities = {
         collectibles.push({ x:e.x, y:e.y, type:'bone', taken:false, bob:rand(0,Math.PI*2),
                             pickupAt:performance.now()+600 });
       }
+      // XP bursts out as green orbs that magnetize to the dog (xporbs.js).
+      if(typeof spawnXpOrbs==='function'){
+        const xp=(typeof Progression!=='undefined' && Progression.ENEMY_XP[e.kind]) || 8;
+        spawnXpOrbs(e.x, e.y-4, xp);
+      }
       this.remove(e);
       if(typeof sfxDeliver==='function') sfxDeliver();
       showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);

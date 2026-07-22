@@ -74,25 +74,35 @@ function dropItemOnGround(p, id, qty){
     dropped:true, icon:def.icon, pickupAt:performance.now()+950 });
 }
 
+// Cheer lonely friends by GIFTING them treat ITEMS from the bag (bone/heart/flower/…).
+// Treats-the-currency (p.treats) are money now and are never spent here. Throttled so
+// holding the action key feeds ~one treat every 220ms rather than the whole bag at once.
 function tryDeliver(p){
   if(!Input.held('action'))return;
-  friends.forEach(f=>{
-    if(f.cheered)return;
-    if(Math.hypot(p.x-f.x,p.y-f.y)<44&&p.treats>0){
-      const give=Math.min(p.treats,f.need-f.given);
-      if(give>0){
-        p.treats-=give;f.given+=give;
-        spawnSparkles(f.x,f.y-10,'#FF8FA3',8);updateHUD();
-        if(f.given>=f.need){
-          f.cheered=true;cheeredCount++;
-          spawnSparkles(f.x,f.y-10,'#FFD93D',30);sfxCheer();
-          showToast(`${f.name} is so happy now! 🎉`);updateHUD();checkWin();
-        } else {
-          sfxDeliver();showToast(`${f.name}: "${f.msg}"`,1800);
-        }
-      }
+  const now=performance.now();
+  if(p._deliverAt && now-p._deliverAt<220) return;
+  for(const f of friends){
+    if(f.cheered) continue;
+    if(Math.hypot(p.x-f.x,p.y-f.y)>=44) continue;
+    // find a treat-type item in the bag to give
+    const cell=Inventory.cells(p).find(c=>c && Items.get(c.id) && Items.get(c.id).type==='treat');
+    if(!cell){
+      if(!p._noGiftAt || now-p._noGiftAt>2200){ showToast(`${f.name} would love a treat — go collect some! 🦴`,1600); p._noGiftAt=now; }
+      return;
     }
-  });
+    p._deliverAt=now;
+    Inventory.remove(p, cell.id, 1); f.given++;
+    spawnSparkles(f.x,f.y-10,'#FF8FA3',8); updateHUD();
+    if(f.given>=f.need){
+      f.cheered=true; cheeredCount++;
+      spawnSparkles(f.x,f.y-10,'#FFD93D',30); sfxCheer();
+      if(typeof Progression!=='undefined') Progression.award(p, Progression.CHEER_XP, 'cheer');
+      showToast(`${f.name} is so happy now! 🎉`); updateHUD(); checkWin();
+    } else {
+      sfxDeliver(); showToast(`${f.name}: ${f.need-f.given} more treat${f.need-f.given>1?'s':''} to go 🦴`,1400);
+    }
+    return;   // one gift per throttled tick
+  }
 }
 
 // Interact with the nearest interactable entity (NPC) on an action-key press.
@@ -120,6 +130,9 @@ function checkWin(){
   if(!done) return;
   if(entities.some(e=>e.kind==='portal')) return;   // exit already spawned
   sfxWin();
+  // Clearing the level grants skill points (stats) + level-clear XP — fires once, here,
+  // guarded by the portal check above.
+  if(typeof Progression!=='undefined') Progression.onLevelCleared(p1);
   // The world keeps playing: a biome-themed exit portal appears near the dog, and the
   // player walks into it to reveal the journey map (portal.js runs the old flow).
   // On a biome's final level a golden chest materialises beside it.

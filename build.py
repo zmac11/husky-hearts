@@ -27,6 +27,7 @@ LOAD_ORDER = [
     'core/input.js',      # keys, control maps, ESC hook
     'data/breeds.js',     # per-breed stats + abilityId (used by makePlayer at load)
     'data/skills.js',     # skill tree nodes + Skills.apply (used by makePlayer)
+    'data/progression.js',# XP curve, dog levels, mastery/skill points (Progression)
     'data/items.js',      # item definitions (inventory / shop)
     'data/chests.js',     # treasure-chest rarities/loot tables + per-level spawns
     'data/campaign.js',   # environments/levels world-map data + Progress tracker
@@ -56,6 +57,7 @@ LOAD_ORDER = [
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
+    'xporbs.js',          # Minecraft-style XP pickup orbs (spawn/update/draw)
     'minimap.js',         # drawMinimap
     'abilities/registry.js',    # Abilities registry (register/dispatch + cooldowns)
     'abilities/ballCannon.js',  # Lolla: placeable auto-turret

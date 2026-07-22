@@ -16,7 +16,11 @@
   <div id="subtitle">a cozy little walk to make some friends smile</div>
 
   <div id="hud">
-    <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> treats<span class="heartbar" id="p1hearts"></span></div>
+    <div class="panel" id="dogLevelPanel" title="Dog level & XP">
+      <span class="lvl-badge">Lv <span id="dogLevel">1</span></span>
+      <span class="xp-bar"><i id="xpFill"></i></span>
+    </div>
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> 🦴<span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <span class="hud-mutes">
@@ -57,9 +61,10 @@
         <div id="wmNote" class="wm-note">Your journey continues!</div>
         <div class="wm-actions">
           <button class="modebtn" id="wmContinue">Continue →</button>
+          <button class="modebtn secondary" id="wmMastery">🎓 Mastery</button>
           <button class="modebtn secondary" id="wmMenu">🏠 Main Menu</button>
         </div>
-        <div class="overlay-hint">Tap a region to see what's ahead</div>
+        <div class="overlay-hint">Tap a region to see what's ahead · upgrade abilities in 🎓 Mastery</div>
       </div>
 
       <div id="devScreen" style="display:none;">
@@ -124,6 +129,15 @@
         <div class="overlay-hint">World keeps playing · K / Esc to close</div>
       </div>
 
+      <div id="masteryScreen" style="display:none;">
+        <div id="masteryHeader">
+          <h2>🎓 Ability Mastery</h2>
+        </div>
+        <div id="masteryBody"></div>
+        <button class="modebtn" id="masteryDone">✓ Done</button>
+        <div class="overlay-hint">Upgrade abilities between levels</div>
+      </div>
+
       <div id="hotbar" style="display:none;"></div>
 
       <div id="dialogScreen" class="game-overlay" style="display:none;">
@@ -157,6 +171,10 @@
   </div>
   <footer>Tip: check the minimap (top-right) to find animals and treats! · <span id="footKeys"><b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests</span></footer>
 </div>
+
+<!-- Hover tooltip (items + abilities). Top-level so fullscreen's game-frame zoom
+     never distorts its fixed position. -->
+<div id="itemTip" style="display:none;"></div>
 
 <!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->
 <script src="dist/bundle.js"></script>

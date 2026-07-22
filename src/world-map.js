@@ -38,7 +38,7 @@ const WorldMap = {
     this._start();
   },
 
-  hide(){ this._stop(); if(typeof UI!=='undefined') UI._show('worldMapScreen', false); },
+  hide(){ this._stop(); if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); } },
 
   // Continue into the next real level.
   advance(){

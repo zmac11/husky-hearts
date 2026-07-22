@@ -190,6 +190,10 @@ function sfxRoar(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspend
   g.gain.exponentialRampToValueAtTime(0.0001,t+0.55);
   o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t+0.6);
 }
+// XP orb pickup: a tiny bright blip.
+function sfxXp(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); osc(ac,'triangle',noteHz(N.C6),0.14,sfxBus,t,0.06); }
+// Dog level-up: a short rising three-note fanfare.
+function sfxLevelUp(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume(); [N.C5,N.E5,N.G5,N.C6].forEach((n,i)=>osc(ac,'triangle',noteHz(n),0.3,sfxBus,t+i*0.09,0.2)); }
 // Scurry dash: a quick airy whoosh.
 function sfxDash(){ const ac=getAudio(),t=ac.currentTime; if(ac.state==='suspended')ac.resume();
   const o=ac.createOscillator(),g=ac.createGain();
