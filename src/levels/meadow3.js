@@ -38,9 +38,9 @@ Levels.register({
         x=rand(90,WORLD_W-90); y=rand(90,WORLD_H-90);
         ok=_orchardClearOfWater(x,y,40);
       }
-      worldObjects.push({kind:'oak', x, y, variant:Math.floor(Math.random()*3)});
+      worldObjects.push({kind:'oak', x, y, variant:Math.floor(rnd()*3)});
       addCollider(x-7, y+19, 14, 13);
-      if(Math.random()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:Math.random()<0.3});
+      if(rnd()<0.7) worldObjects.push({kind:'mushroom', x:x+rand(-22,22), y:y+rand(20,34), big:rnd()<0.3});
     }
     worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 

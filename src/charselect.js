@@ -117,6 +117,14 @@ function buildSelectScreen(){
 
   ${buildStatsPanel()}
 
+  <div class="cs-seed">
+    <label for="csSeed">🌱 Seed</label>
+    <input id="csSeed" type="text" maxlength="24" spellcheck="false" autocomplete="off"
+           placeholder="leave blank for a surprise" value="${Run.seedText||''}">
+    <button id="csSeedRoll" title="Roll a new seed">🎲</button>
+  </div>
+  <div class="cs-seed-hint">The seed builds every level — same seed, same world.</div>
+
   <div class="cs-actions">
     <button class="modebtn secondary" id="csBack">← Back</button>
     <button class="modebtn" id="csNext">▶ Play!</button>
@@ -138,6 +146,16 @@ function showCharSelect(){
       // re-render the cards so the selection highlight moves
       showCharSelect();
     });
+  });
+
+  // Seed box. The screen re-renders whenever a breed card is clicked, so what's typed is
+  // parked on Run.seedText (the input is repopulated from it above) rather than lost.
+  const seedIn=document.getElementById('csSeed');
+  if(seedIn) seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+  const seedRoll=document.getElementById('csSeedRoll');
+  if(seedRoll) seedRoll.addEventListener('click', ()=>{
+    Run.newRandom();
+    if(seedIn) seedIn.value=Run.seedText;
   });
 
   // Play button
@@ -182,6 +200,10 @@ function renderBreedPreviews(){
 
 function launchGame(){
   if(previewRAF){ cancelAnimationFrame(previewRAF); previewRAF=null; }
+  // Lock in the run seed BEFORE the first level is built: typed text wins, blank rolls a
+  // fresh random run (core/run.js).
+  const typed=document.getElementById('csSeed');
+  Run.setFromText(typed ? typed.value : Run.seedText);
   // HUD dot takes the chosen breed's accent colour
   const dot = document.querySelector('#hud .dot');
   if(dot) dot.style.background = Breeds.get(dogConfig.breed).color;
@@ -201,8 +223,12 @@ function launchGame(){
 // to rebuild whatever level is current (used by Play Again after a game over).
 function resetGame(cfg, levelId){
   stopMusic();
-  // A brand-new game (levelId given = starting at level 1) wipes campaign progress.
-  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id) Progress.reset();
+  // A brand-new game (levelId given = starting at level 1) wipes campaign progress and
+  // everything remembered about previously-visited levels.
+  if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id){
+    Progress.reset();
+    if(typeof LevelState!=='undefined') LevelState.clear();
+  }
   if(levelId) LevelManager.load(levelId);   // regenerate a specific level
   else LevelManager.reload();               // rebuild the current level
   Abilities.reset();

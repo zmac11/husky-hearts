@@ -113,15 +113,23 @@ const Input = {
 
   down(code){ return !!keys[code]; },
 
-  // ESC hook: Options screen first, then whatever panel UI has open.
+  // ESC hook: Options / save picker first, then whatever panel UI has open.
   onEscape(){
     if(typeof Options!=='undefined' && Options.isOpen && Options.isOpen()){ Options.close(); return; }
+    if(typeof SaveUI!=='undefined' && SaveUI.isOpen && SaveUI.isOpen()){ SaveUI.close(); return; }
     if(typeof UI !== 'undefined' && UI.togglePause) UI.togglePause();
   },
 };
 Input.load();
 
 window.addEventListener('keydown', e=>{
+  // Typing in a text field (the seed box on character select) is not gameplay: don't
+  // steal the keystroke for hotbar/inventory shortcuts or swallow the space bar.
+  const t=e.target;
+  if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.isContentEditable)){
+    if(e.code==='Escape'){ t.blur(); }
+    return;
+  }
   keys[e.code] = true;
   // Don't let bound gameplay keys (or the usual suspects) scroll the page.
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code) || Input.boundAction(e.code)) e.preventDefault();

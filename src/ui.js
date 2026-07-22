@@ -292,7 +292,23 @@ const UI = {
     this.closeJournal();
     this.closeSkills();
     this.panel='pause'; Game.state=SCENES.PAUSED;
+    this.showSeed('pauseSeed');
     this._show('pauseScreen', true);
+  },
+
+  // Print the run seed into a small label (pause menu / world map). Clicking copies it,
+  // so a layout you like can be replayed or shared.
+  showSeed(elId){
+    const el=this.$(elId); if(!el || typeof Run==='undefined') return;
+    el.textContent='🌱 Seed: '+Run.label();
+    if(el._seedWired) return;
+    el._seedWired=true;
+    el.addEventListener('click', ()=>{
+      const txt=Run.label();
+      const done=()=>showToast('🌱 Seed copied: '+txt, 1600);
+      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, ()=>showToast('🌱 Seed: '+txt, 2000));
+      else showToast('🌱 Seed: '+txt, 2000);
+    });
   },
 
   // ---------- item tooltip (hover in inventory / shop / quest) ----------
@@ -777,10 +793,11 @@ const UI = {
     // Game over → replay / menu. (World-map buttons are wired inside WorldMap.)
     on('btnGameOverReplay', ()=>{ if(typeof replayRun==='function') replayRun(); });
     on('btnGameOverMenu', ()=>this.quitToMenu());
-    on('btnSave', ()=>{ if(typeof Save!=='undefined') Save.save(); });
-    on('btnLoad', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    // Saving/loading goes through the slot picker (save-ui.js).
+    on('btnSave', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('save','pause'); });
+    on('btnLoad', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('load','pause'); });
     // Start-screen "Continue" appears only when a save exists.
-    on('btnContinue', ()=>{ if(typeof Save!=='undefined') Save.load(); });
+    on('btnContinue', ()=>{ if(typeof SaveUI!=='undefined') SaveUI.open('load','menu'); });
     // Delete-confirm popup buttons.
     on('btnDelYes', ()=>this.confirmDelete(true));
     on('btnDelNo',  ()=>this.confirmDelete(false));

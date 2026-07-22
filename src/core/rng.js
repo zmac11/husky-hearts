@@ -20,9 +20,36 @@ function mulberry32(seed){ // tiny deterministic RNG — returns a function prod
 const RNG = {
   seed: (Math.random()*1e9)|0,  // default run seed; LevelManager overrides per level
   _fn: null,
+  _gen: false,                  // inside a generation window? (see beginGen/endGen)
 
   // Reseed the shared stream (e.g. when (re)generating a level, or after loading a save).
   reseed(s){ this.seed = s>>>0; this._fn = mulberry32(this.seed); return this.seed; },
+
+  // ---- generation window ----
+  // Level generation must be reproducible from the run seed (core/run.js), while ordinary
+  // gameplay randomness (enemy wander, loot rolls, sparkles) stays unpredictable. So the
+  // seeded stream is only "armed" between beginGen() and endGen(): inside the window rnd()
+  // draws from it, outside it falls back to Math.random(). Every generator calls rnd()
+  // (directly or via rand()), so the same seed always rebuilds the same world.
+  beginGen(s){ this.reseed(s); this._gen = true; return this.seed; },
+  endGen(){ this._gen = false; },
+  rnd(){ return this._gen ? this._fn() : Math.random(); },
+
+  // ---- seed math ----
+  // 32-bit string hash (FNV-1a) so a level id / typed seed word becomes a number.
+  hash32(str){
+    let h = 0x811C9DC5;
+    const s = String(str==null ? '' : str);
+    for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h>>>0;
+  },
+  // Stir two seeds together so neighbouring inputs give unrelated streams.
+  mix(a,b){
+    let h = ((a>>>0) ^ Math.imul(b>>>0, 0x9E3779B1))>>>0;
+    h ^= h>>>16; h = Math.imul(h, 0x85EBCA6B);
+    h ^= h>>>13; h = Math.imul(h, 0xC2B2AE35);
+    return (h ^ h>>>16)>>>0;
+  },
 
   next(){ if(!this._fn) this._fn = mulberry32(this.seed); return this._fn(); },
   range(a,b){ return a + this.next()*(b-a); },
