@@ -1,0 +1,28 @@
+{
+  "bone":   { "name": "Bone",   "icon": "🦴", "type": "treat", "value": 1 },
+  "heart":  { "name": "Heart",  "icon": "💛", "type": "treat", "value": 1 },
+  "ball":   { "name": "Ball",   "icon": "🎾", "type": "toy",   "value": 2 },
+  "flower": { "name": "Flower", "icon": "🌸", "type": "treat", "value": 1 },
+  "fish":   { "name": "Fish",   "icon": "🐟", "type": "food",  "value": 2 },
+
+  "biscuit": { "name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4 },
+  "ribbon":  { "name": "Ribbon",  "icon": "🎀", "type": "wearable",   "value": 5, "slot": "head", "render": "ribbon" },
+
+  "tophat":  { "name": "Top Hat",     "icon": "🎩", "type": "wearable", "value": 8,  "slot": "head", "render": "tophat",  "mods": { "smartsPrice": -0.05 } },
+  "ballcap": { "name": "Ball Cap",    "icon": "🧢", "type": "wearable", "value": 6,  "slot": "head", "render": "ballcap", "abilityMods": { "cannon": { "capacity": 1 } } },
+  "shades":  { "name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7,  "slot": "face", "render": "shades",  "mods": { "noiseMul": -0.10 } },
+  "scarf":   { "name": "Cozy Scarf",  "icon": "🧣", "type": "wearable", "value": 6,  "slot": "neck", "render": "scarf",   "mods": { "maxHp": 2 } },
+  "raincoat":{ "name": "Rain Coat",   "icon": "🧥", "type": "wearable", "value": 9,  "slot": "body", "render": "raincoat","mods": { "maxHp": 4 } },
+  "cape":    { "name": "Hero Cape",   "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape",    "mods": { "maxHp": 2, "speed": 0.06 } },
+
+  "beanie":      { "name": "Wool Beanie",  "icon": "🧶", "type": "wearable",   "value": 6, "slot": "head", "render": "beanie",      "mods": { "maxHp": 2 } },
+  "snowgoggles": { "name": "Snow Goggles", "icon": "🥽", "type": "wearable",   "value": 8, "slot": "face", "render": "snowgoggles", "mods": { "scentR": 30 } },
+  "trailmix":    { "name": "Trail Mix",    "icon": "🥜", "type": "consumable", "value": 4, "heal": 6 },
+
+  "key":      { "name": "Chest Key",   "icon": "🗝️", "type": "tool",       "value": 8 },
+  "feast":    { "name": "Feast",       "icon": "🍖", "type": "consumable", "value": 7, "heal": 12 },
+  "goldbone": { "name": "Golden Bone", "icon": "🏅", "type": "treat",      "value": 5 },
+
+  "crown": { "name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown",
+             "mods": { "maxHp": 4, "speed": 0.06 }, "abilityMods": { "stormfang": { "cdMs": -5000 }, "monster": { "dmg": 1 } } }
+}

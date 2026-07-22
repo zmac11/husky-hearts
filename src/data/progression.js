@@ -12,17 +12,20 @@ const Progression = {
   // XP needed to go from (level) to (level+1). Gently rising curve.
   xpToNext(level){ return 40 + 25*(Math.max(1,level)-1); },
 
-  // XP handed out by source (tune here). Enemy XP is delivered via orbs, not directly.
-  ENEMY_XP: { enemy:8, wolf:16 },
-  CHEST_XP: { wooden:5, iron:10, silver:18, golden:35 },
-  QUEST_XP: 20,
-  CHEER_XP: 12,
-  LEVEL_XP: 40,
+  // XP handed out by source. Tuned in src/config/loot.json (LOOT_DATA) so combat rewards
+  // sit next to the loot tables. Enemy XP is delivered via orbs (entities/registry.js).
+  get ENEMY_XP(){ const m={}; const es=(typeof LOOT_DATA!=='undefined' && LOOT_DATA.enemies)||{}; for(const k in es) m[k]=es[k].xp; return m; },
+  get CHEST_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.chestXp) || {}; },
+  get QUEST_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.quest) || 20; },
+  get CHEER_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.cheer) || 12; },
+  get LEVEL_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.level) || 40; },
 
   // Grant XP and roll any dog level-ups. Each level grants +1 mastery point.
   award(p, amount, reason){
     if(!p || !(amount>0)) return;
     p.xp = (p.xp||0) + amount;
+    // Mint "+n XP" rises off the dog for every scrap of experience earned (floaters.js).
+    if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-32, `+${amount} XP`, 'xp');
     let leveled=0;
     while(p.xp >= this.xpToNext(p.dogLevel||1)){
       p.xp -= this.xpToNext(p.dogLevel||1);
@@ -31,7 +34,8 @@ const Progression = {
       leveled++;
     }
     if(leveled>0){
-      if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
+      if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
+      else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
       showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
     }

@@ -1,13 +1,9 @@
-// ====================== LEVEL 2: ROCKY MOUNTAINS ======================
-// The trail out of the Sunny Meadow climbs into a lush Canadian-Rockies valley: a
-// forested green basin ringed by jagged snow-veined peaks, dotted with vivid turquoise
-// glacial lakes, fed by cascading waterfalls, with a river winding through and a pack of
-// wolves on the prowl. Reached by clearing level 1 (meadow.next → 'rocky'); final level.
-//
-// Like meadow.js this is a thin declaration: a bigger `size`, an alpine `theme`, a
-// `generate()` that lays down the terrain / animals / actors, and a `quest`. Visuals
-// (mountains, lakes, waterfalls, evergreens, boulders, campfires) live in world-draw.js;
-// new animals in friends.js; the wolf in entities/.
+// ====================== TERRAIN: ROCKY MOUNTAINS ======================
+// A lush Canadian-Rockies valley: a forested green basin ringed by jagged snow-veined
+// peaks, dotted with turquoise glacial lakes, fed by waterfalls, with a river winding
+// through. Built by buildRockyWorld() (procedural, so it stays code); the level that uses
+// it names terrain "rocky" in src/config/levels.json. Visuals (mountains, lakes,
+// waterfalls, evergreens, boulders, campfires) live in world-draw.js.
 
 // ---- world generation (alpine valley: peaks, glacial lakes, waterfalls, a river) ----
 function buildRockyWorld(){
@@ -148,96 +144,4 @@ function buildRockyWorld(){
   worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
 }
 
-// Treats are scarcer per-square-metre than the meadow (bigger map, same-ish count), so
-// you have to roam to gather enough — part of what makes this level harder.
-function makeRockyCollectibles(){
-  const types=['bone','heart','ball','flower'];
-  const items=[];
-  for(let i=0;i<30;i++){
-    items.push({ x:rand(80,WORLD_W-80), y:rand(240,WORLD_H-80),
-      type:types[i%types.length], taken:false, bob:rand(0,Math.PI*2) });
-  }
-  // fish darting in the stream
-  for(let i=0;i<6;i++){
-    const baseX=rand(160,WORLD_W-160);
-    items.push({ type:'fish', taken:false, bob:rand(0,Math.PI*2), dir:1,
-      baseX, range:rand(50,120), speed:rand(0.35,0.8)*(rnd()<0.5?1:-1), phase:rand(0,Math.PI*2),
-      x:baseX, y:riverY(baseX) });
-  }
-  return items;
-}
-
-// Six lonely mountain animals (one more than the meadow), each needing more treats, and
-// several stranded across the stream so you have to use the crossings.
-function makeRockyFriends(){
-  const W=WORLD_W, H=WORLD_H;
-  return [
-    {name:'Rusty the Fox',    x:W*0.17, y:H*0.28, need:4,given:0,cheered:false,kind:'fox',     msg:"The cold nights are so lonely up here..."},
-    {name:'Old Billy Goat',   x:W*0.84, y:H*0.26, need:4,given:0,cheered:false,kind:'goat',    msg:"My herd wandered off over the ridge."},
-    {name:'Hoot the Owl',     x:W*0.52, y:H*0.16, need:4,given:0,cheered:false,kind:'owl',      msg:"Whoo will keep me company tonight?"},
-    {name:'Pip the Marmot',   x:W*0.15, y:H*0.82, need:5,given:0,cheered:false,kind:'marmot',   msg:"I burrowed too far from my friends..."},
-    {name:'Bramble the Cub',  x:W*0.85, y:H*0.80, need:5,given:0,cheered:false,kind:'bearcub',  msg:"I can't find my way back to the den."},
-    {name:'Ridge the Raven',  x:W*0.52, y:H*0.78, need:4,given:0,cheered:false,kind:'bird',     msg:"The peaks are quiet and grey today."},
-  ];
-}
-
-Levels.register({
-  id: 'rocky',
-  name: 'Rocky Mountains',
-  seed: 24680,
-  size: { w: 2400, h: 1600 },      // a bigger world = more ground to cover
-  spawn: { x: 170, y: 250 },       // start on the lower-left plateau, below the peaks
-  next: null,                      // final level
-
-  // Lush alpine-valley palette (green basin, log-fence border, turquoise water on map).
-  theme: {
-    grass:'#86A867', grassDark:'#71934F', grassLight:'#9BBC79',
-    dirt:'rgba(122,100,64,0.18)',
-    fenceA:'#6B4A2E', fenceB:'#7C5636', rail:'#A9793F',
-    minimapGrass:'#5E8A46', minimapWater:'#3FC8C0',
-  },
-
-  generate(){
-    buildRockyWorld();
-    collectibles = makeRockyCollectibles();
-    friends = makeRockyFriends();
-
-    Entities.clear();
-    // Rusk the Ranger — a park-ranger guide/merchant by the lakeside camp, stocking
-    // outdoor gear and a hearty snack.
-    Entities.spawn('npc', {
-      x: WORLD_W*0.60, y: WORLD_H*0.22,
-      name: 'Rusk the Ranger',
-      look: 'ranger',
-      greeting: "Welcome to the valley, pup! Gear up before the wolves catch your scent.",
-      wares: [
-        {id:'beanie',   cost:6}, {id:'snowgoggles', cost:8},
-        {id:'trailmix', cost:4}, {id:'biscuit',     cost:3},
-        {id:'cape',     cost:10}, {id:'key',        cost:8},
-      ],
-    });
-    // A prowling wolf pack — the teeth of the level.
-    Entities.spawn('wolf', { x: WORLD_W*0.40, y: WORLD_H*0.52, speed:1.15 });
-    Entities.spawn('wolf', { x: WORLD_W*0.68, y: WORLD_H*0.66, speed:1.2  });
-    Entities.spawn('wolf', { x: WORLD_W*0.30, y: WORLD_H*0.74, speed:1.1, chaseR:220 });
-    // A grumpy badger still lurks too.
-    Entities.spawn('enemy', { x: WORLD_W*0.78, y: WORLD_H*0.44, speed:1.0 });
-
-    // Friendly Canadian wildlife — peaceful, greet them for a positive reward. Loons
-    // ride on the lakes, the beaver keeps to a lakeshore, the moose roams the forest.
-    const lk = worldObjects.filter(o=>o.kind==='lake');
-    if(lk[0]) Entities.spawn('critter', { species:'loon',   x: lk[0].x-80, y: lk[0].y });
-    if(lk[2]) Entities.spawn('critter', { species:'loon',   x: lk[2].x+50, y: lk[2].y });
-    if(lk[1]) Entities.spawn('critter', { species:'beaver', x: lk[1].x,    y: lk[1].y + lk[1].h/2 + 16 });
-    Entities.spawn('critter', { species:'moose', x: WORLD_W*0.34, y: WORLD_H*0.28 });
-
-    Chests.spawnForLevel('rocky');   // buried treasure in the valley
-  },
-
-  quest: {
-    id: 'cheer-all-rocky',
-    label: 'Cheer up every mountain friend',
-    describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
-    isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
-  },
-});
+TERRAIN.rocky = buildRockyWorld;

@@ -35,12 +35,37 @@ const UI = {
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.renderHotbar();
+    this.renderTreeButtons();
     this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
     if(this.invOpen) this.renderInventory();
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
     if(this.skillsOpen) this.renderSkills();
+  },
+
+  // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
+  // Always reachable while playing, and they GLOW with a count badge whenever there are
+  // unspent points — so a level-up or a cleared level is never quietly banked and forgotten.
+  renderTreeButtons(){
+    const box=this.$('treeBtns'); if(!box) return;
+    const s=Game.state;
+    const show = s===SCENES.PLAYING || s===SCENES.PAUSED || s===SCENES.DIALOG
+                 || this.invOpen || this.journalOpen || this.skillsOpen;
+    box.style.display = show ? 'flex' : 'none';
+    if(!show || !p1){
+      // Drop the glow while hidden so a stale ring can't flash when they come back.
+      ['btnTreeSkills','btnTreeMastery'].forEach(id=>{ const b=this.$(id); if(b) b.classList.remove('glow'); });
+      return;
+    }
+    const mark=(id, pts, label)=>{
+      const btn=this.$(id); if(!btn) return;
+      btn.classList.toggle('glow', pts>0);
+      const badge=btn.querySelector('.tree-badge'); if(badge) badge.textContent=pts>0?pts:'';
+      btn.title = pts>0 ? `${label} — ${pts} point${pts>1?'s':''} to spend!` : label;
+    };
+    mark('btnTreeSkills',  p1.skillPoints||0,   'Skill tree (K)');
+    mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -89,8 +114,13 @@ const UI = {
   openSkills(){
     this.closeInventory();            // one non-blocking overlay at a time
     this.closeJournal();
+    if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
     this.renderSkills();
+    // In-world it's a side dock over live gameplay; on the journey map it takes the whole
+    // frame (like the mastery tree) so it can't cover Continue / Main Menu.
+    const el=this.$('skillScreen');
+    if(el) el.classList.toggle('overmap', Game.state===SCENES.WORLDMAP);
     this._show('skillScreen', true);
   },
   closeSkills(){
@@ -141,8 +171,14 @@ const UI = {
     this.updateHUD();   // hearts/hotbar + re-renders the open tree
   },
 
-  // ---------- mastery tree (between levels, from the world map): unlock/rank abilities ----------
+  // ---------- mastery tree: unlock/rank abilities (world map, or the in-game 🎓 button) ----------
+  toggleMastery(){
+    if(this.masteryOpen){ this.closeMastery(); return; }
+    this.openMastery();
+  },
   openMastery(){
+    this.closeInventory();
+    if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
     this.renderMastery();
     this._show('masteryScreen', true);
@@ -150,6 +186,7 @@ const UI = {
   closeMastery(){
     this.masteryOpen=false;
     this._show('masteryScreen', false);
+    this.updateHUD();                 // the 🎓 badge reflects freshly spent points
   },
   renderMastery(){
     const body=this.$('masteryBody'); if(!body) return;
@@ -190,6 +227,7 @@ const UI = {
       Mastery.removePoint(p,id);
     }
     this.renderMastery();
+    this.renderTreeButtons();          // badge/glow follows the points left
   },
 
   renderJournal(){
@@ -280,6 +318,7 @@ const UI = {
   // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.masteryOpen){ this.closeMastery(); return; }
     if(this.skillsOpen){ this.closeSkills(); return; }
     if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
@@ -815,6 +854,10 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    on('skillDone', ()=>this.closeSkills());   // shown only in the map's full-frame mode
+    // In-game tree buttons (bottom-left of the frame) — same panels, always reachable.
+    on('btnTreeSkills',  ()=>{ this.closeInventory(); this.toggleSkills(); });
+    on('btnTreeMastery', ()=>{ this.closeInventory(); this.toggleMastery(); });
     // Mastery tree (world-map only): the body's +/- buttons, its Done button, and the
     // world-map "Mastery" button that opens it.
     // Hover tooltips — one delegated handler covers items (inventory tiles, doll slots,
@@ -828,7 +871,9 @@ const UI = {
 
     const mb=this.$('masteryBody'); if(mb) mb.addEventListener('click', e=>this._onMasteryClick(e));
     const mDone=this.$('masteryDone'); if(mDone) mDone.addEventListener('click', ()=>this.closeMastery());
-    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.openMastery());
+    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.toggleMastery());
+    // The world map's 🌳 button reopens the skill tree after you've closed it there.
+    const sOpen=this.$('wmSkills'); if(sOpen) sOpen.addEventListener('click', ()=>{ this.skillsOpen ? this.closeSkills() : this.openSkills(); });
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){

@@ -1,54 +1,23 @@
 // ====================== ITEMS (data) ======================
-// Definitions for everything that can live in a player's inventory: collectibles,
-// consumables, and wearables. `type` groups items; `value` is a coin/trade worth for
-// the shop seam. The collectible ids here match the collectible `type` strings produced
-// by makeCollectibles() (world.js), so a pickup maps straight in.
+// Item definitions — everything that can live in a player's inventory (collectibles,
+// consumables, wearables) — are authored in src/config/items.json and baked into the
+// ITEMS_DATA global at build time (build.py). This file is the behaviour around that
+// data: lookup + the tooltip/effect-line helpers.
 //
-// type flavours the item and drives UI/behaviour:
-//   'treat'/'toy'/'food'   — plain collectibles (delivery currency lives in p.treats)
-//   'consumable'           — usable from the hotbar (number keys). `heal` (hp) restores
-//                            health when used; consumed on use.
-//   'wearable'             — equippable cosmetic. `slot` is which paper-doll slot it fills
-//                            (head/face/neck/body/back); `render` keys into Wearables'
-//                            draw table so it shows on the dog.
-
-const ITEMS_DATA = {
-  // collectibles found in the world
-  bone:   { name:'Bone',   icon:'🦴', type:'treat', value:1 },
-  heart:  { name:'Heart',  icon:'💛', type:'treat', value:1 },
-  ball:   { name:'Ball',   icon:'🎾', type:'toy',   value:2 },
-  flower: { name:'Flower', icon:'🌸', type:'treat', value:1 },
-  fish:   { name:'Fish',   icon:'🐟', type:'food',  value:2 },
-
-  // consumables — usable from the hotbar
-  biscuit:{ name:'Biscuit', icon:'🍪', type:'consumable', value:3, heal:4 },  // heals 2 hearts
-  ribbon: { name:'Ribbon',  icon:'🎀', type:'wearable',   value:5, slot:'head', render:'ribbon' },
-
-  // wearables — sold by Fenwick the Tailor; shown on the dog when equipped.
-  // `mods` are passive stat bonuses summed in Skills.apply while worn:
-  //   maxHp (+hp), speed (+px/frame), scentR (+px), noiseMul (× — negative = quieter).
-  // `abilityMods` tweak a specific ability's numbers: { <skillNode>: { field:delta } }
-  //   (e.g. cannon capacity +1, stormfang cdMs −5000). Read by the ability modules.
-  tophat:  { name:'Top Hat',    icon:'🎩', type:'wearable', value:8,  slot:'head', render:'tophat',  mods:{ smartsPrice:-0.05 } },
-  ballcap: { name:'Ball Cap',   icon:'🧢', type:'wearable', value:6,  slot:'head', render:'ballcap', abilityMods:{ cannon:{ capacity:1 } } },
-  shades:  { name:'Cool Shades',icon:'🕶️', type:'wearable', value:7,  slot:'face', render:'shades',  mods:{ noiseMul:-0.10 } },
-  scarf:   { name:'Cozy Scarf', icon:'🧣', type:'wearable', value:6,  slot:'neck', render:'scarf',   mods:{ maxHp:2 } },
-  raincoat:{ name:'Rain Coat',  icon:'🧥', type:'wearable', value:9,  slot:'body', render:'raincoat',mods:{ maxHp:4 } },
-  cape:    { name:'Hero Cape',  icon:'🦸', type:'wearable', value:10, slot:'back', render:'cape',    mods:{ maxHp:2, speed:0.06 } },
-
-  // rocky-mountain wearables — sold by Rusk the Ranger on level 2
-  beanie:     { name:'Wool Beanie',   icon:'🧶', type:'wearable',   value:6, slot:'head', render:'beanie',      mods:{ maxHp:2 } },
-  snowgoggles:{ name:'Snow Goggles',  icon:'🥽', type:'wearable',   value:8, slot:'face', render:'snowgoggles', mods:{ scentR:30 } },
-  trailmix:   { name:'Trail Mix',     icon:'🥜', type:'consumable', value:4, heal:6 },  // heals 3 hearts
-
-  // treasure-chest loop (data/chests.js): keys open silver chests; the rest is loot
-  key:      { name:'Chest Key',   icon:'🗝️', type:'tool',       value:8 },
-  feast:    { name:'Feast',       icon:'🍖', type:'consumable', value:7, heal:12 },  // heals 6 hearts
-  goldbone: { name:'Golden Bone', icon:'🏅', type:'treat',      value:5 },
-  // golden-chest exclusive — a royal set piece with real power
-  crown:    { name:'Royal Crown', icon:'👑', type:'wearable',   value:15, slot:'head', render:'crown',
-              mods:{ maxHp:4, speed:0.06 }, abilityMods:{ stormfang:{ cdMs:-5000 }, monster:{ dmg:1 } } },
-};
+// Field reference (for editing items.json):
+//   type   groups the item and drives UI/behaviour:
+//     'treat'/'toy'/'food'  — plain collectibles (delivery currency lives in p.treats)
+//     'consumable'          — usable from the hotbar (number keys); `heal` restores hp
+//     'wearable'            — equippable cosmetic; `slot` is the paper-doll slot filled
+//                             (head/face/neck/body/back); `render` keys Wearables' draw table
+//   value  coin/trade worth for the shop seam
+//   mods   passive stat bonuses summed in Skills.apply while worn:
+//     maxHp (+hp), speed (+px/frame), scentR (+px), noiseMul (× — negative = quieter),
+//     smartsPrice (× shop price — negative = cheaper)
+//   abilityMods  tweak a specific ability's numbers: { <skillNode>: { field:delta } }
+//     (e.g. cannon capacity +1, stormfang cdMs −5000). Read by the ability modules.
+// The collectible ids (bone/heart/ball/flower/fish) match the collectible `type` strings
+// produced by the level builder, so a world pickup maps straight in.
 
 // --- tooltip helpers: turn an item's numbers into readable effect lines ---
 const _TYPE_LABEL = { treat:'Treat', toy:'Toy', food:'Food', consumable:'Consumable', wearable:'Wearable', tool:'Tool' };

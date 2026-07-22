@@ -44,6 +44,7 @@ const LevelManager = {
     // Fresh quest progress for the new level; drop any leftover XP orbs.
     Game.cheeredCount = 0;
     if(typeof resetXpOrbs==='function') resetXpOrbs();
+    if(typeof resetFloaters==='function') resetFloaters();
     return level;
   },
 

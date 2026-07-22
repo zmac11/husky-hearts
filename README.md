@@ -10,7 +10,9 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 
 - 🐕 **Three playable dogs, each unique** — **Dinno** the alpha husky (tanky, fast), **Lolla** the clever sheltie (loud, great at haggling), and **Ťapka** the tiny Prague Ratter (frail but swift and near-silent, drawn with a smaller model). Each has its own real coat colours, stats, and a distinct pair of active abilities.
 - 📊 **Stat bars that actually matter** — clicking a dog on the select screen shows 1–5 bars for **Health, Speed, Swimming, Noise, and Smarts**, and every one is real: *Noise* scales how far enemies detect you (and howling makes you louder), *Smarts* discounts shop prices and boosts quest rewards. The numbers are derived from the bars, so display and gameplay can never drift.
-- 🌳 **Skill tree** — spend levels on shared character upgrades (Vitality, Swift Paws, Keen Nose, Soft Steps) and per-dog ability upgrades (up to level 3 each). Open it with **K** or the 🌳 button in the inventory. *(Point-earning is a future step — for now you can level freely and respec to experiment.)*
+- 💥 **Floating combat numbers** — every hit pops a number where it landed: **gold** for damage your dog deals, **red** for damage it takes, green for healing, and mint **+XP** as orbs are picked up. A level-up blooms golden rings around the dog with a ⭐ LEVEL banner.
+- 🌳 **Upgrade trees a click away** — 🌳 Skills and 🎓 Mastery buttons sit in the corner of the game frame and **glow with a count badge** whenever points are waiting to be spent. Step through a cleared level's portal and the skill tree opens itself on the journey map, so fresh points never sit forgotten — both trees are reachable there from 🌳 Skills / 🎓 Mastery.
+- 🌳 **Two upgrade trees** — a shared **Skill tree** of character stats (Vitality, Swift Paws, Keen Nose, Soft Steps), with points earned by **clearing levels**, and a per-dog **Mastery tree** that ranks abilities up (to level 3), with points earned by **leveling up**. Open Skills with **K**, the 🌳 button, or from the inventory; respec freely to experiment.
 - ⚡ **Active abilities with cooldowns** — each dog carries two abilities on **Q / E** plus a reserved **Ultimate** slot on **R**:
   - **Dinno** — *Storm Fang* (transform into a storm-wolf: rain, screen-darkening, lightning bolts that strike enemies, a fear aura, and a speed boost) and *Spirit of the Storm* (summon a spectral wolf that hunts on its own).
   - **Lolla** — *Ball Cannon* (place an auto-turret, load it with 🎾 balls from your hotbar, it fires at enemies and drops recyclable ammo) and *Piercing Scream* (a mobile AOE of damage + knockback, with a chance to frighten enemies at higher levels).
@@ -27,6 +29,7 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 - 📜 **NPC quests & shops** — quest-givers show a glowing **"!"**; press the action key to hear the task, accept it, and hand in the goal for a reward. Tailor NPCs also sell wearables and 🗝️ chest keys for treats (smart dogs pay less).
 - 🎒 **Inventory & wearables** — a drag-and-drop bag with a paper-doll: equip hats, shades, scarves, coats and capes onto your dog, drop items on the ground, and use consumables/toys from a 6-slot hotbar (number keys). Wearables fit each breed and layer correctly (capes drape over the dog's back when it faces away).
 - ⚙️ **Options screen** — fully **rebindable controls** (two keys per action), plus **music/effects volume sliders and mutes** (also available as always-visible quick-mute buttons in the HUD). Opened from the start or pause menu.
+- ✨ **XP orbs that stay put** — defeated enemies burst experience orbs that pop out, settle where they dropped and hover there until you come close enough to hoover them up.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot, a sad sound plays) — then it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**.
 - 🎵 **Synthesized music & SFX** — several selectable ambient soundtracks plus procedural sound effects (collecting, delivering, howling, digging, thunder, scream, roar…), all generated in-browser via the Web Audio API — no audio files.
 - 📱 **Touch controls** — an on-screen D-pad and action button auto-appear on mobile.
@@ -98,6 +101,10 @@ husky-hearts/
 ├── css/
 │   └── style.css       ← all styles (HUD, panels, skill tree, hotbar, fullscreen)
 ├── src/                ← editable JS modules
+│   ├── config/              ← JSON content configs (edit these to retune the game)
+│   │   ├── items.json       item / wearable definitions → ITEMS_DATA
+│   │   ├── loot.json        chest tables, enemy drops, XP payouts → LOOT_DATA
+│   │   └── levels.json      per-level content (friends/npcs/enemies/critters/chests/quest) → LEVELS_DATA
 │   ├── init.js              canvas & ctx setup
 │   ├── core/
 │   │   ├── rng.js           seeded RNG (mulberry32) + generation window (beginGen/rnd)
@@ -107,8 +114,9 @@ husky-hearts/
 │   ├── data/
 │   │   ├── breeds.js        per-dog 1–5 stat bars → derived stats + abilities
 │   │   ├── skills.js        skill-tree nodes + Skills.apply (character + ability upgrades)
-│   │   ├── items.js         item definitions (collectibles / consumables / wearables / tools)
-│   │   ├── chests.js        treasure-chest rarities, loot tables, per-level spawns
+│   │   ├── items.js         item lookup + tooltip helpers (data from config/items.json)
+│   │   ├── loot.js          rollLoot() — shared drop-table roller (independent chances)
+│   │   ├── chests.js        chest rarities/roll (data from config/loot.json)
 │   │   └── campaign.js      world-map environments (3 levels + boss each) + Progress
 │   ├── inventory.js         positional bag: add/remove/stack/move
 │   ├── wearables.js         equippable cosmetics: equip + per-breed on-dog rendering
@@ -117,11 +125,12 @@ husky-hearts/
 │   ├── audio.js             Web Audio engine, music buses, SFX
 │   ├── world.js             world size, colliders, world objects, makePlayer
 │   ├── levels/
-│   │   ├── index.js         Levels registry
-│   │   ├── meadow.js        Sunny Meadows 1
-│   │   ├── meadow2.js       Sunny Meadows 2 — Wildflower Field (wildlife intro, no enemies)
-│   │   ├── meadow3.js       Sunny Meadows 3 — Old Orchard Path (gentle enemy + river)
-│   │   └── rocky.js         Rocky Mountains (Canadian valley: lakes/waterfalls/peaks/wolves)
+│   │   ├── index.js         Levels registry + TERRAIN / AUGMENTS / QUEST_TYPES hooks
+│   │   ├── from-config.js   builds every level from config/levels.json (generic generate())
+│   │   ├── meadow.js        meadow terrain builder → TERRAIN.meadow
+│   │   ├── meadow2.js       'wildflowers' augment (extra flower scatter)
+│   │   ├── meadow3.js       'orchard' augment (extra oak clusters)
+│   │   └── rocky.js         rocky terrain builder (peaks/lakes/waterfalls) → TERRAIN.rocky
 │   ├── level-state.js       per-level dynamic state so visited levels stay as you left them
 │   ├── level-manager.js     LevelManager.load/enter — build world + themed ground
 │   ├── draw-helpers.js      px(), shade(), roundRect()
@@ -148,6 +157,7 @@ husky-hearts/
 │   │   └── scurry.js        Ťapka E — evasive dash + i-frames
 │   ├── dog-sprite.js        drawDog dispatcher + per-breed renderers (incl. transform forms)
 │   ├── sparkles.js          particle effects
+│   ├── floaters.js          floating damage/XP numbers + level-up burst
 │   ├── minimap.js           top-right corner minimap (theme-aware)
 │   ├── update.js            updatePlayer, tryCollect/Deliver/Interact, checkWin
 │   ├── toast.js             on-screen message popups
@@ -183,22 +193,38 @@ extensions are additive:
   and add a matching node in `src/data/skills.js`. Cooldowns and hotbar gating come for free.
 - **New skill node** → add it to `src/data/skills.js` (`common` for all dogs, or `byBreed`);
   apply its effect in `Skills.apply(p)`.
-- **New level** → add a file in `src/levels/` declaring `size`, `theme`, `generate()`, and
-  `quest`, then `Levels.register(...)`. Call `Chests.spawnForLevel(id)` from `generate()`
-  to bury treasure. Generators must draw randomness from `rand()`/`rnd()` and never
-  `Math.random()` — a level's terrain is rebuilt from the run seed every time you walk
-  back into it (`level-state.js` restores only the dynamic half on top).
+- **Retune content / loot / shops / rewards** → edit the JSON in `src/config/` — no code:
+  - `levels.json` — a level's friends, npcs (+ `wares` shop lists and `quest` + `reward`),
+    enemies (`speed`/`chaseR`/`hp`), critters, buried `chests`, and quest label. Positions
+    are `{x,y}` absolute, `{fx,fy}` fractional, or `{onWater:{kind,index,dx,dy}}`.
+  - `loot.json` — chest tables, per-enemy drops, and XP payouts. Drops use **independent
+    chances**: `{item,chance?}` (omit `chance` = guaranteed) or `{oneOf:[…],chance?}`, plus a
+    guaranteed `treats:[min,max]` spill.
+  - `items.json` — item/wearable definitions (`heal`, `slot`, `mods`, `abilityMods`, `value`).
+  Run `python3 build.py` and reload; the build validates the JSON and bakes it into the bundle.
+- **New level** → add an entry to `config/levels.json`. Reuse an existing `terrain` (`meadow`/
+  `rocky`), or add a builder function in `src/levels/` that assigns `TERRAIN.<name> = fn`
+  (optionally an `AUGMENTS.<name>` decorator). Terrain code must draw randomness from
+  `rand()`/`rnd()`, never `Math.random()` — a level's terrain is rebuilt from the run seed
+  every time you revisit it (`level-state.js` restores only the dynamic half on top).
+- **New quest type** → add `QUEST_TYPES['<type>'] = { describe(), isComplete() }` (see
+  `levels/from-config.js`) and reference it from a level's `quest.type`.
 - **New enemy / NPC / world actor** → register a kind in `src/entities/` (with
-  `update`/`draw`/`onInteract`, and `hp` if it should be damageable) and `Entities.spawn()`
-  it from a level's `generate()`.
-- **New item / chest loot / shop ware** → add to `src/data/items.js` (and a loot table in
-  `src/data/chests.js`); use the `Inventory` API.
+  `update`/`draw`/`onInteract`, and `hp` if it should be damageable); then place instances via
+  the level's `enemies`/`critters`/`npcs` list in `config/levels.json`.
+- **New item** → add it to `config/items.json` (behaviour like `heal`/`mods` is read
+  generically); use the `Inventory` API to grant it.
 
-Remember to add any new file to `LOAD_ORDER` in `build.py` (dependency order).
+Remember to add any new **JS** file to `LOAD_ORDER` in `build.py` (dependency order); new
+`config/*.json` files go in `CONFIG_FILES` there.
 
 ## Tech notes
 
 - **No external dependencies.** No npm, no bundler, no audio assets — just the browser.
+- **Content is data-driven.** Levels, loot tables, shop wares, quest rewards and item stats
+  live in `src/config/*.json`. `build.py` validates each file and bakes it into the bundle as
+  a global, so retuning the game is a JSON edit + rebuild — and the offline single-file build
+  needs no runtime fetch.
 - **All audio is synthesized.** Oscillator-driven soundtracks route through separate music
   and SFX buses (so volume/mute can be controlled independently); SFX are short oscillator envelopes.
 - **All graphics are drawn at runtime** as pixel-art via 2D canvas calls. The ground is

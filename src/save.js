@@ -174,6 +174,7 @@ const Save = {
     document.getElementById('gameOverScreen').style.display = 'none';
     sparkles = [];
     if(typeof resetXpOrbs==='function') resetXpOrbs();
+    if(typeof resetFloaters==='function') resetFloaters();
     Game.state = SCENES.PLAYING;
     updateHUD();
     if(typeof startMusic === 'function') startMusic();

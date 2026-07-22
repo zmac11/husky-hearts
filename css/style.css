@@ -514,6 +514,31 @@
   .hb-ult-mark{ color:#B79AE0; font-size:16px; }
   .hb-sep{ width:2px; align-self:stretch; background:rgba(255,248,239,0.5); border-radius:2px; margin:0 2px; }
 
+  /* ===== upgrade-tree buttons (bottom-left of the frame, beside the hotbar) ===== */
+  #treeBtns{
+    position:absolute; left:10px; bottom:14px; z-index:20;
+    display:flex; gap:6px;
+  }
+  .tree-btn{
+    position:relative; width:36px; height:36px; padding:0; cursor:pointer;
+    font-size:18px; line-height:1; border-radius:10px;
+    border:2px solid var(--brown); background:rgba(255,248,239,0.92);
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation;
+  }
+  .tree-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
+  .tree-btn .tree-badge{ display:none; }
+  /* points waiting to be spent: pulsing gold ring + a count badge */
+  .tree-btn.glow{ border-color:var(--gold); animation:treeGlow 1.3s ease-in-out infinite; }
+  .tree-btn.glow .tree-badge{
+    display:block; position:absolute; right:-4px; top:-5px; min-width:14px;
+    font-size:9px; font-weight:bold; line-height:14px; border-radius:7px;
+    background:var(--gold); color:#4A3A10; border:1.5px solid #FFF8EF;
+  }
+  @keyframes treeGlow{
+    0%,100%{ box-shadow:0 2px 0 var(--shadow), 0 0 0 rgba(230,178,74,0.0); }
+    50%    { box-shadow:0 2px 0 var(--shadow), 0 0 10px 3px rgba(230,178,74,0.75); }
+  }
+
   /* ===== quest tracker (always-on HUD list of accepted quests, top-left of frame) ===== */
   #questTracker{
     position:absolute; top:8px; left:8px; z-index:18;
@@ -572,8 +597,10 @@
   .q-empty{ font-size:12px; color:var(--brown-soft); line-height:1.5; padding:6px 2px; }
 
   /* ===== skill tree (K): non-blocking overlay, docked left like the journal ===== */
+  /* z-index sits above the world map (26) — the tree opens over it between levels */
   #skillScreen{
-    position:absolute; top:8px; left:8px; bottom:8px; z-index:25;
+    position:absolute; top:8px; left:8px; bottom:8px; z-index:31;
+    /* .overmap (see below) reshapes this into a full-frame panel on the journey map */
     width:min(310px,76%);
     display:flex; flex-direction:column; align-items:stretch; gap:8px;
     padding:12px; text-align:left; overflow-y:auto;
@@ -581,6 +608,18 @@
     border:3px solid var(--brown); border-radius:14px;
     box-shadow:0 6px 18px rgba(74,63,53,0.35);
   }
+  /* On the journey map the tree isn't a side dock — it takes the frame like the mastery
+     screen, so it can't sit on top of the map's Continue / Menu buttons. */
+  #skillScreen.overmap{
+    inset:0; width:auto; align-items:center; border:none; border-radius:10px;
+    padding:14px 12px; background:rgba(244,235,222,0.98); box-shadow:none;
+  }
+  #skillScreen.overmap > *{ width:100%; max-width:440px; }
+  #skillScreen.overmap #skillHeader h2{ text-align:center; width:100%; }
+  #skillDone{ display:none; align-self:center; }
+  #skillScreen.overmap #skillDone{ display:inline-block; width:auto; }
+  /* the in-world hint ("World keeps playing…") doesn't apply between levels */
+  #skillScreen.overmap .overlay-hint{ display:none; }
   #skillHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   #skillScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
   #skillScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }

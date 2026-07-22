@@ -151,6 +151,9 @@ function checkWin(){
     Entities.spawn('chest', { x:cs.x, y:cs.y, rarity:'golden', state:'dug' });
     spawnSparkles(cs.x, cs.y-8, '#FFD93D', 20);
   }
+  // Clearing a level pays out skill points here, but the tree isn't opened yet: you may
+  // still want to wander, dig or shop before leaving. It comes up on the journey map
+  // once you step through the portal (world-map.js showAfter).
   showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
                    : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
 }

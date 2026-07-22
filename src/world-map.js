@@ -44,6 +44,12 @@ const WorldMap = {
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
     this._wire();
     this._start();
+
+    // Between levels is the moment to spend what the level paid out: if skill points are
+    // waiting, the tree opens itself over the map (the 🌳 button reopens it after closing).
+    if(typeof UI!=='undefined' && UI.openSkills && p1 && (p1.skillPoints||0)>0){
+      setTimeout(()=>{ if(Game.state===SCENES.WORLDMAP) UI.openSkills(); }, 600);
+    }
   },
 
   // Where "Continue" should lead: the first real level you haven't cleared, in campaign
@@ -63,7 +69,11 @@ const WorldMap = {
   hide(){
     this._stop();
     this._detailEnv=null; this._detailLevel=null;
-    if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); }
+    if(typeof UI!=='undefined'){
+      UI.closeMastery && UI.closeMastery();
+      UI.closeSkills && UI.closeSkills();
+      UI._show('worldMapScreen', false);
+    }
   },
 
   // Continue into the next real level.
@@ -235,7 +245,9 @@ const WorldMap = {
     if(this._nextId===l.id) return 'next';
     return 'locked';
   },
-  _canTravel(status){ return status==='cleared' || status==='visited' || status==='next'; },
+  // 'here' counts: stepping back into the level you just walked out of is a normal move
+  // (you left through its portal and want another look around).
+  _canTravel(status){ return status==='cleared' || status==='visited' || status==='next' || status==='here'; },
 
   _chipFor(status){
     return { soon:'· soon', here:'▶ you are here', cleared:'✓ cleared',
@@ -292,7 +304,7 @@ const WorldMap = {
     }
     if(body) body.innerHTML=rows;
     if(acts) acts.innerHTML =
-      (this._canTravel(st) ? `<button class="modebtn" data-travel="${l.id}">🐾 Travel here</button>` : '')
+      (this._canTravel(st) ? `<button class="modebtn" data-travel="${l.id}">🐾 ${st==='here'?'Go back in':'Travel here'}</button>` : '')
       + `<button class="modebtn secondary" data-wm="back">← Back</button>`;
   },
 
