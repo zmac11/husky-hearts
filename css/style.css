@@ -514,6 +514,31 @@
   .hb-ult-mark{ color:#B79AE0; font-size:16px; }
   .hb-sep{ width:2px; align-self:stretch; background:rgba(255,248,239,0.5); border-radius:2px; margin:0 2px; }
 
+  /* ===== upgrade-tree buttons (bottom-left of the frame, beside the hotbar) ===== */
+  #treeBtns{
+    position:absolute; left:10px; bottom:14px; z-index:20;
+    display:flex; gap:6px;
+  }
+  .tree-btn{
+    position:relative; width:36px; height:36px; padding:0; cursor:pointer;
+    font-size:18px; line-height:1; border-radius:10px;
+    border:2px solid var(--brown); background:rgba(255,248,239,0.92);
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation;
+  }
+  .tree-btn:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
+  .tree-btn .tree-badge{ display:none; }
+  /* points waiting to be spent: pulsing gold ring + a count badge */
+  .tree-btn.glow{ border-color:var(--gold); animation:treeGlow 1.3s ease-in-out infinite; }
+  .tree-btn.glow .tree-badge{
+    display:block; position:absolute; right:-4px; top:-5px; min-width:14px;
+    font-size:9px; font-weight:bold; line-height:14px; border-radius:7px;
+    background:var(--gold); color:#4A3A10; border:1.5px solid #FFF8EF;
+  }
+  @keyframes treeGlow{
+    0%,100%{ box-shadow:0 2px 0 var(--shadow), 0 0 0 rgba(230,178,74,0.0); }
+    50%    { box-shadow:0 2px 0 var(--shadow), 0 0 10px 3px rgba(230,178,74,0.75); }
+  }
+
   /* ===== quest tracker (always-on HUD list of accepted quests, top-left of frame) ===== */
   #questTracker{
     position:absolute; top:8px; left:8px; z-index:18;

@@ -38,6 +38,9 @@ const Entities = {
     if(typeof e.hp!=='number') return false;    // not a damageable entity
     e.hp -= dmg;
     e.hurtT = 220;
+    // Gold number floating off the target: damage the dog DEALT (red is damage taken —
+    // see Health.damage).
+    if(typeof spawnFloater==='function') spawnFloater(e.x, e.y-18, '-'+dmg, 'hit');
     if(!e.noKnockback && typeof fromX==='number'){
       const ang=Math.atan2(e.y-fromY, e.x-fromX);
       e.x=clamp(e.x+Math.cos(ang)*knock, 20, WORLD_W-20);

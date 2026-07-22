@@ -23,6 +23,8 @@ const Progression = {
   award(p, amount, reason){
     if(!p || !(amount>0)) return;
     p.xp = (p.xp||0) + amount;
+    // Mint "+n XP" rises off the dog for every scrap of experience earned (floaters.js).
+    if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-32, `+${amount} XP`, 'xp');
     let leveled=0;
     while(p.xp >= this.xpToNext(p.dogLevel||1)){
       p.xp -= this.xpToNext(p.dogLevel||1);
@@ -31,7 +33,8 @@ const Progression = {
       leveled++;
     }
     if(leveled>0){
-      if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
+      if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
+      else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
       showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
     }

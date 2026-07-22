@@ -10,6 +10,8 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 
 - 🐕 **Three playable dogs, each unique** — **Dinno** the alpha husky (tanky, fast), **Lolla** the clever sheltie (loud, great at haggling), and **Ťapka** the tiny Prague Ratter (frail but swift and near-silent, drawn with a smaller model). Each has its own real coat colours, stats, and a distinct pair of active abilities.
 - 📊 **Stat bars that actually matter** — clicking a dog on the select screen shows 1–5 bars for **Health, Speed, Swimming, Noise, and Smarts**, and every one is real: *Noise* scales how far enemies detect you (and howling makes you louder), *Smarts* discounts shop prices and boosts quest rewards. The numbers are derived from the bars, so display and gameplay can never drift.
+- 💥 **Floating combat numbers** — every hit pops a number where it landed: **gold** for damage your dog deals, **red** for damage it takes, green for healing, and mint **+XP** as orbs are picked up. A level-up blooms golden rings around the dog with a ⭐ LEVEL banner.
+- 🌳 **Upgrade trees a click away** — 🌳 Skills and 🎓 Mastery buttons sit in the corner of the game frame and **glow with a count badge** whenever points are waiting to be spent; clearing a level opens the skill tree on its own so fresh points never sit forgotten.
 - 🌳 **Skill tree** — spend levels on shared character upgrades (Vitality, Swift Paws, Keen Nose, Soft Steps) and per-dog ability upgrades (up to level 3 each). Open it with **K** or the 🌳 button in the inventory. *(Point-earning is a future step — for now you can level freely and respec to experiment.)*
 - ⚡ **Active abilities with cooldowns** — each dog carries two abilities on **Q / E** plus a reserved **Ultimate** slot on **R**:
   - **Dinno** — *Storm Fang* (transform into a storm-wolf: rain, screen-darkening, lightning bolts that strike enemies, a fear aura, and a speed boost) and *Spirit of the Storm* (summon a spectral wolf that hunts on its own).
@@ -27,6 +29,7 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 - 📜 **NPC quests & shops** — quest-givers show a glowing **"!"**; press the action key to hear the task, accept it, and hand in the goal for a reward. Tailor NPCs also sell wearables and 🗝️ chest keys for treats (smart dogs pay less).
 - 🎒 **Inventory & wearables** — a drag-and-drop bag with a paper-doll: equip hats, shades, scarves, coats and capes onto your dog, drop items on the ground, and use consumables/toys from a 6-slot hotbar (number keys). Wearables fit each breed and layer correctly (capes drape over the dog's back when it faces away).
 - ⚙️ **Options screen** — fully **rebindable controls** (two keys per action), plus **music/effects volume sliders and mutes** (also available as always-visible quick-mute buttons in the HUD). Opened from the start or pause menu.
+- ✨ **XP orbs that stay put** — defeated enemies burst experience orbs that pop out, settle where they dropped and hover there until you come close enough to hoover them up.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot, a sad sound plays) — then it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**.
 - 🎵 **Synthesized music & SFX** — several selectable ambient soundtracks plus procedural sound effects (collecting, delivering, howling, digging, thunder, scream, roar…), all generated in-browser via the Web Audio API — no audio files.
 - 📱 **Touch controls** — an on-screen D-pad and action button auto-appear on mobile.
@@ -148,6 +151,7 @@ husky-hearts/
 │   │   └── scurry.js        Ťapka E — evasive dash + i-frames
 │   ├── dog-sprite.js        drawDog dispatcher + per-breed renderers (incl. transform forms)
 │   ├── sparkles.js          particle effects
+│   ├── floaters.js          floating damage/XP numbers + level-up burst
 │   ├── minimap.js           top-right corner minimap (theme-aware)
 │   ├── update.js            updatePlayer, tryCollect/Deliver/Interact, checkWin
 │   ├── toast.js             on-screen message popups

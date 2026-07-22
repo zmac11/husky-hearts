@@ -13,8 +13,12 @@ function spawnXpOrbs(x, y, amount){
   const base = Math.floor(amount/n), extra = amount - base*n;
   for(let i=0;i<n;i++){
     const ang = Math.random()*Math.PI*2, spd = rand(1.2, 2.6);
+    // Each orb pops out and then hovers around its own resting spot near the drop point,
+    // so a burst spreads into a little cloud instead of piling up on one pixel.
+    const rest = rand(10, 26), restAng = ang + rand(-0.5, 0.5);
     xpOrbs.push({
       x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 1.2,
+      ax: x + Math.cos(restAng)*rest, ay: y + Math.sin(restAng)*rest*0.6,
       xp: base + (i<extra?1:0),
       bob: rand(0,Math.PI*2), life: 12000,   // orbs expire after a while if unreachable
     });
@@ -26,6 +30,7 @@ function updateXpOrbs(p){
   const MAG=64, PICK=14;
   for(const o of xpOrbs){
     o.life -= dtScale*16;
+    if(o.ax===undefined){ o.ax=o.x; o.ay=o.y; }   // orb from before resting spots existed
     const dx=(p&&!p.dead)?p.x-o.x:0, dy=(p&&!p.dead)?p.y-o.y:0;
     const d=Math.hypot(dx,dy);
     if(p && !p.dead && d<MAG){
@@ -34,7 +39,10 @@ function updateXpOrbs(p){
       o.vx += (dx/(d||1))*pull*dtScale;
       o.vy += (dy/(d||1))*pull*dtScale;
     } else {
-      o.vy += 0.12*dtScale;                 // gentle settle when not being pulled
+      // No gravity: an orb drifts back to its resting spot and hovers there (a gentle
+      // spring), so a burst stays where it dropped instead of sinking off downhill.
+      o.vx += (o.ax-o.x)*0.012*dtScale;
+      o.vy += (o.ay-o.y)*0.012*dtScale;
     }
     o.vx*=Math.pow(0.86,dtScale); o.vy*=Math.pow(0.86,dtScale);
     o.x += o.vx*dtScale; o.y += o.vy*dtScale;

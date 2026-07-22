@@ -58,6 +58,7 @@ LOAD_ORDER = [
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
     'sparkles.js',        # drawSparkles
+    'floaters.js',        # floating damage/XP numbers + level-up burst
     'xporbs.js',          # Minecraft-style XP pickup orbs (spawn/update/draw)
     'minimap.js',         # drawMinimap
     'abilities/registry.js',    # Abilities registry (register/dispatch + cooldowns)

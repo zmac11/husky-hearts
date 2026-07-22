@@ -622,6 +622,8 @@ const Progression = {
   award(p, amount, reason){
     if(!p || !(amount>0)) return;
     p.xp = (p.xp||0) + amount;
+    // Mint "+n XP" rises off the dog for every scrap of experience earned (floaters.js).
+    if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-32, `+${amount} XP`, 'xp');
     let leveled=0;
     while(p.xp >= this.xpToNext(p.dogLevel||1)){
       p.xp -= this.xpToNext(p.dogLevel||1);
@@ -630,7 +632,8 @@ const Progression = {
       leveled++;
     }
     if(leveled>0){
-      if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
+      if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
+      else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
       showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
     }
@@ -1200,6 +1203,9 @@ const Health = {
     if(p.invulnT>0) return;            // Scurry i-frames (abilities/scurry.js)
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
+    // Red number floating off the dog — damage TAKEN reads red, damage DEALT reads gold
+    // (see Entities.hurt), so a scrap is legible at a glance.
+    if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-26, '-'+n, 'hurt');
     if(typeof updateHUD==='function') updateHUD();
     if(p.hp<=0) this.onDown(p);
   },
@@ -1208,8 +1214,10 @@ const Health = {
     if(!p || p.dead) return 0;         // a fainted dog can't be healed back to life
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + n);
+    const gained = p.hp - before;
+    if(gained>0 && typeof spawnFloater==='function') spawnFloater(p.x, p.y-26, '+'+gained, 'heal');
     if(typeof updateHUD==='function') updateHUD();
-    return p.hp - before;              // amount actually restored
+    return gained;                     // amount actually restored
   },
 
   isDown(p){ return p && (p.dead || p.hp<=0); },
@@ -3929,6 +3937,9 @@ const Entities = {
     if(typeof e.hp!=='number') return false;    // not a damageable entity
     e.hp -= dmg;
     e.hurtT = 220;
+    // Gold number floating off the target: damage the dog DEALT (red is damage taken —
+    // see Health.damage).
+    if(typeof spawnFloater==='function') spawnFloater(e.x, e.y-18, '-'+dmg, 'hit');
     if(!e.noKnockback && typeof fromX==='number'){
       const ang=Math.atan2(e.y-fromY, e.x-fromX);
       e.x=clamp(e.x+Math.cos(ang)*knock, 20, WORLD_W-20);
@@ -5238,6 +5249,97 @@ function drawSparkles(){
 }
 
 
+// ===== src/floaters.js =====
+// ====================== FLOATING NUMBERS ======================
+// Combat/progress feedback that rises off an actor and fades: damage you deal, damage
+// you take, healing, XP picked up, and the level-up burst. Purely cosmetic and never
+// saved (like sparkles.js / xporbs.js) — drawn in world space from the main loop, so a
+// number sticks to the spot it was earned as the camera moves.
+//
+// Colour carries the meaning at a glance:
+//   hit   — gold, damage YOUR dog dealt to an enemy
+//   hurt  — red,  damage an enemy dealt to your dog
+//   heal  — green, hearts restored
+//   xp    — mint, experience picked up
+//   level — big gold "LEVEL n" with expanding rings
+
+const FLOATER_KINDS = {
+  hit:   { color:'#FFD34D', outline:'#5A3E12', size:11, rise:0.55, life:900 },
+  hurt:  { color:'#FF6B6B', outline:'#5A1414', size:12, rise:0.62, life:1000 },
+  heal:  { color:'#7FE0A0', outline:'#12441F', size:11, rise:0.5,  life:900 },
+  xp:    { color:'#A8F5C0', outline:'#12441F', size:9,  rise:0.42, life:800 },
+  level: { color:'#FFE066', outline:'#5A3E12', size:15, rise:0.28, life:1800 },
+};
+
+let floaters = [];
+
+// `kind` picks the palette; opts.dx nudges the start sideways so stacked hits don't overlap.
+function spawnFloater(x, y, text, kind, opts){
+  const k = FLOATER_KINDS[kind] || FLOATER_KINDS.hit;
+  const o = opts || {};
+  floaters.push({
+    x: x + (typeof o.dx==='number' ? o.dx : rand(-5,5)), y,
+    vx: (typeof o.vx==='number' ? o.vx : rand(-0.12,0.12)),
+    text: String(text), kind: kind in FLOATER_KINDS ? kind : 'hit',
+    life: o.life || k.life, max: o.life || k.life,
+    rings: o.rings ? { t:0, of:o.rings } : null,   // of = the player the rings orbit
+  });
+}
+
+// Level-up: a big label plus rings blooming out of the dog.
+function spawnLevelUpFx(p, level){
+  if(!p) return;
+  spawnFloater(p.x, p.y-30, `⭐ LEVEL ${level}`, 'level', { dx:0, vx:0, rings:p });
+  if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#FFE066', 26);
+}
+
+function updateFloaters(){
+  if(!floaters.length) return;
+  for(const f of floaters){
+    const k=FLOATER_KINDS[f.kind];
+    f.life -= dtScale*16;
+    f.y -= k.rise*dtScale;
+    f.x += f.vx*dtScale;
+    if(f.rings){ f.rings.t += dtScale*16; f.x=f.rings.of.x; }   // the label tracks the dog
+  }
+  floaters = floaters.filter(f=>f.life>0);
+}
+
+function drawFloaters(t){
+  if(!floaters.length) return;
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const f of floaters){
+    const k=FLOATER_KINDS[f.kind];
+    const age=f.max-f.life;
+    const fade=Math.min(1, f.life/260);                 // fade out at the end
+    const pop=Math.min(1, age/110);                     // pop in at the start
+    const x=Math.round(f.x), y=Math.round(f.y);
+
+    // level-up rings bloom out of the dog underneath the label
+    if(f.rings){
+      const p=f.rings.of;
+      for(let i=0;i<3;i++){
+        const ph=((f.rings.t/700)+i/3)%1;
+        ctx.globalAlpha=0.55*(1-ph)*fade;
+        ctx.strokeStyle=i%2?'#FFE066':'#FFF6D0'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.ellipse(Math.round(p.x), Math.round(p.y+4), 10+ph*38, 4+ph*15, 0, 0, Math.PI*2); ctx.stroke();
+      }
+    }
+
+    ctx.globalAlpha=fade;
+    const size=Math.round(k.size*(0.6+0.4*pop));
+    ctx.font=`bold ${size}px monospace`;
+    ctx.lineWidth=3; ctx.strokeStyle=k.outline; ctx.strokeText(f.text, x, y);
+    ctx.fillStyle=k.color; ctx.fillText(f.text, x, y);
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+
+// Cleared per level, alongside sparkles and XP orbs.
+function resetFloaters(){ floaters = []; }
+
 // ===== src/xporbs.js =====
 // ====================== XP ORBS ======================
 // Minecraft-style experience pickups: defeated enemies burst a few small green orbs
@@ -5254,8 +5356,12 @@ function spawnXpOrbs(x, y, amount){
   const base = Math.floor(amount/n), extra = amount - base*n;
   for(let i=0;i<n;i++){
     const ang = Math.random()*Math.PI*2, spd = rand(1.2, 2.6);
+    // Each orb pops out and then hovers around its own resting spot near the drop point,
+    // so a burst spreads into a little cloud instead of piling up on one pixel.
+    const rest = rand(10, 26), restAng = ang + rand(-0.5, 0.5);
     xpOrbs.push({
       x, y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - 1.2,
+      ax: x + Math.cos(restAng)*rest, ay: y + Math.sin(restAng)*rest*0.6,
       xp: base + (i<extra?1:0),
       bob: rand(0,Math.PI*2), life: 12000,   // orbs expire after a while if unreachable
     });
@@ -5267,6 +5373,7 @@ function updateXpOrbs(p){
   const MAG=64, PICK=14;
   for(const o of xpOrbs){
     o.life -= dtScale*16;
+    if(o.ax===undefined){ o.ax=o.x; o.ay=o.y; }   // orb from before resting spots existed
     const dx=(p&&!p.dead)?p.x-o.x:0, dy=(p&&!p.dead)?p.y-o.y:0;
     const d=Math.hypot(dx,dy);
     if(p && !p.dead && d<MAG){
@@ -5275,7 +5382,10 @@ function updateXpOrbs(p){
       o.vx += (dx/(d||1))*pull*dtScale;
       o.vy += (dy/(d||1))*pull*dtScale;
     } else {
-      o.vy += 0.12*dtScale;                 // gentle settle when not being pulled
+      // No gravity: an orb drifts back to its resting spot and hovers there (a gentle
+      // spring), so a burst stays where it dropped instead of sinking off downhill.
+      o.vx += (o.ax-o.x)*0.012*dtScale;
+      o.vy += (o.ay-o.y)*0.012*dtScale;
     }
     o.vx*=Math.pow(0.86,dtScale); o.vy*=Math.pow(0.86,dtScale);
     o.x += o.vx*dtScale; o.y += o.vy*dtScale;
@@ -6293,6 +6403,7 @@ const LevelManager = {
     // Fresh quest progress for the new level; drop any leftover XP orbs.
     Game.cheeredCount = 0;
     if(typeof resetXpOrbs==='function') resetXpOrbs();
+    if(typeof resetFloaters==='function') resetFloaters();
     return level;
   },
 
@@ -6515,6 +6626,13 @@ function checkWin(){
   }
   showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
                    : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
+
+  // Clearing a level just paid out skill points, so bring the tree up on its own — a beat
+  // later, so the completion toast and the portal sparkle land first. It's a non-blocking
+  // panel: closing it (K / Esc) drops you straight back into the world.
+  if(typeof UI!=='undefined' && UI.openSkills){
+    setTimeout(()=>{ if(Game.state===SCENES.PLAYING && (p1.skillPoints||0)>0) UI.openSkills(); }, 1300);
+  }
 }
 
 
@@ -6705,6 +6823,7 @@ const Save = {
     document.getElementById('gameOverScreen').style.display = 'none';
     sparkles = [];
     if(typeof resetXpOrbs==='function') resetXpOrbs();
+    if(typeof resetFloaters==='function') resetFloaters();
     Game.state = SCENES.PLAYING;
     updateHUD();
     if(typeof startMusic === 'function') startMusic();
@@ -6795,12 +6914,37 @@ const UI = {
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.renderHotbar();
+    this.renderTreeButtons();
     this.renderQuestTracker();
     // Keep the open (non-blocking) inventory panel in sync as treats/items change.
     if(this.invOpen) this.renderInventory();
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
     if(this.skillsOpen) this.renderSkills();
+  },
+
+  // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
+  // Always reachable while playing, and they GLOW with a count badge whenever there are
+  // unspent points — so a level-up or a cleared level is never quietly banked and forgotten.
+  renderTreeButtons(){
+    const box=this.$('treeBtns'); if(!box) return;
+    const s=Game.state;
+    const show = s===SCENES.PLAYING || s===SCENES.PAUSED || s===SCENES.DIALOG
+                 || this.invOpen || this.journalOpen || this.skillsOpen;
+    box.style.display = show ? 'flex' : 'none';
+    if(!show || !p1){
+      // Drop the glow while hidden so a stale ring can't flash when they come back.
+      ['btnTreeSkills','btnTreeMastery'].forEach(id=>{ const b=this.$(id); if(b) b.classList.remove('glow'); });
+      return;
+    }
+    const mark=(id, pts, label)=>{
+      const btn=this.$(id); if(!btn) return;
+      btn.classList.toggle('glow', pts>0);
+      const badge=btn.querySelector('.tree-badge'); if(badge) badge.textContent=pts>0?pts:'';
+      btn.title = pts>0 ? `${label} — ${pts} point${pts>1?'s':''} to spend!` : label;
+    };
+    mark('btnTreeSkills',  p1.skillPoints||0,   'Skill tree (K)');
+    mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -6901,7 +7045,11 @@ const UI = {
     this.updateHUD();   // hearts/hotbar + re-renders the open tree
   },
 
-  // ---------- mastery tree (between levels, from the world map): unlock/rank abilities ----------
+  // ---------- mastery tree: unlock/rank abilities (world map, or the in-game 🎓 button) ----------
+  toggleMastery(){
+    if(this.masteryOpen){ this.closeMastery(); return; }
+    this.openMastery();
+  },
   openMastery(){
     this.masteryOpen=true;
     this.renderMastery();
@@ -6910,6 +7058,7 @@ const UI = {
   closeMastery(){
     this.masteryOpen=false;
     this._show('masteryScreen', false);
+    this.updateHUD();                 // the 🎓 badge reflects freshly spent points
   },
   renderMastery(){
     const body=this.$('masteryBody'); if(!body) return;
@@ -6950,6 +7099,7 @@ const UI = {
       Mastery.removePoint(p,id);
     }
     this.renderMastery();
+    this.renderTreeButtons();          // badge/glow follows the points left
   },
 
   renderJournal(){
@@ -7040,6 +7190,7 @@ const UI = {
   // ESC: close whatever is open (blocking panel first, then non-blocking overlays), else pause.
   togglePause(){
     if(this.panel){ this.closePanel(); return; }
+    if(this.masteryOpen){ this.closeMastery(); return; }
     if(this.skillsOpen){ this.closeSkills(); return; }
     if(this.journalOpen){ this.closeJournal(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
@@ -7575,6 +7726,9 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    // In-game tree buttons (bottom-left of the frame) — same panels, always reachable.
+    on('btnTreeSkills',  ()=>{ this.closeInventory(); this.toggleSkills(); });
+    on('btnTreeMastery', ()=>{ this.closeInventory(); this.toggleMastery(); });
     // Mastery tree (world-map only): the body's +/- buttons, its Done button, and the
     // world-map "Mastery" button that opens it.
     // Hover tooltips — one delegated handler covers items (inventory tiles, doll slots,
@@ -7973,7 +8127,9 @@ const WorldMap = {
     if(this._nextId===l.id) return 'next';
     return 'locked';
   },
-  _canTravel(status){ return status==='cleared' || status==='visited' || status==='next'; },
+  // 'here' counts: stepping back into the level you just walked out of is a normal move
+  // (you left through its portal and want another look around).
+  _canTravel(status){ return status==='cleared' || status==='visited' || status==='next' || status==='here'; },
 
   _chipFor(status){
     return { soon:'· soon', here:'▶ you are here', cleared:'✓ cleared',
@@ -8030,7 +8186,7 @@ const WorldMap = {
     }
     if(body) body.innerHTML=rows;
     if(acts) acts.innerHTML =
-      (this._canTravel(st) ? `<button class="modebtn" data-travel="${l.id}">🐾 Travel here</button>` : '')
+      (this._canTravel(st) ? `<button class="modebtn" data-travel="${l.id}">🐾 ${st==='here'?'Go back in':'Travel here'}</button>` : '')
       + `<button class="modebtn secondary" data-wm="back">← Back</button>`;
   },
 
@@ -8099,7 +8255,7 @@ function loop(now){
     Entities.updateAll(now,dt);
     // A fainted dog is frozen (a grave marks the spot) until the level ends.
     if(!p1.dead){updatePlayer(p1,now,dt);tryCollect(p1);tryDeliver(p1);tryInteract(p1);}
-    updateSparkles();updateXpOrbs(p1);updateCamera();
+    updateSparkles();updateXpOrbs(p1);updateFloaters();updateCamera();
     UI.tickCooldowns();   // hotbar ability cooldown sweep
   }
   if(showWorld){
@@ -8125,7 +8281,7 @@ function loop(now){
       }}); });
     actors.sort((a,b)=>a.y-b.y).forEach(a=>a.d());
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
-    drawSparkles();drawXpOrbs(now);
+    drawSparkles();drawXpOrbs(now);drawFloaters(now);
     ctx.restore();
     drawMinimap();
   }

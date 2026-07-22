@@ -153,5 +153,12 @@ function checkWin(){
   }
   showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
                    : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
+
+  // Clearing a level just paid out skill points, so bring the tree up on its own — a beat
+  // later, so the completion toast and the portal sparkle land first. It's a non-blocking
+  // panel: closing it (K / Esc) drops you straight back into the world.
+  if(typeof UI!=='undefined' && UI.openSkills){
+    setTimeout(()=>{ if(Game.state===SCENES.PLAYING && (p1.skillPoints||0)>0) UI.openSkills(); }, 1300);
+  }
 }
 

@@ -19,6 +19,9 @@ const Health = {
     if(p.invulnT>0) return;            // Scurry i-frames (abilities/scurry.js)
     p.hp = Math.max(0, p.hp - n);
     p.hurtTimer = 260;                 // ms of red flash
+    // Red number floating off the dog — damage TAKEN reads red, damage DEALT reads gold
+    // (see Entities.hurt), so a scrap is legible at a glance.
+    if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-26, '-'+n, 'hurt');
     if(typeof updateHUD==='function') updateHUD();
     if(p.hp<=0) this.onDown(p);
   },
@@ -27,8 +30,10 @@ const Health = {
     if(!p || p.dead) return 0;         // a fainted dog can't be healed back to life
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + n);
+    const gained = p.hp - before;
+    if(gained>0 && typeof spawnFloater==='function') spawnFloater(p.x, p.y-26, '+'+gained, 'heal');
     if(typeof updateHUD==='function') updateHUD();
-    return p.hp - before;              // amount actually restored
+    return gained;                     // amount actually restored
   },
 
   isDown(p){ return p && (p.dead || p.hp<=0); },
