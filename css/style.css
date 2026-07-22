@@ -597,8 +597,10 @@
   .q-empty{ font-size:12px; color:var(--brown-soft); line-height:1.5; padding:6px 2px; }
 
   /* ===== skill tree (K): non-blocking overlay, docked left like the journal ===== */
+  /* z-index sits above the world map (26) — the tree opens over it between levels */
   #skillScreen{
-    position:absolute; top:8px; left:8px; bottom:8px; z-index:25;
+    position:absolute; top:8px; left:8px; bottom:8px; z-index:31;
+    /* .overmap (see below) reshapes this into a full-frame panel on the journey map */
     width:min(310px,76%);
     display:flex; flex-direction:column; align-items:stretch; gap:8px;
     padding:12px; text-align:left; overflow-y:auto;
@@ -606,6 +608,18 @@
     border:3px solid var(--brown); border-radius:14px;
     box-shadow:0 6px 18px rgba(74,63,53,0.35);
   }
+  /* On the journey map the tree isn't a side dock — it takes the frame like the mastery
+     screen, so it can't sit on top of the map's Continue / Menu buttons. */
+  #skillScreen.overmap{
+    inset:0; width:auto; align-items:center; border:none; border-radius:10px;
+    padding:14px 12px; background:rgba(244,235,222,0.98); box-shadow:none;
+  }
+  #skillScreen.overmap > *{ width:100%; max-width:440px; }
+  #skillScreen.overmap #skillHeader h2{ text-align:center; width:100%; }
+  #skillDone{ display:none; align-self:center; }
+  #skillScreen.overmap #skillDone{ display:inline-block; width:auto; }
+  /* the in-world hint ("World keeps playing…") doesn't apply between levels */
+  #skillScreen.overmap .overlay-hint{ display:none; }
   #skillHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   #skillScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
   #skillScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }

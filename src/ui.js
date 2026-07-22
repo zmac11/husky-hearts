@@ -114,8 +114,13 @@ const UI = {
   openSkills(){
     this.closeInventory();            // one non-blocking overlay at a time
     this.closeJournal();
+    if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
     this.renderSkills();
+    // In-world it's a side dock over live gameplay; on the journey map it takes the whole
+    // frame (like the mastery tree) so it can't cover Continue / Main Menu.
+    const el=this.$('skillScreen');
+    if(el) el.classList.toggle('overmap', Game.state===SCENES.WORLDMAP);
     this._show('skillScreen', true);
   },
   closeSkills(){
@@ -172,6 +177,8 @@ const UI = {
     this.openMastery();
   },
   openMastery(){
+    this.closeInventory();
+    if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
     this.renderMastery();
     this._show('masteryScreen', true);
@@ -847,6 +854,7 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    on('skillDone', ()=>this.closeSkills());   // shown only in the map's full-frame mode
     // In-game tree buttons (bottom-left of the frame) — same panels, always reachable.
     on('btnTreeSkills',  ()=>{ this.closeInventory(); this.toggleSkills(); });
     on('btnTreeMastery', ()=>{ this.closeInventory(); this.toggleMastery(); });
@@ -863,7 +871,9 @@ const UI = {
 
     const mb=this.$('masteryBody'); if(mb) mb.addEventListener('click', e=>this._onMasteryClick(e));
     const mDone=this.$('masteryDone'); if(mDone) mDone.addEventListener('click', ()=>this.closeMastery());
-    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.openMastery());
+    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.toggleMastery());
+    // The world map's 🌳 button reopens the skill tree after you've closed it there.
+    const sOpen=this.$('wmSkills'); if(sOpen) sOpen.addEventListener('click', ()=>{ this.skillsOpen ? this.closeSkills() : this.openSkills(); });
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){

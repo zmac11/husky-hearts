@@ -44,6 +44,12 @@ const WorldMap = {
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
     this._wire();
     this._start();
+
+    // Between levels is the moment to spend what the level paid out: if skill points are
+    // waiting, the tree opens itself over the map (the 🌳 button reopens it after closing).
+    if(typeof UI!=='undefined' && UI.openSkills && p1 && (p1.skillPoints||0)>0){
+      setTimeout(()=>{ if(Game.state===SCENES.WORLDMAP) UI.openSkills(); }, 600);
+    }
   },
 
   // Where "Continue" should lead: the first real level you haven't cleared, in campaign
@@ -63,7 +69,11 @@ const WorldMap = {
   hide(){
     this._stop();
     this._detailEnv=null; this._detailLevel=null;
-    if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); }
+    if(typeof UI!=='undefined'){
+      UI.closeMastery && UI.closeMastery();
+      UI.closeSkills && UI.closeSkills();
+      UI._show('worldMapScreen', false);
+    }
   },
 
   // Continue into the next real level.

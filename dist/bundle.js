@@ -6624,15 +6624,11 @@ function checkWin(){
     Entities.spawn('chest', { x:cs.x, y:cs.y, rarity:'golden', state:'dug' });
     spawnSparkles(cs.x, cs.y-8, '#FFD93D', 20);
   }
+  // Clearing a level pays out skill points here, but the tree isn't opened yet: you may
+  // still want to wander, dig or shop before leaving. It comes up on the journey map
+  // once you step through the portal (world-map.js showAfter).
   showToast(finale ? '🌟 Biome cleared! A golden chest appeared — and a portal hums nearby…'
                    : '🌀 Quest complete! A portal opened nearby — step in when you’re ready.', 3200);
-
-  // Clearing a level just paid out skill points, so bring the tree up on its own — a beat
-  // later, so the completion toast and the portal sparkle land first. It's a non-blocking
-  // panel: closing it (K / Esc) drops you straight back into the world.
-  if(typeof UI!=='undefined' && UI.openSkills){
-    setTimeout(()=>{ if(Game.state===SCENES.PLAYING && (p1.skillPoints||0)>0) UI.openSkills(); }, 1300);
-  }
 }
 
 
@@ -6993,8 +6989,13 @@ const UI = {
   openSkills(){
     this.closeInventory();            // one non-blocking overlay at a time
     this.closeJournal();
+    if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
     this.renderSkills();
+    // In-world it's a side dock over live gameplay; on the journey map it takes the whole
+    // frame (like the mastery tree) so it can't cover Continue / Main Menu.
+    const el=this.$('skillScreen');
+    if(el) el.classList.toggle('overmap', Game.state===SCENES.WORLDMAP);
     this._show('skillScreen', true);
   },
   closeSkills(){
@@ -7051,6 +7052,8 @@ const UI = {
     this.openMastery();
   },
   openMastery(){
+    this.closeInventory();
+    if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
     this.renderMastery();
     this._show('masteryScreen', true);
@@ -7726,6 +7729,7 @@ const UI = {
     // Skill tree: +/− buttons (delegated) and the inventory-header shortcut button.
     const sk=this.$('skillBody'); if(sk) sk.addEventListener('click', e=>this._onSkillClick(e));
     const skBtn=this.$('btnSkills'); if(skBtn) skBtn.addEventListener('click', ()=>{ this.closeInventory(); this.openSkills(); });
+    on('skillDone', ()=>this.closeSkills());   // shown only in the map's full-frame mode
     // In-game tree buttons (bottom-left of the frame) — same panels, always reachable.
     on('btnTreeSkills',  ()=>{ this.closeInventory(); this.toggleSkills(); });
     on('btnTreeMastery', ()=>{ this.closeInventory(); this.toggleMastery(); });
@@ -7742,7 +7746,9 @@ const UI = {
 
     const mb=this.$('masteryBody'); if(mb) mb.addEventListener('click', e=>this._onMasteryClick(e));
     const mDone=this.$('masteryDone'); if(mDone) mDone.addEventListener('click', ()=>this.closeMastery());
-    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.openMastery());
+    const mOpen=this.$('wmMastery'); if(mOpen) mOpen.addEventListener('click', ()=>this.toggleMastery());
+    // The world map's 🌳 button reopens the skill tree after you've closed it there.
+    const sOpen=this.$('wmSkills'); if(sOpen) sOpen.addEventListener('click', ()=>{ this.skillsOpen ? this.closeSkills() : this.openSkills(); });
     // The game canvas is the "drop out of the bag → onto the ground" target.
     const game=this.$('game');
     if(game){
@@ -7936,6 +7942,12 @@ const WorldMap = {
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
     this._wire();
     this._start();
+
+    // Between levels is the moment to spend what the level paid out: if skill points are
+    // waiting, the tree opens itself over the map (the 🌳 button reopens it after closing).
+    if(typeof UI!=='undefined' && UI.openSkills && p1 && (p1.skillPoints||0)>0){
+      setTimeout(()=>{ if(Game.state===SCENES.WORLDMAP) UI.openSkills(); }, 600);
+    }
   },
 
   // Where "Continue" should lead: the first real level you haven't cleared, in campaign
@@ -7955,7 +7967,11 @@ const WorldMap = {
   hide(){
     this._stop();
     this._detailEnv=null; this._detailLevel=null;
-    if(typeof UI!=='undefined'){ UI.closeMastery && UI.closeMastery(); UI._show('worldMapScreen', false); }
+    if(typeof UI!=='undefined'){
+      UI.closeMastery && UI.closeMastery();
+      UI.closeSkills && UI.closeSkills();
+      UI._show('worldMapScreen', false);
+    }
   },
 
   // Continue into the next real level.
