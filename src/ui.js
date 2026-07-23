@@ -116,6 +116,7 @@ const UI = {
     this.closeJournal();
     if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
+    if(typeof Tips!=='undefined') Tips.show('skills');
     this.renderSkills();
     // In-world it's a side dock over live gameplay; on the journey map it takes the whole
     // frame (like the mastery tree) so it can't cover Continue / Main Menu.
@@ -180,6 +181,7 @@ const UI = {
     this.closeInventory();
     if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
+    if(typeof Tips!=='undefined') Tips.show('mastery');
     this.renderMastery();
     this._show('masteryScreen', true);
   },
@@ -407,6 +409,7 @@ const UI = {
     this.closeSkills();
     this.invOpen=true;
     this._invPlayer=0;
+    if(typeof Tips!=='undefined') Tips.show('inventory');
     this.renderInventory();
     this._show('inventoryScreen', true);
   },
@@ -714,6 +717,12 @@ const UI = {
     this.closeSkills();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
+    // First-time tips for the two NPC roles (a tip surfaces over the dialog, then dismisses
+    // back to it). A quest-giver teaches quests; a plain merchant teaches shopping.
+    if(typeof Tips!=='undefined'){
+      if(npc.quest) Tips.show('quest');
+      else if(npc.wares && npc.wares.length) Tips.show('shop');
+    }
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
     if(q && hasQuests && Quests.stateOf(q)!=='done') this.renderQuest();           // offer / progress / turn-in
     else this.renderDialog(q && q.done ? q.done : npc.greeting);                   // finished quest → thanks; else shop/talk

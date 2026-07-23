@@ -21,6 +21,7 @@ const SaveUI = {
     if(this._returnTo==='pause' && typeof UI!=='undefined') UI._show('pauseScreen', false);
     this.render();
     if(typeof UI!=='undefined') UI._show('savesScreen', true);
+    if(typeof Tips!=='undefined') Tips.show('save');
     this._wire();
   },
 

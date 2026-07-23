@@ -48,6 +48,16 @@ const Options = {
         </div>
       </div>
       <div class="opt-section">
+        <div class="opt-h">💡 Tips</div>
+        <div class="opt-row">
+          <span class="opt-label">Show feature tips</span>
+          <button class="opt-toggle ${(typeof Tips!=='undefined' && Tips.enabled)?'on':''}" id="optTips">${(typeof Tips!=='undefined' && Tips.enabled)?'On':'Off'}</button>
+        </div>
+        <div class="opt-row" style="justify-content:center;">
+          <button class="modebtn secondary" id="optTipsReset">↺ Show all tips again</button>
+        </div>
+      </div>
+      <div class="opt-section">
         <div class="opt-h">🎮 Controls <span class="opt-hint">· click a key, then press the new one · right-click a key to clear it</span></div>
         <div id="optBindings"></div>
         <div class="opt-row" style="justify-content:center;">
@@ -74,6 +84,19 @@ const Options = {
       Input.resetBindings(); this._capture=null;
       this.renderBindings(); this.refreshControlHints();
       showToast('↺ Controls reset to defaults',1500);
+    });
+    const tipsBtn=document.getElementById('optTips');
+    if(tipsBtn) tipsBtn.addEventListener('click',()=>{
+      if(typeof Tips==='undefined') return;
+      Tips.setEnabled(!Tips.enabled);
+      this.render();   // reflect the new On/Off state
+    });
+    const tipsReset=document.getElementById('optTipsReset');
+    if(tipsReset) tipsReset.addEventListener('click',()=>{
+      if(typeof Tips==='undefined') return;
+      Tips.reset();
+      if(!Tips.enabled){ Tips.setEnabled(true); this.render(); }   // resetting implies you want them
+      showToast('💡 Feature tips will show again',1800);
     });
     document.getElementById('optClose').addEventListener('click',()=>this.close());
   },

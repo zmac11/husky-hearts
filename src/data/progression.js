@@ -34,6 +34,7 @@ const Progression = {
       leveled++;
     }
     if(leveled>0){
+      if(typeof Tips!=='undefined') Tips.show('levelup');
       if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
       else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();

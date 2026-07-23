@@ -126,6 +126,17 @@
         <div class="overlay-hint">World keeps playing · drag items to move/wear/drop · I / Esc to close</div>
       </div>
 
+      <!-- First-time feature tip (modal; freezes the world while shown) -->
+      <div id="tipScreen" class="game-overlay" style="display:none;">
+        <div id="tipCard">
+          <div id="tipIcon">💡</div>
+          <div id="tipTitle">Tip</div>
+          <div id="tipBody"></div>
+          <div id="tipNote"></div>
+          <button class="modebtn" id="tipOk">Got it!</button>
+        </div>
+      </div>
+
       <div id="confirmPopup" class="game-overlay" style="display:none;">
         <div id="confirmBox">
           <div id="confirmText">Delete this item?</div>

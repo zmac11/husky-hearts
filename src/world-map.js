@@ -42,6 +42,7 @@ const WorldMap = {
     this._configButtons();
     this._renderDetail();
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
+    if(typeof Tips!=='undefined') Tips.show('worldmap');
     this._wire();
     this._start();
 

@@ -28,7 +28,8 @@ A cozy 2D pixel-art game where you play as one of three real dogs, explore theme
 - 🫎 **Friendly wildlife** — peaceful moose, beavers, loons, ducks and squirrels roam the world; greet them (action key) for a cheerful hello, sparkles, and a treat gift the first time. They never attack. Land animals (and enemies) **swim** when they enter water.
 - 📜 **NPC quests & shops** — quest-givers show a glowing **"!"**; press the action key to hear the task, accept it, and hand in the goal for a reward. Tailor NPCs also sell wearables and 🗝️ chest keys for treats (smart dogs pay less).
 - 🎒 **Inventory & wearables** — a drag-and-drop bag with a paper-doll: equip hats, shades, scarves, coats and capes onto your dog, drop items on the ground, and use consumables/toys from a 6-slot hotbar (number keys). Wearables fit each breed and layer correctly (capes drape over the dog's back when it faces away).
-- ⚙️ **Options screen** — fully **rebindable controls** (two keys per action), plus **music/effects volume sliders and mutes** (also available as always-visible quick-mute buttons in the HUD). Opened from the start or pause menu.
+- 💡 **First-time feature tips** — the first time you meet a mechanic (collecting treats, cheering a friend, digging a chest, a shop, a quest, an enemy, an ability, wearing gear, leveling up, the journey map…) a little popup explains it, then never shows again. Each notes it can be turned off, and **Options** has a toggle plus "show all tips again."
+- ⚙️ **Options screen** — fully **rebindable controls** (two keys per action), **music/effects volume sliders and mutes** (also always-visible quick-mute buttons in the HUD), and a **feature-tips** toggle. Opened from the start or pause menu.
 - ✨ **XP orbs that stay put** — defeated enemies burst experience orbs that pop out, settle where they dropped and hover there until you come close enough to hoover them up.
 - 🪦 **Fainting & graves** — a dog whose hearts run out faints (a grave marks the spot, a sad sound plays) — then it's **Game Over**, with **Play Again** (restart the level) and **Main Menu**.
 - 🎵 **Synthesized music & SFX** — several selectable ambient soundtracks plus procedural sound effects (collecting, delivering, howling, digging, thunder, scream, roar…), all generated in-browser via the Web Audio API — no audio files.
@@ -161,6 +162,7 @@ husky-hearts/
 │   ├── minimap.js           top-right corner minimap (theme-aware)
 │   ├── update.js            updatePlayer, tryCollect/Deliver/Interact, checkWin
 │   ├── toast.js             on-screen message popups
+│   ├── tips.js              first-time feature tips (Tips.show, hooked across modules)
 │   ├── save.js              save slots (1–6 + autosave) in localStorage (seed + level state)
 │   ├── ui.js                HUD + panels (inventory / journal / skill tree / dialog / pause) + hotbar
 │   ├── save-ui.js           save-slot picker overlay (save / load / delete)

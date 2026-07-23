@@ -151,7 +151,10 @@ function showCharSelect(){
   // Seed box. The screen re-renders whenever a breed card is clicked, so what's typed is
   // parked on Run.seedText (the input is repopulated from it above) rather than lost.
   const seedIn=document.getElementById('csSeed');
-  if(seedIn) seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+  if(seedIn){
+    seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+    seedIn.addEventListener('focus', ()=>{ if(typeof Tips!=='undefined') Tips.show('seed'); });
+  }
   const seedRoll=document.getElementById('csSeedRoll');
   if(seedRoll) seedRoll.addEventListener('click', ()=>{
     Run.newRandom();
