@@ -11,11 +11,14 @@ function loop(now){
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
-  const playing=Game.state===SCENES.PLAYING;
+  // A first-time tip modal (tips.js) freezes gameplay so the player can read it, even if
+  // it popped mid-combat — but the world keeps DRAWING behind it (frozen on the last frame).
+  const tipUp=(typeof Tips!=='undefined' && Tips.active);
+  const playing=Game.state===SCENES.PLAYING && !tipUp;
   // Keep drawing the frozen world behind any overlay that sits over live gameplay
-  // (pause / inventory / dialog / game over / the brief win freeze).
+  // (pause / inventory / dialog / game over / the brief win freeze / a tip).
   const s=Game.state;
-  const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
+  const showWorld=s===SCENES.PLAYING||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
   if(playing){
     updateCollectibles(now);
     Entities.updateAll(now,dt);

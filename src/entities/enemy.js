@@ -39,7 +39,7 @@ Entities.register('enemy', {
     }
     // Detection range scales with how loud the target dog is (breed noise + howling).
     else if(target && dist<e.chaseR*Entities.noiseFactor(target)){
-      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
+      if(!e._chasing){ e._chasing=true; e.alertT=700; if(typeof Tips!=='undefined') Tips.show('enemy'); }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;

@@ -35,6 +35,7 @@ const Wearables = {
     if(prev) Inventory.add(p, prev, 1);
     eq[slot]=id;
     this.restat(p);
+    if(typeof Tips!=='undefined') Tips.show('wearable');
     return true;
   },
 

@@ -31,7 +31,9 @@ const Abilities = {
   // by makePlayer; deliberately NOT saved — cooldowns reset on load). Ticked here so
   // every ability def gets them for free.
   cdLeft(p, id){ return (p && p.abilityCd && p.abilityCd[id]) || 0; },
-  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; },
+  // Called the moment an ability fires (each ability starts its cooldown here) — a handy
+  // single spot to teach the ability system the first time any ability is used.
+  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; if(typeof Tips!=='undefined') Tips.show('ability'); },
 
   update(p, dt){
     if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }

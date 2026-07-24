@@ -51,7 +51,7 @@ Entities.register('wolf', {
     // Keen ears: detection range scales with how loud the target dog is.
     const hearR=e.chaseR*Entities.noiseFactor(target);
     if(target && dist<hearR){
-      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
+      if(!e._chasing){ e._chasing=true; e.alertT=700; if(typeof Tips!=='undefined') Tips.show('enemy'); }   // just heard the dog → "!"
       // periodic lunge: a short burst of extra speed to close the gap
       if(e.lungeCd<=0 && dist>40 && dist<hearR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;

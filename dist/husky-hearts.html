@@ -240,6 +240,15 @@
   .opt-key.listening{ background:var(--gold); border-color:var(--brown); animation:optpulse .7s infinite alternate; }
   .opt-mute.muted{ opacity:.45; filter:grayscale(1); }
   @keyframes optpulse{ from{ transform:scale(1); } to{ transform:scale(1.06); } }
+  /* On/Off toggle (feature tips) — reuses the key/mute pill look; green when on. */
+  .opt-toggle{
+    font-family:inherit; font-size:11px; font-weight:bold; min-width:52px;
+    padding:4px 12px; border-radius:8px; border:2px solid var(--brown-soft);
+    background:var(--cream); color:var(--brown-soft); cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation;
+  }
+  .opt-toggle.on{ background:var(--meadow); color:var(--brown); border-color:#3a5a3a; }
+  .opt-toggle:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
 
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
@@ -471,6 +480,30 @@
   .inv-bin:hover{ background:rgba(226,92,92,0.28); }
 
   /* delete-confirm popup (small modal over the frame) */
+  /* ===== first-time feature tip (modal card) ===== */
+  /* z-index above every other overlay (dialog/pause/worldmap/skill ≤31) so a tip can
+     surface on top of whatever triggered it (a shop dialog, the journey map, …). */
+  #tipScreen{ background:rgba(74,63,53,0.55); z-index:40; }
+  #tipCard{
+    background:var(--cream); border:3px solid var(--brown); border-radius:16px;
+    padding:16px 18px 14px; max-width:320px; box-shadow:0 6px 0 var(--shadow);
+    text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  #tipIcon{ font-size:30px; line-height:1; }
+  #tipTitle{ color:var(--brown); font-weight:bold; font-size:clamp(15px,3.6vw,18px); }
+  #tipBody{ color:var(--brown); font-size:12px; line-height:1.55; }
+  #tipNote{ color:var(--brown-soft); font-size:10px; font-style:italic; line-height:1.4; margin-top:2px; }
+  #tipCard .modebtn{ margin-top:6px; }
+  /* illustration strip (tip-art.js): a row of little labelled sprite cards */
+  #tipArt{ display:none; flex-wrap:wrap; justify-content:center; gap:4px 10px; margin:2px 0; }
+  .tipart-cell{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .tipart-cell canvas{
+    image-rendering:pixelated;
+    background:linear-gradient(#BFE0A0,#A8D488);   /* a little patch of grass to sit on */
+    border:1px solid var(--brown-soft); border-radius:6px;
+  }
+  .tipart-label{ font-size:8.5px; color:var(--brown-soft); white-space:nowrap; line-height:1; }
+
   #confirmPopup{ background:rgba(74,63,53,0.5); z-index:30; }
   #confirmBox{
     background:var(--cream); border:3px solid var(--brown); border-radius:14px;
@@ -826,6 +859,18 @@
         </div>
         <div id="invBody"></div>
         <div class="overlay-hint">World keeps playing · drag items to move/wear/drop · I / Esc to close</div>
+      </div>
+
+      <!-- First-time feature tip (modal; freezes the world while shown) -->
+      <div id="tipScreen" class="game-overlay" style="display:none;">
+        <div id="tipCard">
+          <div id="tipIcon">💡</div>
+          <div id="tipTitle">Tip</div>
+          <div id="tipBody"></div>
+          <div id="tipArt" style="display:none;"></div>
+          <div id="tipNote"></div>
+          <button class="modebtn" id="tipOk">Got it!</button>
+        </div>
       </div>
 
       <div id="confirmPopup" class="game-overlay" style="display:none;">
@@ -1545,6 +1590,7 @@ const Progression = {
       leveled++;
     }
     if(leveled>0){
+      if(typeof Tips!=='undefined') Tips.show('levelup');
       if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
       else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
@@ -2161,6 +2207,7 @@ const Wearables = {
     if(prev) Inventory.add(p, prev, 1);
     eq[slot]=id;
     this.restat(p);
+    if(typeof Tips!=='undefined') Tips.show('wearable');
     return true;
   },
 
@@ -4677,7 +4724,7 @@ Entities.register('enemy', {
     }
     // Detection range scales with how loud the target dog is (breed noise + howling).
     else if(target && dist<e.chaseR*Entities.noiseFactor(target)){
-      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
+      if(!e._chasing){ e._chasing=true; e.alertT=700; if(typeof Tips!=='undefined') Tips.show('enemy'); }   // just heard the dog → "!"
       // chase
       const ang=Math.atan2(target.y-e.y, target.x-e.x);
       e.x+=Math.cos(ang)*e.speed*1.4*swim*dtScale;
@@ -4800,7 +4847,7 @@ Entities.register('wolf', {
     // Keen ears: detection range scales with how loud the target dog is.
     const hearR=e.chaseR*Entities.noiseFactor(target);
     if(target && dist<hearR){
-      if(!e._chasing){ e._chasing=true; e.alertT=700; }   // just heard the dog → "!"
+      if(!e._chasing){ e._chasing=true; e.alertT=700; if(typeof Tips!=='undefined') Tips.show('enemy'); }   // just heard the dog → "!"
       // periodic lunge: a short burst of extra speed to close the gap
       if(e.lungeCd<=0 && dist>40 && dist<hearR*0.8){ e.lunge=380; e.lungeCd=2200; }
       const burst=e.lunge>0 ? 1.9 : 1.45;
@@ -5254,6 +5301,7 @@ Entities.register('chest', {
       const d=Math.hypot(p.x-e.x, p.y-e.y);
       const scentR=(p.stats && p.stats.scentR) || 120;
       if(d>scentR) return;                          // completely hidden
+      if(typeof Tips!=='undefined') Tips.show('chest');   // scent wisps just appeared
 
       // sniff wisps at the dog's nose — pulse faster the closer you are
       const closeness=1-d/scentR;                  // 0 far → 1 on top of it
@@ -6136,7 +6184,9 @@ const Abilities = {
   // by makePlayer; deliberately NOT saved — cooldowns reset on load). Ticked here so
   // every ability def gets them for free.
   cdLeft(p, id){ return (p && p.abilityCd && p.abilityCd[id]) || 0; },
-  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; },
+  // Called the moment an ability fires (each ability starts its cooldown here) — a handy
+  // single spot to teach the ability system the first time any ability is used.
+  startCd(p, id, ms){ (p.abilityCd || (p.abilityCd={}))[id]=ms; if(typeof Tips!=='undefined') Tips.show('ability'); },
 
   update(p, dt){
     if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }
@@ -7280,6 +7330,7 @@ function tryCollect(p){
       if(!item.dropped) p.treats++;                          // re-collecting a dropped item doesn't re-award a treat
       Inventory.add(p,item.type,qty);
       spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
+      if(typeof Tips!=='undefined') Tips.show('collect');
     }
   });
 }
@@ -7300,6 +7351,11 @@ function dropItemOnGround(p, id, qty){
 // Treats-the-currency (p.treats) are money now and are never spent here. Throttled so
 // holding the action key feeds ~one treat every 220ms rather than the whole bag at once.
 function tryDeliver(p){
+  // First-time hint the moment you get near a friend you can still cheer — teaches the
+  // "hold action to give treats" step before you have to guess it.
+  if(typeof Tips!=='undefined' && Tips.enabled){
+    for(const f of friends){ if(!f.cheered && Math.hypot(p.x-f.x,p.y-f.y)<52){ Tips.show('deliver'); break; } }
+  }
   if(!Input.held('action'))return;
   const now=performance.now();
   if(p._deliverAt && now-p._deliverAt<220) return;
@@ -7390,6 +7446,227 @@ function showToast(msg,time=2200){
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),time);
 }
 
+
+// ===== src/tip-art.js =====
+// ====================== TIP ART ======================
+// Small pixel-art illustrations for the feature tips (tips.js). Some tips teach the player
+// to RECOGNISE something in the world — the loose-dirt dig spot, the different chest
+// rarities — and a picture does that far better than words. Each tip can carry an `art`
+// key; this module renders the matching strip of labelled mini-canvases into #tipArt.
+//
+// The sprites are drawn straight onto each canvas's own 2D context (not the shared game
+// `ctx`), so they're self-contained and mirror how the same objects look in-world
+// (entities/chest.js). Chest colours come from the chest config (Chests.def → loot.json),
+// so retinting a chest there updates its tip picture too.
+
+const TipArt = {
+  // Local pixel helper — like the global px(), but targets a passed-in context.
+  _px(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(Math.round(x),Math.round(y),w,h); },
+
+  // Soft ground shadow every sprite sits on.
+  _shadow(g,cx,cy){ g.save(); g.globalAlpha=0.18; g.fillStyle='#2A3A2A'; g.beginPath(); g.ellipse(cx,cy+11,12,4,0,0,Math.PI*2); g.fill(); g.restore(); },
+
+  // The loose-dirt patch a buried chest is dug from, with the golden "!" dig prompt above
+  // it — exactly what the player sees in the world (entities/chest.js buried state).
+  drawDirt(g,cx,cy){
+    this._shadow(g,cx,cy);
+    g.save(); g.fillStyle='#A98456';
+    g.beginPath(); g.ellipse(cx,cy+5,13,6,0,0,Math.PI*2); g.fill();
+    g.restore();
+    this._px(g,cx-7,cy+1,5,3,'#8B6B4A');
+    this._px(g,cx+2,cy+4,5,3,'#8B6B4A');
+    this._px(g,cx-2,cy+7,3,2,'#7A5C40');
+    this._px(g,cx+5,cy,2,2,'#9A784E');
+    // static "!" dig prompt (in-game it pulses)
+    g.save();
+    g.font='bold 12px monospace'; g.textAlign='center'; g.textBaseline='middle';
+    g.lineWidth=3; g.strokeStyle='#FFF8EF'; g.strokeText('!',cx,cy-13);
+    g.fillStyle='#C08A2A'; g.fillText('!',cx,cy-13);
+    g.restore();
+  },
+
+  // A closed chest of the given rarity — mirrors the closed-box sprite in chest.js so the
+  // picture matches what's dug up. Reads live colours from the chest config.
+  drawChest(g,cx,cy,rarity){
+    const def=(typeof Chests!=='undefined' && Chests.def) ? Chests.def(rarity)
+      : { base:'#8B6340', band:'#6B4A28', lid:'#A07040', glow:null, locked:false };
+    const locked=!!def.locked;
+    const x=cx, y=cy;
+    // glow for precious rarities (silver/golden)
+    if(def.glow){
+      g.save(); g.globalAlpha=0.55;
+      const gr=g.createRadialGradient(x,y-3,2,x,y-3,16);
+      gr.addColorStop(0,def.glow); gr.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle=gr; g.beginPath(); g.arc(x,y-3,16,0,Math.PI*2); g.fill(); g.restore();
+    }
+    this._shadow(g,cx,cy);
+    // closed box with domed lid + band + hasp
+    this._px(g,x-10,y-4,20,10,def.base);
+    this._px(g,x-10,y-10,20,7,def.lid);
+    this._px(g,x-9,y-12,18,3,def.lid);
+    this._px(g,x-10,y-4,20,2,def.band);
+    this._px(g,x-2,y-5,4,6,def.band);                 // hasp plate
+    this._px(g,x-1,y-3,2,3, locked?'#3A3630':def.band); // keyhole / latch
+    if(locked){ this._px(g,x-2,y+1,4,4,'#4A4640'); this._px(g,x-1,y+2,2,2,'#2A2620'); }  // padlock
+  },
+
+  // Named strips: id → [{label, draw}].
+  SETS: {
+    treasure(TA){ return [
+      { label:'Dig spot', draw:(g,cx,cy)=>TA.drawDirt(g,cx,cy) },
+      { label:'Wooden',   draw:(g,cx,cy)=>TA.drawChest(g,cx,cy,'wooden') },
+      { label:'Iron',     draw:(g,cx,cy)=>TA.drawChest(g,cx,cy,'iron') },
+      { label:'Silver 🔒',draw:(g,cx,cy)=>TA.drawChest(g,cx,cy,'silver') },
+      { label:'Golden',   draw:(g,cx,cy)=>TA.drawChest(g,cx,cy,'golden') },
+    ]; },
+  },
+
+  // Render `setId` into `container`. Returns true if it drew anything (so the caller can
+  // show/hide the strip). Each cell is a crisp HiDPI canvas + a small caption.
+  render(setId, container){
+    const make=this.SETS[setId];
+    if(!make || !container){ if(container){ container.innerHTML=''; } return false; }
+    const items=make(this);
+    container.innerHTML='';
+    const dpr=(typeof hiDPI==='function') ? hiDPI() : 1;
+    const W=46, H=44;
+    items.forEach(item=>{
+      const cell=document.createElement('div'); cell.className='tipart-cell';
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+      cv.style.width=W+'px'; cv.style.height=H+'px';
+      const g=cv.getContext('2d');
+      g.setTransform(dpr,0,0,dpr,0,0); g.imageSmoothingEnabled=false;
+      item.draw(g, W/2, H/2+3);
+      cell.appendChild(cv);
+      const lab=document.createElement('div'); lab.className='tipart-label'; lab.textContent=item.label;
+      cell.appendChild(lab);
+      container.appendChild(cell);
+    });
+    return items.length>0;
+  },
+};
+
+// ===== src/tips.js =====
+// ====================== FEATURE TIPS ======================
+// First-time teaching popups. The very first time the player meets a mechanic — collects a
+// treat, digs a chest, opens a shop, is noticed by an enemy, levels up… — a modal card
+// explains what it is and how it works, then never shows again. Which tips have been seen
+// (and whether tips are on at all) persist in localStorage, so a returning player isn't
+// re-taught, and both are controllable on the Options screen.
+//
+// Triggering is one call, `Tips.show('id')`, dropped at the natural first-interaction site
+// across the codebase (update.js, chest.js, ui.js, progression.js, …). It self-guards on
+// enabled + already-seen, so callers fire it freely every time.
+//
+// While a tip is up the world freezes (main.js checks Tips.active) even mid-combat, so the
+// player can read it safely; dismissing (button / Enter / Esc) resumes and shows the next
+// queued tip if two triggered at once.
+
+const Tips = {
+  KEY: 'husky-hearts-tips-v1',
+  enabled: true,
+  _seen: {},
+  _queue: [],
+  active: false,
+
+  // Every footer carries this so the player always knows they can turn tips off.
+  NOTE: '💡 You can turn these tips off in ⚙️ Options.',
+
+  // id → { icon, title, body }. Ordered roughly by when they first come up in a playthrough.
+  DATA: {
+    seed:     { icon:'🌱', title:'World Seeds',
+      body:"Every adventure is built from a seed. Type your own to replay or share the exact same world, or leave it blank for a fresh surprise each time. Your seed shows on the pause menu and map — tap it to copy." },
+    collect:  { icon:'🦴', title:'Collecting Treats',
+      body:"Bones, hearts, balls and flowers are treats — walk over one to pick it up. Treats are what you give to lonely friends to cheer them, and the coins you spend at shops." },
+    deliver:  { icon:'💛', title:'Cheering Friends',
+      body:"Lonely animals just want some company and a snack. Stand next to one and hold the action key to hand over treats from your bag. Cheer up every friend in a level to complete it!" },
+    chest:    { icon:'💰', title:'Buried Treasure', art:'treasure',
+      body:"Those little sniff wisps at your dog's nose mean treasure is buried nearby — smarter dogs smell it from farther. Walk onto the loose-dirt patch and hold the action key to dig, then open it for loot. Silver chests need a 🗝️ Key." },
+    shop:     { icon:'🛒', title:'Shops',
+      body:"Merchants trade goods for treats. Click a ware to buy it — smarter dogs haggle a better price. Stock up on food to heal and gear to wear before the trail gets tough." },
+    quest:    { icon:'📜', title:'Quests',
+      body:"A glowing “!” means an animal has a task for you. Hear them out, bring what they ask, and return for a reward. Accepted tasks show at the top-left, or press the quest key to open your journal." },
+    enemy:    { icon:'⚔️', title:'Enemies & Hearts',
+      body:"Not everyone is friendly — some critters bite, and each hit costs you a heart (top bar). Keep your distance, or fight back with your abilities. If every heart runs out your dog faints, so carry a biscuit or two to heal!" },
+    ability:  { icon:'⚡', title:'Abilities',
+      body:"That was one of your dog's special abilities! Each has a cooldown, shown sweeping over its hotbar slot. Every breed plays differently — unlock and rank up abilities in the 🎓 Mastery tree between levels." },
+    wearable: { icon:'🎩', title:'Wearables',
+      body:"Gear isn't just for looks. Open your inventory and drag a hat, scarf, coat or cape onto your dog to wear it — most pieces also grant stat bonuses like extra health, speed or quieter steps." },
+    levelup:  { icon:'⭐', title:'Leveling Up',
+      body:"Earning XP levels up your dog, and every level grants a 🎓 mastery point for ability upgrades. Clearing a whole level also awards 🌳 skill points for lasting stat boosts." },
+    inventory:{ icon:'🎒', title:'Your Inventory',
+      body:"Your bag holds treats, food and gear. Drag items to rearrange them, drag them onto the world to drop them, or onto your dog to wear gear. The bottom row is your hotbar — press number keys to use those items quickly." },
+    skills:   { icon:'🌳', title:'Skill Tree',
+      body:"Spend 🌳 skill points (earned by clearing levels) on lasting character upgrades — more health, faster paws, a keener nose, quieter steps. The 🌳 button glows whenever points are waiting to be spent." },
+    mastery:  { icon:'🎓', title:'Ability Mastery',
+      body:"Spend 🎓 mastery points (earned by leveling up) to unlock your dog's abilities and rank them up. Stronger effects, shorter cooldowns — build your dog your way." },
+    worldmap: { icon:'🗺️', title:'Your Journey',
+      body:"This map traces your progress across the biomes. Tap a place you've already been to see its details and travel back — levels stay exactly as you left them, so you can revisit shops and quest-givers whenever you like." },
+    save:     { icon:'💾', title:'Saving Your Game',
+      body:"You can keep several games at once in separate save slots, plus an autosave that updates as you travel between levels. Load any of them later from the main menu or the pause screen." },
+  },
+
+  // ---------- persistence ----------
+  load(){
+    try {
+      const s=JSON.parse(localStorage.getItem(this.KEY));
+      if(s){ this.enabled = s.enabled!==false; this._seen = s.seen || {}; }
+    } catch(e){}
+  },
+  save(){
+    try { localStorage.setItem(this.KEY, JSON.stringify({ enabled:this.enabled, seen:this._seen })); } catch(e){}
+  },
+
+  setEnabled(on){ this.enabled=!!on; this.save(); },
+  reset(){ this._seen={}; this.save(); },   // "show all tips again"
+
+  // ---------- showing ----------
+  show(id){
+    if(!this.enabled || this._seen[id] || !this.DATA[id]) return;
+    this._seen[id]=true; this.save();       // mark up-front: a tip is one-and-done even if skipped
+    this._queue.push(id);
+    if(!this.active) this._present();
+  },
+
+  _present(){
+    const id=this._queue.shift();
+    if(id===undefined){ this.active=false; return; }
+    const d=this.DATA[id];
+    this.active=true;
+    const set=(el,v)=>{ const e=document.getElementById(el); if(e) e.textContent=v; };
+    set('tipIcon', d.icon); set('tipTitle', d.title); set('tipBody', d.body); set('tipNote', this.NOTE);
+    // Optional illustration strip (tip-art.js): drawn when the tip declares an `art` set.
+    const art=document.getElementById('tipArt');
+    if(art){
+      const drew = d.art && typeof TipArt!=='undefined' && TipArt.render(d.art, art);
+      art.style.display = drew ? 'flex' : 'none';
+      if(!drew) art.innerHTML='';
+    }
+    const el=document.getElementById('tipScreen'); if(el) el.style.display='flex';
+  },
+
+  dismiss(){
+    const el=document.getElementById('tipScreen'); if(el) el.style.display='none';
+    if(this._queue.length) this._present();   // chain into the next queued tip
+    else this.active=false;
+  },
+
+  init(){
+    this.load();
+    const btn=document.getElementById('tipOk'); if(btn) btn.addEventListener('click',()=>this.dismiss());
+    // Enter / Esc / Space dismiss. Capture phase + stopImmediatePropagation so the keypress
+    // never also reaches the game (no stray howl, no stuck movement key on resume).
+    window.addEventListener('keydown', e=>{
+      if(!this.active) return;
+      if(e.code==='Enter'||e.code==='Escape'||e.code==='Space'||e.code==='NumpadEnter'){
+        e.preventDefault(); e.stopImmediatePropagation(); this.dismiss();
+      }
+    }, true);
+  },
+};
+
+Tips.init();
 
 // ===== src/save.js =====
 // ====================== SAVE / LOAD ======================
@@ -7740,6 +8017,7 @@ const UI = {
     this.closeJournal();
     if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
+    if(typeof Tips!=='undefined') Tips.show('skills');
     this.renderSkills();
     // In-world it's a side dock over live gameplay; on the journey map it takes the whole
     // frame (like the mastery tree) so it can't cover Continue / Main Menu.
@@ -7804,6 +8082,7 @@ const UI = {
     this.closeInventory();
     if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
+    if(typeof Tips!=='undefined') Tips.show('mastery');
     this.renderMastery();
     this._show('masteryScreen', true);
   },
@@ -8031,6 +8310,7 @@ const UI = {
     this.closeSkills();
     this.invOpen=true;
     this._invPlayer=0;
+    if(typeof Tips!=='undefined') Tips.show('inventory');
     this.renderInventory();
     this._show('inventoryScreen', true);
   },
@@ -8338,6 +8618,12 @@ const UI = {
     this.closeSkills();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
+    // First-time tips for the two NPC roles (a tip surfaces over the dialog, then dismisses
+    // back to it). A quest-giver teaches quests; a plain merchant teaches shopping.
+    if(typeof Tips!=='undefined'){
+      if(npc.quest) Tips.show('quest');
+      else if(npc.wares && npc.wares.length) Tips.show('shop');
+    }
     const q=npc.quest, hasQuests=(typeof Quests!=='undefined');
     if(q && hasQuests && Quests.stateOf(q)!=='done') this.renderQuest();           // offer / progress / turn-in
     else this.renderDialog(q && q.done ? q.done : npc.greeting);                   // finished quest → thanks; else shop/talk
@@ -8539,6 +8825,7 @@ const SaveUI = {
     if(this._returnTo==='pause' && typeof UI!=='undefined') UI._show('pauseScreen', false);
     this.render();
     if(typeof UI!=='undefined') UI._show('savesScreen', true);
+    if(typeof Tips!=='undefined') Tips.show('save');
     this._wire();
   },
 
@@ -8689,6 +8976,7 @@ const WorldMap = {
     this._configButtons();
     this._renderDetail();
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
+    if(typeof Tips!=='undefined') Tips.show('worldmap');
     this._wire();
     this._start();
 
@@ -9010,11 +9298,14 @@ function loop(now){
   ctx.clearRect(0,0,VIEW_W,VIEW_H);
   // Update only while actively playing; keep drawing the frozen world behind any
   // open panel (pause / inventory / dialog) so the overlay sits over the last frame.
-  const playing=Game.state===SCENES.PLAYING;
+  // A first-time tip modal (tips.js) freezes gameplay so the player can read it, even if
+  // it popped mid-combat — but the world keeps DRAWING behind it (frozen on the last frame).
+  const tipUp=(typeof Tips!=='undefined' && Tips.active);
+  const playing=Game.state===SCENES.PLAYING && !tipUp;
   // Keep drawing the frozen world behind any overlay that sits over live gameplay
-  // (pause / inventory / dialog / game over / the brief win freeze).
+  // (pause / inventory / dialog / game over / the brief win freeze / a tip).
   const s=Game.state;
-  const showWorld=playing||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
+  const showWorld=s===SCENES.PLAYING||s===SCENES.PAUSED||s===SCENES.INVENTORY||s===SCENES.DIALOG||s===SCENES.GAMEOVER||s===SCENES.WIN||s===SCENES.WORLDMAP;
   if(playing){
     updateCollectibles(now);
     Entities.updateAll(now,dt);
@@ -9321,7 +9612,10 @@ function showCharSelect(){
   // Seed box. The screen re-renders whenever a breed card is clicked, so what's typed is
   // parked on Run.seedText (the input is repopulated from it above) rather than lost.
   const seedIn=document.getElementById('csSeed');
-  if(seedIn) seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+  if(seedIn){
+    seedIn.addEventListener('input', ()=>{ Run.seedText=seedIn.value; });
+    seedIn.addEventListener('focus', ()=>{ if(typeof Tips!=='undefined') Tips.show('seed'); });
+  }
   const seedRoll=document.getElementById('csSeedRoll');
   if(seedRoll) seedRoll.addEventListener('click', ()=>{
     Run.newRandom();
@@ -9498,6 +9792,16 @@ const Options = {
         </div>
       </div>
       <div class="opt-section">
+        <div class="opt-h">💡 Tips</div>
+        <div class="opt-row">
+          <span class="opt-label">Show feature tips</span>
+          <button class="opt-toggle ${(typeof Tips!=='undefined' && Tips.enabled)?'on':''}" id="optTips">${(typeof Tips!=='undefined' && Tips.enabled)?'On':'Off'}</button>
+        </div>
+        <div class="opt-row" style="justify-content:center;">
+          <button class="modebtn secondary" id="optTipsReset">↺ Show all tips again</button>
+        </div>
+      </div>
+      <div class="opt-section">
         <div class="opt-h">🎮 Controls <span class="opt-hint">· click a key, then press the new one · right-click a key to clear it</span></div>
         <div id="optBindings"></div>
         <div class="opt-row" style="justify-content:center;">
@@ -9524,6 +9828,19 @@ const Options = {
       Input.resetBindings(); this._capture=null;
       this.renderBindings(); this.refreshControlHints();
       showToast('↺ Controls reset to defaults',1500);
+    });
+    const tipsBtn=document.getElementById('optTips');
+    if(tipsBtn) tipsBtn.addEventListener('click',()=>{
+      if(typeof Tips==='undefined') return;
+      Tips.setEnabled(!Tips.enabled);
+      this.render();   // reflect the new On/Off state
+    });
+    const tipsReset=document.getElementById('optTipsReset');
+    if(tipsReset) tipsReset.addEventListener('click',()=>{
+      if(typeof Tips==='undefined') return;
+      Tips.reset();
+      if(!Tips.enabled){ Tips.setEnabled(true); this.render(); }   // resetting implies you want them
+      showToast('💡 Feature tips will show again',1800);
     });
     document.getElementById('optClose').addEventListener('click',()=>this.close());
   },

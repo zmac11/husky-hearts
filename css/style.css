@@ -229,6 +229,15 @@
   .opt-key.listening{ background:var(--gold); border-color:var(--brown); animation:optpulse .7s infinite alternate; }
   .opt-mute.muted{ opacity:.45; filter:grayscale(1); }
   @keyframes optpulse{ from{ transform:scale(1); } to{ transform:scale(1.06); } }
+  /* On/Off toggle (feature tips) — reuses the key/mute pill look; green when on. */
+  .opt-toggle{
+    font-family:inherit; font-size:11px; font-weight:bold; min-width:52px;
+    padding:4px 12px; border-radius:8px; border:2px solid var(--brown-soft);
+    background:var(--cream); color:var(--brown-soft); cursor:pointer;
+    box-shadow:0 2px 0 var(--shadow); touch-action:manipulation;
+  }
+  .opt-toggle.on{ background:var(--meadow); color:var(--brown); border-color:#3a5a3a; }
+  .opt-toggle:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--shadow); }
 
   /* ---- game over screen: translucent red vignette over the frozen death frame ---- */
   #gameOverScreen{ z-index:27; background:rgba(60,26,30,0.62); }
@@ -460,6 +469,30 @@
   .inv-bin:hover{ background:rgba(226,92,92,0.28); }
 
   /* delete-confirm popup (small modal over the frame) */
+  /* ===== first-time feature tip (modal card) ===== */
+  /* z-index above every other overlay (dialog/pause/worldmap/skill ≤31) so a tip can
+     surface on top of whatever triggered it (a shop dialog, the journey map, …). */
+  #tipScreen{ background:rgba(74,63,53,0.55); z-index:40; }
+  #tipCard{
+    background:var(--cream); border:3px solid var(--brown); border-radius:16px;
+    padding:16px 18px 14px; max-width:320px; box-shadow:0 6px 0 var(--shadow);
+    text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  #tipIcon{ font-size:30px; line-height:1; }
+  #tipTitle{ color:var(--brown); font-weight:bold; font-size:clamp(15px,3.6vw,18px); }
+  #tipBody{ color:var(--brown); font-size:12px; line-height:1.55; }
+  #tipNote{ color:var(--brown-soft); font-size:10px; font-style:italic; line-height:1.4; margin-top:2px; }
+  #tipCard .modebtn{ margin-top:6px; }
+  /* illustration strip (tip-art.js): a row of little labelled sprite cards */
+  #tipArt{ display:none; flex-wrap:wrap; justify-content:center; gap:4px 10px; margin:2px 0; }
+  .tipart-cell{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .tipart-cell canvas{
+    image-rendering:pixelated;
+    background:linear-gradient(#BFE0A0,#A8D488);   /* a little patch of grass to sit on */
+    border:1px solid var(--brown-soft); border-radius:6px;
+  }
+  .tipart-label{ font-size:8.5px; color:var(--brown-soft); white-space:nowrap; line-height:1; }
+
   #confirmPopup{ background:rgba(74,63,53,0.5); z-index:30; }
   #confirmBox{
     background:var(--cream); border:3px solid var(--brown); border-radius:14px;

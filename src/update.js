@@ -58,6 +58,7 @@ function tryCollect(p){
       if(!item.dropped) p.treats++;                          // re-collecting a dropped item doesn't re-award a treat
       Inventory.add(p,item.type,qty);
       spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
+      if(typeof Tips!=='undefined') Tips.show('collect');
     }
   });
 }
@@ -78,6 +79,11 @@ function dropItemOnGround(p, id, qty){
 // Treats-the-currency (p.treats) are money now and are never spent here. Throttled so
 // holding the action key feeds ~one treat every 220ms rather than the whole bag at once.
 function tryDeliver(p){
+  // First-time hint the moment you get near a friend you can still cheer — teaches the
+  // "hold action to give treats" step before you have to guess it.
+  if(typeof Tips!=='undefined' && Tips.enabled){
+    for(const f of friends){ if(!f.cheered && Math.hypot(p.x-f.x,p.y-f.y)<52){ Tips.show('deliver'); break; } }
+  }
   if(!Input.held('action'))return;
   const now=performance.now();
   if(p._deliverAt && now-p._deliverAt<220) return;
