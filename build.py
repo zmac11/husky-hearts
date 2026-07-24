@@ -86,6 +86,7 @@ LOAD_ORDER = [
     'level-manager.js',   # LevelManager.load/enter (build world + themed ground)
     'update.js',          # updatePlayer, tryCollect, tryDeliver, checkWin
     'toast.js',           # showToast
+    'tip-art.js',         # pixel-art illustrations for feature tips (dirt pile, chests…)
     'tips.js',            # first-time feature tip popups (Tips.show — hooked across modules)
     'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
     'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)

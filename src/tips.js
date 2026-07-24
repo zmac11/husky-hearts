@@ -31,7 +31,7 @@ const Tips = {
       body:"Bones, hearts, balls and flowers are treats — walk over one to pick it up. Treats are what you give to lonely friends to cheer them, and the coins you spend at shops." },
     deliver:  { icon:'💛', title:'Cheering Friends',
       body:"Lonely animals just want some company and a snack. Stand next to one and hold the action key to hand over treats from your bag. Cheer up every friend in a level to complete it!" },
-    chest:    { icon:'💰', title:'Buried Treasure',
+    chest:    { icon:'💰', title:'Buried Treasure', art:'treasure',
       body:"Those little sniff wisps at your dog's nose mean treasure is buried nearby — smarter dogs smell it from farther. Walk onto the loose-dirt patch and hold the action key to dig, then open it for loot. Silver chests need a 🗝️ Key." },
     shop:     { icon:'🛒', title:'Shops',
       body:"Merchants trade goods for treats. Click a ware to buy it — smarter dogs haggle a better price. Stock up on food to heal and gear to wear before the trail gets tough." },
@@ -86,6 +86,13 @@ const Tips = {
     this.active=true;
     const set=(el,v)=>{ const e=document.getElementById(el); if(e) e.textContent=v; };
     set('tipIcon', d.icon); set('tipTitle', d.title); set('tipBody', d.body); set('tipNote', this.NOTE);
+    // Optional illustration strip (tip-art.js): drawn when the tip declares an `art` set.
+    const art=document.getElementById('tipArt');
+    if(art){
+      const drew = d.art && typeof TipArt!=='undefined' && TipArt.render(d.art, art);
+      art.style.display = drew ? 'flex' : 'none';
+      if(!drew) art.innerHTML='';
+    }
     const el=document.getElementById('tipScreen'); if(el) el.style.display='flex';
   },
 
