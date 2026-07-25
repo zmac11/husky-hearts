@@ -744,7 +744,7 @@ const UI = {
       add(`🐾 Maybe later`, ()=>this.closePanel());
     } else if(Quests.canComplete(q, p)){
       this.$('dialogText').textContent = q.ready || `You've got ${Quests.summary(q)} — hand them over?`;
-      add(`✅ Give ${Quests.summary(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); }, reqItem);
+      add(`✅ ${Quests.turnInLabel(q)}`, ()=>{ const r=Quests.complete(q, p); if(typeof sfxCheer==='function') sfxCheer(); this.updateHUD(); this.renderDialog(q.done || `Thank you so much! 💛${r?(' ('+r+')'):''}`); }, reqItem);
       add(`🐾 Not yet`, ()=>this.closePanel());
     } else {
       this.$('dialogText').textContent = Quests.progressText(q, p);
