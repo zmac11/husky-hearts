@@ -66,6 +66,30 @@
           "done": "Bless you! The pups are chewing away happily now. 💛",
           "reward": { "treats": 6 }
         }
+      },
+      {
+        "name": "Wade the Wader", "fx": 0.16, "fy": 0.6,
+        "greeting": "Morning, pup!",
+        "quest": {
+          "id": "m2-ducks", "type": "greet", "greet": { "species": ["duck"], "count": 2 },
+          "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?",
+          "ready": "You met both ducks? They'll be quacking about it all day!",
+          "progress": "Just {remaining} more duck to greet — they're out on the ponds.",
+          "done": "The ponds feel friendlier already. Thank you, pup! 🦆",
+          "reward": { "treats": 4 }
+        }
+      },
+      {
+        "name": "Acorn", "fx": 0.85, "fy": 0.52,
+        "greeting": "Psst — up here!",
+        "quest": {
+          "id": "m2-squirrels", "type": "greet", "greet": { "species": ["squirrel"], "count": 2 },
+          "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?",
+          "ready": "Both squirrels? How lovely of you!",
+          "progress": "{remaining} squirrel is still waiting for a hello.",
+          "done": "They're chattering away happily now — thank you! 🐿️",
+          "reward": { "item": "biscuit", "count": 1 }
+        }
       }
     ],
     "enemies": [],
@@ -114,13 +138,27 @@
           { "id": "ballcap", "cost": 6 }, { "id": "scarf", "cost": 6 }, { "id": "shades", "cost": 7 },
           { "id": "raincoat", "cost": 9 }, { "id": "cape", "cost": 10 }
         ]
+      },
+      {
+        "name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52,
+        "greeting": "Oh, a visitor!",
+        "quest": {
+          "id": "m3-critters", "type": "greet", "greet": { "count": 3 },
+          "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?",
+          "ready": "You met everyone? They already feel at home!",
+          "progress": "{remaining} orchard critter still hasn't been greeted.",
+          "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎",
+          "reward": { "treats": 6 }
+        }
       }
     ],
     "enemies": [
       { "kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90 }
     ],
     "critters": [
-      { "species": "squirrel", "fx": 0.4, "fy": 0.4 }
+      { "species": "squirrel", "fx": 0.4, "fy": 0.4 },
+      { "species": "squirrel", "fx": 0.72, "fy": 0.7 },
+      { "species": "duck", "onWater": { "kind": "pond", "index": 0 } }
     ],
     "chests": ["wooden", "wooden", "iron", "silver"],
     "quest": { "type": "cheer-all", "label": "Cheer up every friend in the orchard" }
