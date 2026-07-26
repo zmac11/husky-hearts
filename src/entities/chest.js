@@ -102,7 +102,6 @@ Entities.register('chest', {
       const d=Math.hypot(p.x-e.x, p.y-e.y);
       const scentR=(p.stats && p.stats.scentR) || 120;
       if(d>scentR) return;                          // completely hidden
-      if(typeof Tips!=='undefined') Tips.show('chest');   // scent wisps just appeared
 
       // sniff wisps at the dog's nose — pulse faster the closer you are
       const closeness=1-d/scentR;                  // 0 far → 1 on top of it
@@ -119,6 +118,9 @@ Entities.register('chest', {
 
       // within reach: loose-dirt patch + pulsing "!" (npc-style prompt)
       if(d<46){
+        // Teach the treasure loop only now that the dirt pile is actually on screen — firing
+        // it earlier (at mere scent range) described a dig spot the player couldn't see yet.
+        if(typeof Tips!=='undefined') Tips.show('chest');
         ctx.save();
         ctx.globalAlpha=0.85;
         ctx.fillStyle='#A98456';
