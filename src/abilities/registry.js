@@ -37,9 +37,31 @@ const Abilities = {
 
   update(p, dt){
     if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }
+    // Abilities are dormant until the first boss awakens them (p.abilitiesUnlocked). Until
+    // then they don't run at all — pressing Q/E just nudges the player toward the boss.
+    if(!p.abilitiesUnlocked){
+      (p.abilities||[]).forEach((id,slot)=>{
+        if(typeof Input!=='undefined' && Input.held('ability'+(slot+1))) this._lockedHint();
+      });
+      return;
+    }
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });
+  },
+  _lockedHint(){
+    const now=(typeof performance!=='undefined') ? performance.now() : 0;
+    if(this._lockT && now-this._lockT<2600) return;
+    this._lockT=now;
+    if(typeof showToast==='function') showToast('🔒 Your abilities awaken after the first boss…', 1800);
+  },
+
+  // Set once, when the first boss is passed: every future level can use abilities (at their
+  // current mastery rank — level 0 to start, the gentlest tier).
+  unlockAbilities(p){
+    if(!p || p.abilitiesUnlocked) return false;
+    p.abilitiesUnlocked = true;
+    return true;
   },
   drawWorld(t){ for(const id in this._defs){ const d=this._defs[id]; if(d.drawWorld) d.drawWorld(t); } },
   drawOnDog(p, x, by){

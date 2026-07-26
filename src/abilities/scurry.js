@@ -7,6 +7,7 @@
 (function(){
   const DASH_MS=180;
   const PARAMS={
+    0:{ dist:70,  invulnExtra:90,  burstMs:0,    cdMs:11000 },
     1:{ dist:90,  invulnExtra:120, burstMs:0,    cdMs:9000 },
     2:{ dist:120, invulnExtra:150, burstMs:0,    cdMs:7000 },
     3:{ dist:120, invulnExtra:150, burstMs:1000, cdMs:5000 },
@@ -15,7 +16,7 @@
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scurry')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scurry') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   // L3 leaves a brief speed burst after the dash (p.scurryBurstT).
   function speedMul(p){ return (p && p.scurryBurstT>0) ? 1.3 : 1; }
 
@@ -23,8 +24,7 @@
   function reset(){ if(p1){ p1.dashT=0; p1.dashVX=0; p1.dashVY=0; p1.scurryBurstT=0; } }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Scurry in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'scurry');
     if(cd>0){ showToast(`⏳ Scurry recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
     const cfg=params(p);

@@ -8,6 +8,7 @@
 
 (function(){
   const PARAMS={
+    0:{ dur:6000,  boltMs:4200, dmg:2, speedMul:1.10, fear:0,   chain:false, cdMs:52000 },
     1:{ dur:8000,  boltMs:3500, dmg:4, speedMul:1.15, fear:0,   chain:false, cdMs:45000 },
     2:{ dur:10000, boltMs:2500, dmg:4, speedMul:1.15, fear:160, chain:false, cdMs:45000 },
     3:{ dur:12000, boltMs:2000, dmg:5, speedMul:1.25, fear:160, chain:true,  cdMs:40000 },
@@ -22,7 +23,7 @@
     return null;
   }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'stormfang') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   // Exposed so update.js can apply the speed buff.
   function speedMul(p){ return (p && p.wolfT>0) ? params(p).speedMul : 1; }
 
@@ -30,11 +31,7 @@
   function reset(){ boltCd=0; bolts=[]; rain=null; flashT=0; nextFlash=0; if(p1) p1.wolfT=0; }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){
-      showToast(`🎓 Unlock Storm Fang in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'stormFang');
     if(cd>0){ showToast(`⏳ Storm Fang recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);

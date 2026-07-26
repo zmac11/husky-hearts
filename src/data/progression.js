@@ -2,7 +2,7 @@
 // The dog's RPG progression: XP → dog level → mastery points, plus skill points from
 // clearing levels. Two upgrade tracks feed off these:
 //   • skillPoints  → character stats  (skill tree, K, anytime)   — +2 per level cleared
-//   • masteryPoints → abilities       (mastery tree, between levels) — +1 per dog level
+//   • masteryPoints → abilities       (mastery tree, between levels) — +1 every 5th dog level
 // XP itself comes from defeating enemies (as pickup orbs — see xporbs.js), opening
 // chests, completing quests, cheering friends and clearing levels.
 //
@@ -20,17 +20,20 @@ const Progression = {
   get CHEER_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.cheer) || 12; },
   get LEVEL_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.level) || 40; },
 
-  // Grant XP and roll any dog level-ups. Each level grants +1 mastery point.
+  // Grant XP and roll any dog level-ups. A mastery point drops only every 5th level
+  // (5, 10, 15…) — abilities are meant to come from the first-boss unlock, not from
+  // early leveling, so the opening biome hands out no mastery points at all.
+  MASTERY_EVERY: 5,
   award(p, amount, reason){
     if(!p || !(amount>0)) return;
     p.xp = (p.xp||0) + amount;
     // Mint "+n XP" rises off the dog for every scrap of experience earned (floaters.js).
     if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-32, `+${amount} XP`, 'xp');
-    let leveled=0;
+    let leveled=0, mpGained=0;
     while(p.xp >= this.xpToNext(p.dogLevel||1)){
       p.xp -= this.xpToNext(p.dogLevel||1);
       p.dogLevel = (p.dogLevel||1) + 1;
-      p.masteryPoints = (p.masteryPoints||0) + 1;
+      if(p.dogLevel % this.MASTERY_EVERY === 0){ p.masteryPoints = (p.masteryPoints||0) + 1; mpGained++; }
       leveled++;
     }
     if(leveled>0){
@@ -38,7 +41,8 @@ const Progression = {
       if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
       else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
-      showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
+      const mpNote = mpGained>0 ? ` +${mpGained} mastery point${mpGained>1?'s':''}` : '';
+      showToast(`⭐ Level ${p.dogLevel}!${mpNote}`, 2200);
     }
     if(typeof updateHUD==='function') updateHUD();
   },

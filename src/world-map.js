@@ -31,6 +31,19 @@ const WorldMap = {
   // Show the map after finishing (or revisiting and re-exiting) `finishedLevelId`.
   showAfter(finishedLevelId){
     Progress.markComplete(finishedLevelId);
+
+    // Passing a biome boss awakens the dog's abilities (they were dormant until now). The
+    // first time this happens, unlock them and introduce them with a tip. The mastery
+    // button only appears from here on.
+    const justBeatBoss = (typeof Campaign!=='undefined') && Campaign.isBoss(finishedLevelId);
+    let abilitiesJustUnlocked = false;
+    if(justBeatBoss && typeof Abilities!=='undefined' && Abilities.unlockAbilities){
+      abilitiesJustUnlocked = Abilities.unlockAbilities(p1);
+      if(abilitiesJustUnlocked && typeof Skills!=='undefined') Skills.apply(p1);
+    }
+    const wmM=document.getElementById('wmMastery');
+    if(wmM) wmM.style.display = (p1 && p1.abilitiesUnlocked) ? 'inline-block' : 'none';
+
     this._nextId = this._nextUncleared(finishedLevelId);
     const focusLevel = this._nextId || finishedLevelId;
     this._focusIndex = Campaign.envIndexOfLevel(focusLevel);
@@ -42,7 +55,10 @@ const WorldMap = {
     this._configButtons();
     this._renderDetail();
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
-    if(typeof Tips!=='undefined') Tips.show('worldmap');
+    if(typeof Tips!=='undefined'){
+      Tips.show('worldmap');
+      if(abilitiesJustUnlocked) Tips.show('ability');   // introduce the freshly-awakened abilities
+    }
     this._wire();
     this._start();
 

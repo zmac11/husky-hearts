@@ -76,6 +76,8 @@ const LevelManager = {
     let portal=null;
     entities.forEach(e=>{ if(e.kind==='portal'){ e.used=false; portal=e; } });
     const cleared=(typeof Progress!=='undefined') && Progress.isDone(lvl.id);
+    // A cleared level keeps its portal. (autoPortal levels spawn their own in generate(),
+    // so they already have one here — this just re-arms it above.)
     if(!cleared || portal) return;
     const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(lvl.id) : null;
     const nextLvl=lvl.next && Levels.get(lvl.next);

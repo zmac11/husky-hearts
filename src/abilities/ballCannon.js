@@ -12,7 +12,8 @@
   let shots  = [];     // flying balls: { x,y, sx,sy, tx,ty, prog, dur, target }
 
   const LOAD_R  = 48;  // stand this close to load / auto-reload
-  const PARAMS  = {    // per skill level (index = level)
+  const PARAMS  = {    // per mastery level (index = level; 0 = the freshly-unlocked base tier)
+    0: { cap:1, range:140, dmg:1, fireMs:1800, autoReload:false },
     1: { cap:1, range:180, dmg:2, fireMs:1400, autoReload:false },
     2: { cap:3, range:180, dmg:2, fireMs:1000, autoReload:false },
     3: { cap:3, range:260, dmg:3, fireMs:1000, autoReload:true  },
@@ -23,7 +24,7 @@
     return null;
   }
   function skillLevel(p){ return (typeof Skills!=='undefined' && p) ? Skills.level(p,'cannon') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, skillLevel(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, skillLevel(p)))]; }
   // Magazine capacity including equipment abilityMods (e.g. Ball Cap +1).
   function capOf(p){ return (typeof Equip!=='undefined') ? Equip.abilityMod(p,'cannon','capacity', params(p).cap) : params(p).cap; }
 
@@ -32,11 +33,7 @@
 
   // Q pressed (registry routes the ability trigger here via onTrigger).
   function place(p){
-    const lvl=skillLevel(p);
-    if(lvl<1){
-      showToast(`🎓 Unlock Ball Cannon in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'ballCannon');
     if(cd>0){ showToast(`⏳ Cannon recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
     Abilities.startCd(p,'ballCannon',2000);   // placement feels deliberate, not spammy
@@ -54,7 +51,7 @@
   //   'full'   — near the cannon but the magazine is full (ball kept, toast shown)
   //   false    — no cannon / not near it (caller falls back to play-flavor)
   function tryLoadBall(p){
-    if(!cannon || !Abilities.playerHas(p,'ballCannon') || skillLevel(p)<1) return false;
+    if(!cannon || !Abilities.playerHas(p,'ballCannon') || !p.abilitiesUnlocked) return false;
     if(Math.hypot(p.x-cannon.x, p.y-cannon.y)>LOAD_R) return false;
     const cap=capOf(p);
     if(cannon.mag>=cap){ showToast(`🎾 Magazine full (${cannon.mag}/${cap})`, 1200); return 'full'; }

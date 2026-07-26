@@ -5,6 +5,7 @@
 
 (function(){
   const PARAMS={
+    0:{ dur:9000,  dmg:1, chain:false, cdMs:48000 },
     1:{ dur:12000, dmg:2, chain:false, cdMs:40000 },
     2:{ dur:16000, dmg:3, chain:false, cdMs:40000 },
     3:{ dur:16000, dmg:3, chain:true,  cdMs:32000 },
@@ -20,14 +21,10 @@
   function reset(){}   // the spirit is an entity — Entities.clear() handles level changes
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){
-      showToast(`🎓 Unlock Spirit of the Storm in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'spiritWolf');
     if(cd>0){ showToast(`⏳ Spirit of the Storm recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
-    const cfg=PARAMS[Math.min(3, L)];
+    const cfg=PARAMS[Math.min(3, Math.max(0, lvl(p)))];
     // one spirit at a time — re-summoning replaces the old one
     const old=entities.find(e=>e.kind==='spiritwolf');
     if(old) Entities.remove(old);
