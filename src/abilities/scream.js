@@ -6,6 +6,7 @@
 
 (function(){
   const PARAMS={
+    0:{ dur:2000, pulseMs:600, dmg:1, radius:80,  fear:0,    cdMs:24000 },
     1:{ dur:2500, pulseMs:500, dmg:2, radius:95,  fear:0,    cdMs:20000 },
     2:{ dur:3000, pulseMs:500, dmg:2, radius:115, fear:0.25, cdMs:20000 },
     3:{ dur:3500, pulseMs:500, dmg:3, radius:135, fear:0.45, cdMs:18000 },
@@ -14,14 +15,13 @@
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scream')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scream') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
 
   function spawn(){}
   function reset(){ pulseCd=0; rings=[]; if(p1) p1.screamT=0; }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Piercing Scream in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'scream');
     if(cd>0){ showToast(`⏳ Scream recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);

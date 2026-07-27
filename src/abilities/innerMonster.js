@@ -7,6 +7,7 @@
 
 (function(){
   const PARAMS={
+    0:{ dur:5000,  speedMul:1.15, dmg:1, heal:1, cdMs:34000 },
     1:{ dur:6000,  speedMul:1.25, dmg:2, heal:1, cdMs:30000 },
     2:{ dur:8000,  speedMul:1.25, dmg:3, heal:2, cdMs:30000 },
     3:{ dur:10000, speedMul:1.35, dmg:3, heal:2, cdMs:26000 },
@@ -15,15 +16,14 @@
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'innerMonster')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'monster') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   function speedMul(p){ return (p && p.monsterT>0) ? params(p).speedMul : 1; }
 
   function spawn(){}
   function reset(){ if(p1){ p1.monsterT=0; p1.meleeCd=0; } }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Inner Monster in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'innerMonster');
     if(cd>0){ showToast(`⏳ Inner Monster recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);

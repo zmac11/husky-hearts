@@ -1,9 +1,9 @@
 // ===== src/config/items.json =====
 const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
 // ===== src/config/loot.json =====
-const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 8, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 16, "drops": [{"item": "bone", "chance": 0.4}]}}, "chestXp": {"wooden": 5, "iron": 10, "silver": 18, "golden": 35}, "xp": {"quest": 20, "cheer": 12, "level": 40}};
+const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
 // ===== src/config/levels.json =====
-const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": null, "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}];
+const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": null, "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}];
 // ===== src/init.js =====
 // ====================== CANVAS INIT ======================
 const canvas = document.getElementById('game');
@@ -607,7 +607,7 @@ const Mastery = {
 // The dog's RPG progression: XP → dog level → mastery points, plus skill points from
 // clearing levels. Two upgrade tracks feed off these:
 //   • skillPoints  → character stats  (skill tree, K, anytime)   — +2 per level cleared
-//   • masteryPoints → abilities       (mastery tree, between levels) — +1 per dog level
+//   • masteryPoints → abilities       (mastery tree, between levels) — +1 every 5th dog level
 // XP itself comes from defeating enemies (as pickup orbs — see xporbs.js), opening
 // chests, completing quests, cheering friends and clearing levels.
 //
@@ -625,17 +625,20 @@ const Progression = {
   get CHEER_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.cheer) || 12; },
   get LEVEL_XP(){ return (typeof LOOT_DATA!=='undefined' && LOOT_DATA.xp && LOOT_DATA.xp.level) || 40; },
 
-  // Grant XP and roll any dog level-ups. Each level grants +1 mastery point.
+  // Grant XP and roll any dog level-ups. A mastery point drops only every 5th level
+  // (5, 10, 15…) — abilities are meant to come from the first-boss unlock, not from
+  // early leveling, so the opening biome hands out no mastery points at all.
+  MASTERY_EVERY: 5,
   award(p, amount, reason){
     if(!p || !(amount>0)) return;
     p.xp = (p.xp||0) + amount;
     // Mint "+n XP" rises off the dog for every scrap of experience earned (floaters.js).
     if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-32, `+${amount} XP`, 'xp');
-    let leveled=0;
+    let leveled=0, mpGained=0;
     while(p.xp >= this.xpToNext(p.dogLevel||1)){
       p.xp -= this.xpToNext(p.dogLevel||1);
       p.dogLevel = (p.dogLevel||1) + 1;
-      p.masteryPoints = (p.masteryPoints||0) + 1;
+      if(p.dogLevel % this.MASTERY_EVERY === 0){ p.masteryPoints = (p.masteryPoints||0) + 1; mpGained++; }
       leveled++;
     }
     if(leveled>0){
@@ -643,7 +646,8 @@ const Progression = {
       if(typeof spawnLevelUpFx==='function') spawnLevelUpFx(p, p.dogLevel);
       else if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-16, '#7FE0A0', 24);
       if(typeof sfxLevelUp==='function') sfxLevelUp();
-      showToast(`⭐ Level ${p.dogLevel}! +${leveled} mastery point${leveled>1?'s':''}`, 2200);
+      const mpNote = mpGained>0 ? ` +${mpGained} mastery point${mpGained>1?'s':''}` : '';
+      showToast(`⭐ Level ${p.dogLevel}!${mpNote}`, 2200);
     }
     if(typeof updateHUD==='function') updateHUD();
   },
@@ -853,7 +857,7 @@ const Campaign = {
         { id:'meadow',      name:'Sunny Meadow',    kind:'level', real:true },
         { id:'meadow-2',    name:'Wildflower Field', kind:'level', real:true },
         { id:'meadow-3',    name:'Old Orchard Path', kind:'level', real:true },
-        { id:'meadow-boss', name:'The Badger Baron',  kind:'boss' },
+        { id:'meadow-boss', name:'The Badger Baron',  kind:'boss', real:true },
       ] },
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
       levels:[
@@ -923,6 +927,15 @@ const Campaign = {
     const env=this.envOfLevel(levelId);
     const real=env.levels.filter(l=>l.real);
     return real.length>0 && real[real.length-1].id===levelId;
+  },
+
+  // Is this level a biome boss? (Passing the first boss awakens the dog's abilities.)
+  isBoss(levelId){
+    for(const env of this.environments){
+      const l=env.levels.find(x=>x.id===levelId);
+      if(l) return l.kind==='boss';
+    }
+    return false;
   },
 };
 
@@ -2172,6 +2185,7 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
     skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
     mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
+    abilitiesUnlocked:false,   // abilities stay dormant until the first boss is passed (world-map.js)
     xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
@@ -4384,7 +4398,6 @@ Entities.register('chest', {
       const d=Math.hypot(p.x-e.x, p.y-e.y);
       const scentR=(p.stats && p.stats.scentR) || 120;
       if(d>scentR) return;                          // completely hidden
-      if(typeof Tips!=='undefined') Tips.show('chest');   // scent wisps just appeared
 
       // sniff wisps at the dog's nose — pulse faster the closer you are
       const closeness=1-d/scentR;                  // 0 far → 1 on top of it
@@ -4401,6 +4414,9 @@ Entities.register('chest', {
 
       // within reach: loose-dirt patch + pulsing "!" (npc-style prompt)
       if(d<46){
+        // Teach the treasure loop only now that the dirt pile is actually on screen — firing
+        // it earlier (at mere scent range) described a dig spot the player couldn't see yet.
+        if(typeof Tips!=='undefined') Tips.show('chest');
         ctx.save();
         ctx.globalAlpha=0.85;
         ctx.fillStyle='#A98456';
@@ -5273,9 +5289,31 @@ const Abilities = {
 
   update(p, dt){
     if(p.abilityCd) for(const id in p.abilityCd){ if(p.abilityCd[id]>0) p.abilityCd[id]=Math.max(0, p.abilityCd[id]-dt); }
+    // Abilities are dormant until the first boss awakens them (p.abilitiesUnlocked). Until
+    // then they don't run at all — pressing Q/E just nudges the player toward the boss.
+    if(!p.abilitiesUnlocked){
+      (p.abilities||[]).forEach((id,slot)=>{
+        if(typeof Input!=='undefined' && Input.held('ability'+(slot+1))) this._lockedHint();
+      });
+      return;
+    }
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });
+  },
+  _lockedHint(){
+    const now=(typeof performance!=='undefined') ? performance.now() : 0;
+    if(this._lockT && now-this._lockT<2600) return;
+    this._lockT=now;
+    if(typeof showToast==='function') showToast('🔒 Your abilities awaken after the first boss…', 1800);
+  },
+
+  // Set once, when the first boss is passed: every future level can use abilities (at their
+  // current mastery rank — level 0 to start, the gentlest tier).
+  unlockAbilities(p){
+    if(!p || p.abilitiesUnlocked) return false;
+    p.abilitiesUnlocked = true;
+    return true;
   },
   drawWorld(t){ for(const id in this._defs){ const d=this._defs[id]; if(d.drawWorld) d.drawWorld(t); } },
   drawOnDog(p, x, by){
@@ -5300,7 +5338,8 @@ const Abilities = {
   let shots  = [];     // flying balls: { x,y, sx,sy, tx,ty, prog, dur, target }
 
   const LOAD_R  = 48;  // stand this close to load / auto-reload
-  const PARAMS  = {    // per skill level (index = level)
+  const PARAMS  = {    // per mastery level (index = level; 0 = the freshly-unlocked base tier)
+    0: { cap:1, range:140, dmg:1, fireMs:1800, autoReload:false },
     1: { cap:1, range:180, dmg:2, fireMs:1400, autoReload:false },
     2: { cap:3, range:180, dmg:2, fireMs:1000, autoReload:false },
     3: { cap:3, range:260, dmg:3, fireMs:1000, autoReload:true  },
@@ -5311,7 +5350,7 @@ const Abilities = {
     return null;
   }
   function skillLevel(p){ return (typeof Skills!=='undefined' && p) ? Skills.level(p,'cannon') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, skillLevel(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, skillLevel(p)))]; }
   // Magazine capacity including equipment abilityMods (e.g. Ball Cap +1).
   function capOf(p){ return (typeof Equip!=='undefined') ? Equip.abilityMod(p,'cannon','capacity', params(p).cap) : params(p).cap; }
 
@@ -5320,11 +5359,7 @@ const Abilities = {
 
   // Q pressed (registry routes the ability trigger here via onTrigger).
   function place(p){
-    const lvl=skillLevel(p);
-    if(lvl<1){
-      showToast(`🎓 Unlock Ball Cannon in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'ballCannon');
     if(cd>0){ showToast(`⏳ Cannon recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
     Abilities.startCd(p,'ballCannon',2000);   // placement feels deliberate, not spammy
@@ -5342,7 +5377,7 @@ const Abilities = {
   //   'full'   — near the cannon but the magazine is full (ball kept, toast shown)
   //   false    — no cannon / not near it (caller falls back to play-flavor)
   function tryLoadBall(p){
-    if(!cannon || !Abilities.playerHas(p,'ballCannon') || skillLevel(p)<1) return false;
+    if(!cannon || !Abilities.playerHas(p,'ballCannon') || !p.abilitiesUnlocked) return false;
     if(Math.hypot(p.x-cannon.x, p.y-cannon.y)>LOAD_R) return false;
     const cap=capOf(p);
     if(cannon.mag>=cap){ showToast(`🎾 Magazine full (${cannon.mag}/${cap})`, 1200); return 'full'; }
@@ -5573,6 +5608,7 @@ const Abilities = {
 
 (function(){
   const PARAMS={
+    0:{ dur:6000,  boltMs:4200, dmg:2, speedMul:1.10, fear:0,   chain:false, cdMs:52000 },
     1:{ dur:8000,  boltMs:3500, dmg:4, speedMul:1.15, fear:0,   chain:false, cdMs:45000 },
     2:{ dur:10000, boltMs:2500, dmg:4, speedMul:1.15, fear:160, chain:false, cdMs:45000 },
     3:{ dur:12000, boltMs:2000, dmg:5, speedMul:1.25, fear:160, chain:true,  cdMs:40000 },
@@ -5587,7 +5623,7 @@ const Abilities = {
     return null;
   }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'stormfang') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   // Exposed so update.js can apply the speed buff.
   function speedMul(p){ return (p && p.wolfT>0) ? params(p).speedMul : 1; }
 
@@ -5595,11 +5631,7 @@ const Abilities = {
   function reset(){ boltCd=0; bolts=[]; rain=null; flashT=0; nextFlash=0; if(p1) p1.wolfT=0; }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){
-      showToast(`🎓 Unlock Storm Fang in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'stormFang');
     if(cd>0){ showToast(`⏳ Storm Fang recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -5739,6 +5771,7 @@ const Abilities = {
 
 (function(){
   const PARAMS={
+    0:{ dur:9000,  dmg:1, chain:false, cdMs:48000 },
     1:{ dur:12000, dmg:2, chain:false, cdMs:40000 },
     2:{ dur:16000, dmg:3, chain:false, cdMs:40000 },
     3:{ dur:16000, dmg:3, chain:true,  cdMs:32000 },
@@ -5754,14 +5787,10 @@ const Abilities = {
   function reset(){}   // the spirit is an entity — Entities.clear() handles level changes
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){
-      showToast(`🎓 Unlock Spirit of the Storm in the Ability Mastery tree (between levels)`, 2200);
-      return;
-    }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'spiritWolf');
     if(cd>0){ showToast(`⏳ Spirit of the Storm recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
-    const cfg=PARAMS[Math.min(3, L)];
+    const cfg=PARAMS[Math.min(3, Math.max(0, lvl(p)))];
     // one spirit at a time — re-summoning replaces the old one
     const old=entities.find(e=>e.kind==='spiritwolf');
     if(old) Entities.remove(old);
@@ -5797,6 +5826,7 @@ const Abilities = {
 
 (function(){
   const PARAMS={
+    0:{ dur:2000, pulseMs:600, dmg:1, radius:80,  fear:0,    cdMs:24000 },
     1:{ dur:2500, pulseMs:500, dmg:2, radius:95,  fear:0,    cdMs:20000 },
     2:{ dur:3000, pulseMs:500, dmg:2, radius:115, fear:0.25, cdMs:20000 },
     3:{ dur:3500, pulseMs:500, dmg:3, radius:135, fear:0.45, cdMs:18000 },
@@ -5805,14 +5835,13 @@ const Abilities = {
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scream')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scream') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
 
   function spawn(){}
   function reset(){ pulseCd=0; rings=[]; if(p1) p1.screamT=0; }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Piercing Scream in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'scream');
     if(cd>0){ showToast(`⏳ Scream recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -5880,6 +5909,7 @@ const Abilities = {
 
 (function(){
   const PARAMS={
+    0:{ dur:5000,  speedMul:1.15, dmg:1, heal:1, cdMs:34000 },
     1:{ dur:6000,  speedMul:1.25, dmg:2, heal:1, cdMs:30000 },
     2:{ dur:8000,  speedMul:1.25, dmg:3, heal:2, cdMs:30000 },
     3:{ dur:10000, speedMul:1.35, dmg:3, heal:2, cdMs:26000 },
@@ -5888,15 +5918,14 @@ const Abilities = {
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'innerMonster')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'monster') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   function speedMul(p){ return (p && p.monsterT>0) ? params(p).speedMul : 1; }
 
   function spawn(){}
   function reset(){ if(p1){ p1.monsterT=0; p1.meleeCd=0; } }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Inner Monster in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'innerMonster');
     if(cd>0){ showToast(`⏳ Inner Monster recharging (${Math.ceil(cd/1000)}s)`, 1400); return; }
     const cfg=params(p);
@@ -5959,6 +5988,7 @@ const Abilities = {
 (function(){
   const DASH_MS=180;
   const PARAMS={
+    0:{ dist:70,  invulnExtra:90,  burstMs:0,    cdMs:11000 },
     1:{ dist:90,  invulnExtra:120, burstMs:0,    cdMs:9000 },
     2:{ dist:120, invulnExtra:150, burstMs:0,    cdMs:7000 },
     3:{ dist:120, invulnExtra:150, burstMs:1000, cdMs:5000 },
@@ -5967,7 +5997,7 @@ const Abilities = {
 
   function owner(){ for(const p of Game.players){ if(Abilities.playerHas(p,'scurry')) return p; } return null; }
   function lvl(p){ return (typeof Skills!=='undefined') ? Skills.level(p,'scurry') : 0; }
-  function params(p){ return PARAMS[Math.min(3, Math.max(1, lvl(p)))]; }
+  function params(p){ return PARAMS[Math.min(3, Math.max(0, lvl(p)))]; }
   // L3 leaves a brief speed burst after the dash (p.scurryBurstT).
   function speedMul(p){ return (p && p.scurryBurstT>0) ? 1.3 : 1; }
 
@@ -5975,8 +6005,7 @@ const Abilities = {
   function reset(){ if(p1){ p1.dashT=0; p1.dashVX=0; p1.dashVY=0; p1.scurryBurstT=0; } }
 
   function activate(p){
-    const L=lvl(p);
-    if(L<1){ showToast(`🎓 Unlock Scurry in the Ability Mastery tree (between levels)`, 2200); return; }
+    if(!p.abilitiesUnlocked) return;   // dormant until the first boss (registry hints on press)
     const cd=Abilities.cdLeft(p,'scurry');
     if(cd>0){ showToast(`⏳ Scurry recharging (${Math.ceil(cd/1000)}s)`, 1200); return; }
     const cfg=params(p);
@@ -6020,6 +6049,13 @@ const Abilities = {
 QUEST_TYPES['cheer-all'] = {
   describe(){ return `Cheered ${Game.cheeredCount}/${friends.length} friends`; },
   isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
+};
+
+// 'none' — no win condition. Used by the first-boss test level, which just walks you to an
+// auto-spawned portal (level-manager _armExit) with no reward flow (checkWin never fires).
+QUEST_TYPES['none'] = {
+  describe(){ return 'Walk to the portal'; },
+  isComplete(){ return false; },
 };
 
 // ---- helpers ----
@@ -6075,6 +6111,7 @@ function buildCollectibles(spec){
       spawn: cfg.spawn,
       next: cfg.next || null,
       theme: cfg.theme,
+      autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -6115,6 +6152,21 @@ function buildCollectibles(spec){
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);
+
+        // 6) auto-portal (boss test level): drop the exit portal right on entry so you can
+        // walk straight through — no win condition needed. Works on every entry path
+        // (play-through, save-load, dev jump). On a revisit the saved portal is restored
+        // over this one, so there's never a duplicate.
+        if(cfg.autoPortal){
+          const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(cfg.id) : null;
+          const nextLvl=cfg.next && Levels.get(cfg.next);
+          const nextEnv=(nextLvl && typeof Campaign!=='undefined') ? Campaign.envOfLevel(nextLvl.id) : null;
+          const spawn=cfg.spawn || { x:200, y:200 };
+          const spot={ x:clamp(spawn.x+110, 80, WORLD_W-80), y:clamp(spawn.y+40, 80, WORLD_H-80) };
+          if(typeof nudgeOutOfWater==='function') nudgeOutOfWater(spot, 40);
+          Entities.spawn('portal', { x:spot.x, y:spot.y, levelId:cfg.id,
+            colA:(env&&env.color)||'#9B7EC8', colB:'#FFD93D', icon:(nextEnv&&nextEnv.icon)||'✨' });
+        }
       },
 
       quest: {
@@ -6317,6 +6369,8 @@ const LevelManager = {
     let portal=null;
     entities.forEach(e=>{ if(e.kind==='portal'){ e.used=false; portal=e; } });
     const cleared=(typeof Progress!=='undefined') && Progress.isDone(lvl.id);
+    // A cleared level keeps its portal. (autoPortal levels spawn their own in generate(),
+    // so they already have one here — this just re-arms it above.)
     if(!cleared || portal) return;
     const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(lvl.id) : null;
     const nextLvl=lvl.next && Levels.get(lvl.next);
@@ -6672,8 +6726,8 @@ const Tips = {
       body:"A glowing “!” means an animal has a task for you. Hear them out, bring what they ask, and return for a reward. Accepted tasks show at the top-left, or press the quest key to open your journal." },
     enemy:    { icon:'⚔️', title:'Enemies & Hearts',
       body:"Not everyone is friendly — some critters bite, and each hit costs you a heart (top bar). Keep your distance, or fight back with your abilities. If every heart runs out your dog faints, so carry a biscuit or two to heal!" },
-    ability:  { icon:'⚡', title:'Abilities',
-      body:"That was one of your dog's special abilities! Each has a cooldown, shown sweeping over its hotbar slot. Every breed plays differently — unlock and rank up abilities in the 🎓 Mastery tree between levels." },
+    ability:  { icon:'⚡', title:'Abilities Awakened!',
+      body:"Clearing the boss awakened your dog's special abilities! Press Q and E to use them — each has a cooldown shown on its hotbar slot. They start at their gentlest tier; spend 🎓 mastery points (earned every 5 levels) in the new Mastery tree to rank them up." },
     wearable: { icon:'🎩', title:'Wearables',
       body:"Gear isn't just for looks. Open your inventory and drag a hat, scarf, coat or cape onto your dog to wear it — most pieces also grant stat bonuses like extra health, speed or quieter steps." },
     levelup:  { icon:'⭐', title:'Leveling Up',
@@ -6798,6 +6852,7 @@ const Save = {
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
              skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
              mastery:Object.assign({}, p.mastery), masteryPoints:p.masteryPoints||0,
+             abilitiesUnlocked:!!p.abilitiesUnlocked,
              xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
@@ -6897,6 +6952,9 @@ const Save = {
       pl.skillPoints = sp.skillPoints || 0;
       pl.mastery = sp.mastery || {};
       pl.masteryPoints = sp.masteryPoints || 0;
+      // Abilities are unlocked if the save says so, or (back-compat for saves made before
+      // the boss unlock existed) if any ability was already ranked up.
+      pl.abilitiesUnlocked = !!sp.abilitiesUnlocked || Object.keys(pl.mastery).some(k=>pl.mastery[k]>0);
       pl.xp = sp.xp || 0;
       pl.dogLevel = sp.dogLevel || 1;
       if(typeof Mastery!=='undefined') Mastery.migrate(pl);   // pre-split saves: skills→mastery
@@ -7049,7 +7107,11 @@ const UI = {
       btn.title = pts>0 ? `${label} — ${pts} point${pts>1?'s':''} to spend!` : label;
     };
     mark('btnTreeSkills',  p1.skillPoints||0,   'Skill tree (K)');
-    mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
+    // The mastery button stays hidden until abilities are unlocked at the first boss — the
+    // whole ability screen is out of reach before then.
+    const mBtn=this.$('btnTreeMastery');
+    if(mBtn) mBtn.style.display = p1.abilitiesUnlocked ? '' : 'none';
+    if(p1.abilitiesUnlocked) mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -7162,6 +7224,11 @@ const UI = {
     this.openMastery();
   },
   openMastery(){
+    // The ability screen can't be opened until the first boss awakens your abilities.
+    if(!p1 || !p1.abilitiesUnlocked){
+      if(typeof showToast==='function') showToast('🔒 Ability mastery unlocks after you clear the first boss.', 2400);
+      return;
+    }
     this.closeInventory();
     if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
@@ -7516,13 +7583,14 @@ const UI = {
       const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      // An ability the dog carries but hasn't unlocked yet (mastery level 0) shows as
-      // an empty slot pointing at the mastery tree. Gating is data-driven via def.skillNode.
-      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
-      const learned=def && lvl>0;
+      // Abilities are dormant until the first boss awakens them (p1.abilitiesUnlocked);
+      // after that they're usable at their mastery rank (0 = the base tier). A carried but
+      // still-dormant ability shows as an empty slot that points at the boss.
+      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?0:0);
+      const learned=!!(def && p1 && p1.abilitiesUnlocked);
       const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
       const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — unlock it in the 🎓 Mastery tree (between levels)`
+                : def ? `${def.name} — awakens after you clear the first boss`
                 : emptyLabel;
       html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
@@ -8048,6 +8116,19 @@ const WorldMap = {
   // Show the map after finishing (or revisiting and re-exiting) `finishedLevelId`.
   showAfter(finishedLevelId){
     Progress.markComplete(finishedLevelId);
+
+    // Passing a biome boss awakens the dog's abilities (they were dormant until now). The
+    // first time this happens, unlock them and introduce them with a tip. The mastery
+    // button only appears from here on.
+    const justBeatBoss = (typeof Campaign!=='undefined') && Campaign.isBoss(finishedLevelId);
+    let abilitiesJustUnlocked = false;
+    if(justBeatBoss && typeof Abilities!=='undefined' && Abilities.unlockAbilities){
+      abilitiesJustUnlocked = Abilities.unlockAbilities(p1);
+      if(abilitiesJustUnlocked && typeof Skills!=='undefined') Skills.apply(p1);
+    }
+    const wmM=document.getElementById('wmMastery');
+    if(wmM) wmM.style.display = (p1 && p1.abilitiesUnlocked) ? 'inline-block' : 'none';
+
     this._nextId = this._nextUncleared(finishedLevelId);
     const focusLevel = this._nextId || finishedLevelId;
     this._focusIndex = Campaign.envIndexOfLevel(focusLevel);
@@ -8059,7 +8140,10 @@ const WorldMap = {
     this._configButtons();
     this._renderDetail();
     if(typeof UI!=='undefined'){ UI._show('worldMapScreen', true); UI.showSeed && UI.showSeed('wmSeed'); }
-    if(typeof Tips!=='undefined') Tips.show('worldmap');
+    if(typeof Tips!=='undefined'){
+      Tips.show('worldmap');
+      if(abilitiesJustUnlocked) Tips.show('ability');   // introduce the freshly-awakened abilities
+    }
     this._wire();
     this._start();
 

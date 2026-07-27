@@ -16,6 +16,13 @@ QUEST_TYPES['cheer-all'] = {
   isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
 };
 
+// 'none' — no win condition. Used by the first-boss test level, which just walks you to an
+// auto-spawned portal (level-manager _armExit) with no reward flow (checkWin never fires).
+QUEST_TYPES['none'] = {
+  describe(){ return 'Walk to the portal'; },
+  isComplete(){ return false; },
+};
+
 // ---- helpers ----
 // Resolve a placement to absolute world coords. Supports absolute {x,y}, fractional
 // {fx,fy} (of the current WORLD_W/H), and {onWater:{kind,index,dx,dy,dyEdge}} which pins
@@ -69,6 +76,7 @@ function buildCollectibles(spec){
       spawn: cfg.spawn,
       next: cfg.next || null,
       theme: cfg.theme,
+      autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -109,6 +117,21 @@ function buildCollectibles(spec){
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);
+
+        // 6) auto-portal (boss test level): drop the exit portal right on entry so you can
+        // walk straight through — no win condition needed. Works on every entry path
+        // (play-through, save-load, dev jump). On a revisit the saved portal is restored
+        // over this one, so there's never a duplicate.
+        if(cfg.autoPortal){
+          const env=(typeof Campaign!=='undefined') ? Campaign.envOfLevel(cfg.id) : null;
+          const nextLvl=cfg.next && Levels.get(cfg.next);
+          const nextEnv=(nextLvl && typeof Campaign!=='undefined') ? Campaign.envOfLevel(nextLvl.id) : null;
+          const spawn=cfg.spawn || { x:200, y:200 };
+          const spot={ x:clamp(spawn.x+110, 80, WORLD_W-80), y:clamp(spawn.y+40, 80, WORLD_H-80) };
+          if(typeof nudgeOutOfWater==='function') nudgeOutOfWater(spot, 40);
+          Entities.spawn('portal', { x:spot.x, y:spot.y, levelId:cfg.id,
+            colA:(env&&env.color)||'#9B7EC8', colB:'#FFD93D', icon:(nextEnv&&nextEnv.icon)||'✨' });
+        }
       },
 
       quest: {

@@ -18,7 +18,7 @@ const Campaign = {
         { id:'meadow',      name:'Sunny Meadow',    kind:'level', real:true },
         { id:'meadow-2',    name:'Wildflower Field', kind:'level', real:true },
         { id:'meadow-3',    name:'Old Orchard Path', kind:'level', real:true },
-        { id:'meadow-boss', name:'The Badger Baron',  kind:'boss' },
+        { id:'meadow-boss', name:'The Badger Baron',  kind:'boss', real:true },
       ] },
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
       levels:[
@@ -88,6 +88,15 @@ const Campaign = {
     const env=this.envOfLevel(levelId);
     const real=env.levels.filter(l=>l.real);
     return real.length>0 && real[real.length-1].id===levelId;
+  },
+
+  // Is this level a biome boss? (Passing the first boss awakens the dog's abilities.)
+  isBoss(levelId){
+    for(const env of this.environments){
+      const l=env.levels.find(x=>x.id===levelId);
+      if(l) return l.kind==='boss';
+    }
+    return false;
   },
 };
 

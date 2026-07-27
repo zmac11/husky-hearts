@@ -65,7 +65,11 @@ const UI = {
       btn.title = pts>0 ? `${label} — ${pts} point${pts>1?'s':''} to spend!` : label;
     };
     mark('btnTreeSkills',  p1.skillPoints||0,   'Skill tree (K)');
-    mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
+    // The mastery button stays hidden until abilities are unlocked at the first boss — the
+    // whole ability screen is out of reach before then.
+    const mBtn=this.$('btnTreeMastery');
+    if(mBtn) mBtn.style.display = p1.abilitiesUnlocked ? '' : 'none';
+    if(p1.abilitiesUnlocked) mark('btnTreeMastery', p1.masteryPoints||0, 'Ability mastery');
   },
 
   // ---------- quest tracker (always-visible list of accepted quests) ----------
@@ -178,6 +182,11 @@ const UI = {
     this.openMastery();
   },
   openMastery(){
+    // The ability screen can't be opened until the first boss awakens your abilities.
+    if(!p1 || !p1.abilitiesUnlocked){
+      if(typeof showToast==='function') showToast('🔒 Ability mastery unlocks after you clear the first boss.', 2400);
+      return;
+    }
     this.closeInventory();
     if(this.skillsOpen) this.closeSkills();     // the two trees never stack
     this.masteryOpen=true;
@@ -532,13 +541,14 @@ const UI = {
       const ult=(i===2);
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
-      // An ability the dog carries but hasn't unlocked yet (mastery level 0) shows as
-      // an empty slot pointing at the mastery tree. Gating is data-driven via def.skillNode.
-      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?1:0);
-      const learned=def && lvl>0;
+      // Abilities are dormant until the first boss awakens them (p1.abilitiesUnlocked);
+      // after that they're usable at their mastery rank (0 = the base tier). A carried but
+      // still-dormant ability shows as an empty slot that points at the boss.
+      const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?0:0);
+      const learned=!!(def && p1 && p1.abilitiesUnlocked);
       const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
       const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — unlock it in the 🎓 Mastery tree (between levels)`
+                : def ? `${def.name} — awakens after you clear the first boss`
                 : emptyLabel;
       html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`

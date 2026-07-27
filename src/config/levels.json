@@ -109,7 +109,7 @@
     "seed": 20241,
     "size": { "w": 1760, "h": 1200 },
     "spawn": { "x": 200, "y": 200 },
-    "next": "rocky",
+    "next": "meadow-boss",
     "theme": {
       "grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982",
       "dirt": "rgba(196,150,96,0.18)",
@@ -162,6 +162,35 @@
     ],
     "chests": ["wooden", "wooden", "iron", "silver"],
     "quest": { "type": "cheer-all", "label": "Cheer up every friend in the orchard" }
+  },
+
+  {
+    "id": "meadow-boss",
+    "name": "The Badger Baron",
+    "seed": 30011,
+    "size": { "w": 1280, "h": 960 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "rocky",
+    "autoPortal": true,
+    "theme": {
+      "grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E",
+      "dirt": "rgba(150,110,70,0.20)",
+      "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40",
+      "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"
+    },
+    "terrain": "meadow",
+    "collectibles": { "count": 6, "types": ["bone", "heart"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42,
+        "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"
+      }
+    ],
+    "enemies": [],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "none", "label": "Reach the Badger Baron's den" }
   },
 
   {
