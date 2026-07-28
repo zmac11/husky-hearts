@@ -63,6 +63,7 @@ LOAD_ORDER = [
     'levels/cliffside.js',  # 'cliffside' switchback-climb terrain (Rocky Mountains 3)
     'levels/mossytrail.js', # 'mossytrail' dark-forest terrain (Whispering Woods 1)
     'levels/fungushollow.js', # 'fungushollow' branching cave terrain (Whispering Woods 2)
+    'levels/fireflygrove.js', # 'fireflygrove' moonlit-shrine terrain (Whispering Woods 3)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -81,6 +82,8 @@ LOAD_ORDER = [
     'entities/sporecloud.js', # poison zone (Fungus Hollow)
     'entities/toadstool.js',  # ranged spore spitter (Fungus Hollow)
     'entities/mooncap.js',    # Mooncap quest pickup (Fungus Hollow)
+    'entities/shrinelantern.js', # relightable shrine lantern (Firefly Grove rite)
+    'entities/patrol.js',     # sweeping sight-cone stealth threat (Firefly Grove)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
@@ -95,6 +98,7 @@ LOAD_ORDER = [
     'abilities/scream.js',      # Lolla E: piercing AOE scream
     'abilities/innerMonster.js',# Ťapka Q: feral melee transform + lifesteal
     'abilities/scurry.js',      # Ťapka E: evasive dash + i-frames
+    'abilities/ultimate.js',    # R Ultimate (Moonburst) — awoken by the Moonlit Rite
     'levels/from-config.js', # register levels from LEVELS_DATA (needs terrain/augment fns + Chests)
     'level-state.js',     # per-level dynamic state so visited levels stay as you left them
     'level-manager.js',   # LevelManager.load/enter (build world + themed ground)

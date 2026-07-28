@@ -44,7 +44,7 @@ const Save = {
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
              skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
              mastery:Object.assign({}, p.mastery), masteryPoints:p.masteryPoints||0,
-             abilitiesUnlocked:!!p.abilitiesUnlocked,
+             abilitiesUnlocked:!!p.abilitiesUnlocked, ultimateUnlocked:!!p.ultimateUnlocked,
              xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
@@ -147,6 +147,7 @@ const Save = {
       // Abilities are unlocked if the save says so, or (back-compat for saves made before
       // the boss unlock existed) if any ability was already ranked up.
       pl.abilitiesUnlocked = !!sp.abilitiesUnlocked || Object.keys(pl.mastery).some(k=>pl.mastery[k]>0);
+      pl.ultimateUnlocked = !!sp.ultimateUnlocked;
       pl.xp = sp.xp || 0;
       pl.dogLevel = sp.dogLevel || 1;
       if(typeof Mastery!=='undefined') Mastery.migrate(pl);   // pre-split saves: skills→mastery

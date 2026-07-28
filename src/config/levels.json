@@ -389,7 +389,7 @@
     "seed": 40631,
     "size": { "w": 1900, "h": 1400 },
     "spawn": { "x": 180, "y": 700 },
-    "next": null,
+    "next": "woods-3",
     "theme": {
       "grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047",
       "dirt": "rgba(40,60,40,0.28)",
@@ -422,5 +422,45 @@
     "mooncap": { "fx": 0.72, "fy": 0.5 },
     "chests": ["iron", "silver"],
     "quest": { "type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble" }
+  },
+
+  {
+    "id": "woods-3",
+    "name": "Firefly Grove",
+    "seed": 41077,
+    "size": { "w": 1700, "h": 1300 },
+    "spawn": { "x": 210, "y": 650 },
+    "next": null,
+    "unlockUltimate": true,
+    "theme": {
+      "grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578",
+      "dirt": "rgba(60,60,100,0.24)",
+      "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A",
+      "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"
+    },
+    "terrain": "fireflygrove",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "flower"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.3,
+        "greeting": "Old moon-magic sleeps in these lanterns, pup. Light all three of the shrine — mind the shadow that walks — and it will wake the power within you."
+      },
+      {
+        "name": "Marla the Merchant", "fx": 0.16, "fy": 0.72,
+        "greeting": "Fancy meeting you this deep! A snack before the shrine?",
+        "wares": [ { "id": "feast", "cost": 8 }, { "id": "biscuit", "cost": 3 }, { "id": "antidote", "cost": 4 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "patrol", "fx": 0.5, "fy": 0.5, "range": 340 }
+    ],
+    "shrinelanterns": [
+      { "fx": 0.5,  "fy": 0.36 },
+      { "fx": 0.62, "fy": 0.62 },
+      { "fx": 0.38, "fy": 0.62 }
+    ],
+    "chests": ["silver"],
+    "quest": { "type": "ritual", "label": "Complete the Moonlit Rite" }
   }
 ]

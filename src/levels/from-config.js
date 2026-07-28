@@ -35,6 +35,18 @@ QUEST_TYPES['kindle'] = {
   isComplete(){ const f=this._fires(); return f.total>0 && f.lit>=f.total; },
 };
 
+// 'ritual' — light every shrine lantern (entities/shrinelantern.js). The Moonlit Rite in
+// Firefly Grove; completing it (a level flagged `unlockUltimate`) awakens the R Ultimate.
+QUEST_TYPES['ritual'] = {
+  _lamps(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='shrinelantern');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const l=this._lamps(); return `Shrine lanterns lit ${l.lit}/${l.total}`; },
+  isComplete(){ const l=this._lamps(); return l.total>0 && l.lit>=l.total; },
+};
+
 // 'defeat' — clear the level's guardians (enemies). Cliffside Climb's gauntlet: drive off
 // every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
 // enemy-less level from counting as instantly won.
@@ -122,6 +134,7 @@ function buildCollectibles(spec){
       autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
       cold: !!cfg.cold,               // drives the warmth-survival meter (warmth.js)
       dark: !!cfg.dark,               // drives the darkness/light overlay (darkness.js)
+      unlockUltimate: !!cfg.unlockUltimate,   // clearing this level awakens the R Ultimate
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -176,6 +189,10 @@ function buildCollectibles(spec){
         (cfg.lanterns||[]).forEach(l=>{
           const p=_resolvePos(l); if(!p) return;
           Entities.spawn('lanternpost', { x:p.x, y:p.y });
+        });
+        (cfg.shrinelanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('shrinelantern', { x:p.x, y:p.y, lit:!!l.lit });
         });
         (cfg.sporeclouds||[]).forEach(s=>{
           const p=_resolvePos(s); if(!p) return;

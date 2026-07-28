@@ -31,7 +31,7 @@ const Campaign = {
       levels:[
         { id:'woods-1', name:'Mossy Trail',   kind:'level', real:true },
         { id:'woods-2', name:'Fungus Hollow', kind:'level', real:true },
-        { id:'woods-3', name:'Firefly Grove', kind:'level' },
+        { id:'woods-3', name:'Firefly Grove', kind:'level', real:true },
         { id:'woods-boss', name:'The Old Grizzly', kind:'boss' },
       ] },
     { id:'cove', name:'Seashell Cove', icon:'🏖️', color:'#F0D9A8', boss:'The Giant Hermit Crab',

@@ -24,11 +24,12 @@ const Darkness = {
 
   _hasTorch(p){ return !!(p && p.equipment && Object.keys(p.equipment).some(s=>p.equipment[s]==='torch')); },
 
-  // Standing light sources in the world (lantern posts). NOT the dog's own glow.
+  // Standing light sources in the world — any entity carrying a positive `lightR` (lantern
+  // posts, lit shrine lanterns, …). NOT the dog's own glow.
   _worldLights(){
     const L=[];
     const es=(typeof entities!=='undefined' && entities) ? entities : [];
-    es.forEach(e=>{ if(e.kind==='lanternpost' && e.lit!==false) L.push({ x:e.x, y:e.y-8, r:this.LANTERN_R }); });
+    es.forEach(e=>{ if(e && e.lightR>0 && e.lit!==false) L.push({ x:e.x, y:e.y-8, r:e.lightR }); });
     return L;
   },
   // Everything that lights the scene = world lights + the dog's own glow (used for rendering).

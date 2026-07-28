@@ -226,7 +226,18 @@ chains**, and the payoff — the **Ultimate (R)** unlock at Firefly Grove.
   `terrain:"fungushollow"`, `enemies:[{kind:"toadstool",…}×n, {kind:"myconid",…}]`,
   `quest:{type:"fetch-from", label:"Fetch the Mooncap for Bramble"}`.
 
-## 3·3 — Firefly Grove *(new)*
+## 3·3 — Firefly Grove *(implemented — first build)*
+
+> **Status:** shipped. The **Moonlit Rite** (relight three **shrine lanterns** → new `ritual`
+> clear), the **patrol** stealth threat (sweeps a sight cone; catching you shoves you back and
+> snuffs the nearest lit lantern), the moonlit `fireflygrove` terrain (butterflies as
+> fireflies, the Grove Guardian + Marla), and — the payoff — the **Ultimate (R) unlock**: an
+> `ultimateUnlocked` flag (checkWin sets it on a `unlockUltimate` level), the reserved **R**
+> slot wired to a generic **Moonburst** ultimate (AOE + self-heal + brief i-frames, long
+> cooldown), the hotbar R slot, and an "Ultimate Awakened!" tip. *Deferred to a follow-up:*
+> per-breed ultimates (Moonburst is shared for now), leading firefly swarms to the lanterns
+> (relight is stand-close for now), and a moonlit-dim darkness pass (the grove uses normal
+> lighting so the patrol cone reads clearly).
 
 - **Role.** **The Moonlit Rite → Ultimate (R) unlock**; a stealth-ritual climax before the
   Grizzly. The biome's power payoff.

@@ -5,7 +5,8 @@
 
 Entities.register('lanternpost', {
   radius: 0,
-  init(e){ e.lit = (e.lit!==false); e._fl = rand(0, Math.PI*2); },
+  init(e){ e.lit = (e.lit!==false); e._fl = rand(0, Math.PI*2);
+    e.lightR = (typeof Darkness!=='undefined') ? Darkness.LANTERN_R : 82; },
 
   draw(e, t){
     const x=Math.round(e.x), y=Math.round(e.y);

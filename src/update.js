@@ -142,6 +142,13 @@ function checkWin(){
   // Clearing the level grants skill points (stats) + level-clear XP — fires once, here,
   // guarded by the portal check above.
   if(typeof Progression!=='undefined') Progression.onLevelCleared(p1);
+  // Completing the Moonlit Rite (a level flagged `unlockUltimate`) awakens the R Ultimate,
+  // mirroring how the first boss awakened Q/E — a story-driven power milestone.
+  if(lvl.unlockUltimate && p1 && !p1.ultimateUnlocked){
+    p1.ultimateUnlocked=true;
+    if(typeof Tips!=='undefined') Tips.show('ultimate');
+    if(typeof updateHUD==='function') updateHUD();
+  }
   // The world keeps playing: a biome-themed exit portal appears near the dog, and the
   // player walks into it to reveal the journey map (portal.js runs the old flow).
   // On a biome's final level a golden chest materialises beside it.

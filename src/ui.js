@@ -562,19 +562,21 @@ const UI = {
     // 0/1 are the standard abilities (Q/E); slot 2 is the ULTIMATE (R), styled apart.
     const abilities=(p1&&p1.abilities)||[];
     for(let i=0;i<3;i++){
-      const id=abilities[i];
-      const def=Abilities.get(id);
       const ult=(i===2);
+      // The R slot is the Ultimate (awoken at the Moonlit Rite); Q/E come from the breed.
+      let id=abilities[i], def=Abilities.get(id);
+      if(ult){ id='ultimate'; def=Abilities.get('ultimate'); }
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
       // Abilities are dormant until the first boss awakens them (p1.abilitiesUnlocked);
       // after that they're usable at their mastery rank (0 = the base tier). A carried but
-      // still-dormant ability shows as an empty slot that points at the boss.
+      // still-dormant ability shows as an empty slot that points at the boss. The Ultimate
+      // gates on its own p1.ultimateUnlocked instead.
       const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?0:0);
-      const learned=!!(def && p1 && p1.abilitiesUnlocked);
-      const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
-      const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — awakens after you clear the first boss`
+      const learned = ult ? !!(p1 && p1.ultimateUnlocked) : !!(def && p1 && p1.abilitiesUnlocked);
+      const emptyLabel=ult ? 'Ultimate — awakens at the Moonlit Rite' : 'No ability yet';
+      const title=learned ? `${def.name||'Ability'}${(def&&def.skillNode)?' L'+lvl:''} — press ${key}`
+                : (def && !ult) ? `${def.name} — awakens after you clear the first boss`
                 : emptyLabel;
       html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
