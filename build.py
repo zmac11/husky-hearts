@@ -85,6 +85,7 @@ LOAD_ORDER = [
     'entities/shrinelantern.js', # relightable shrine lantern (Firefly Grove rite)
     'entities/patrol.js',     # sweeping sight-cone stealth threat (Firefly Grove)
     'entities/alphawolf.js',  # Rocky Mountains boss (phased: lunge + interruptible howl)
+    'entities/grizzly.js',    # Whispering Woods boss (phased: ground-slam + charge)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers

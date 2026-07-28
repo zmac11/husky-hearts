@@ -430,7 +430,7 @@
     "seed": 41077,
     "size": { "w": 1700, "h": 1300 },
     "spawn": { "x": 210, "y": 650 },
-    "next": null,
+    "next": "woods-boss",
     "unlockUltimate": true,
     "theme": {
       "grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578",
@@ -492,5 +492,35 @@
     "critters": [],
     "chests": [],
     "quest": { "type": "defeat", "label": "Defeat the Alpha Wolf" }
+  },
+
+  {
+    "id": "woods-boss",
+    "name": "The Old Grizzly",
+    "seed": 41903,
+    "size": { "w": 1500, "h": 1150 },
+    "spawn": { "x": 750, "y": 1030 },
+    "next": null,
+    "theme": {
+      "grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578",
+      "dirt": "rgba(60,60,100,0.24)",
+      "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A",
+      "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"
+    },
+    "terrain": "fireflygrove",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.94,
+        "greeting": "The old bear wakes, pup. It's slow but heavy — when it rears to slam, get clear of the ring; when it paws the ground, step aside. Show it the moonlight in you."
+      }
+    ],
+    "enemies": [
+      { "kind": "grizzly", "fx": 0.5, "fy": 0.32, "maxHp": 44 }
+    ],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Defeat the Old Grizzly" }
   }
 ]

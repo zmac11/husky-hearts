@@ -172,6 +172,17 @@ chains**, and the payoff — the **Ultimate (R)** unlock at Firefly Grove.
 > intact). *Deferred:* a distinct multi-attack move-set and a bespoke arena terrain (reuses
 > `frozenpass`). This establishes the boss framework the Old Grizzly + later bosses reuse.
 
+## Boss · The Old Grizzly *(implemented — Whispering Woods finale)*
+
+> **Status:** shipped. `entities/grizzly.js` — a slow, tanky brawler on a moonlit `woods-boss`
+> arena, reusing the boss framework with a distinct kit: it **telegraphs a ground-SLAM** (rears
+> up → a shockwave ring blooms out — get clear) and a **CHARGE** (paws the ground → barrels in
+> a line — sidestep), and **enrages** below a third health (faster, chains attacks). No
+> summons — pure dodging, testing the reflexes the biome trained. HP bar, knockback-resist,
+> config loot/XP (`grizzly`), `defeat` clear, and the woods-finale golden chest. The campaign
+> now runs Firefly Grove → **The Old Grizzly** → (Seashell Cove, a future biome). *Deferred:*
+> the design's sleep/stealth phase and a light-source relic reward.
+
 - **Role.** Introduce **light & darkness** and stealth (built on the existing noise/detection).
 - **Theme & mood.** Stepping under a canopy that swallows the sun. The world contracts to a
   soft glow around you; every rustle is a maybe. Eerie but gentle — a place of secrets.

@@ -51,7 +51,7 @@ QUEST_TYPES['ritual'] = {
 // every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
 // enemy-less level from counting as instantly won.
 let _defeatArmed = false;
-const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool','alphawolf'];
+const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool','alphawolf','grizzly'];
 QUEST_TYPES['defeat'] = {
   _left(){
     const es=(typeof entities!=='undefined' && entities) ? entities : [];
