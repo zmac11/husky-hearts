@@ -91,7 +91,15 @@ turn the cozy walk into a real adventure. New systems this biome: **combat that 
   `levels.json`: `terrain:"frozenpass"`, `chests:["iron","iron","silver"]`,
   `quest:{type:"kindle", label:"Relight the frozen pass"}`.
 
-## 2·3 — Cliffside Climb *(new)*
+## 2·3 — Cliffside Climb *(implemented — first build)*
+
+> **Status:** shipped. `cliffside` terrain (a tall map of switchback ledge-walls with
+> alternating gaps), the **rockfall** hazard entity (telegraph → roll → damage + knockback →
+> reset), the **`defeat`** clear objective (drive off every guardian), a buffed **pack-leader**
+> wolf (a wolf with higher hp/speed/dmg — no new kind needed), the **Cliffside Lookout**
+> last-shop, and the `rocky-3` config are in and verified. *Deferred to a follow-up:*
+> crumbling ledges, wind-gust zones, the golden side-climb `reach` sub-quest, and a distinct
+> pack-leader sprite.
 
 - **Role.** Verticality-lite + dodging telegraphed hazards + a combat gauntlet that hands you
   to the Alpha Wolf. The biome's skill check.

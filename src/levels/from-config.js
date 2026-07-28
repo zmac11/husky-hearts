@@ -35,6 +35,20 @@ QUEST_TYPES['kindle'] = {
   isComplete(){ const f=this._fires(); return f.total>0 && f.lit>=f.total; },
 };
 
+// 'defeat' — clear the level's guardians (enemies). Cliffside Climb's gauntlet: drive off
+// every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
+// enemy-less level from counting as instantly won.
+let _defeatArmed = false;
+const _ENEMY_KINDS = ['enemy','wolf','packleader'];
+QUEST_TYPES['defeat'] = {
+  _left(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    return es.filter(e=>_ENEMY_KINDS.indexOf(e.kind)!==-1).length;
+  },
+  describe(){ return `Enemies left ${this._left()}`; },
+  isComplete(){ return _defeatArmed && this._left()===0; },
+};
+
 // ---- helpers ----
 // Resolve a placement to absolute world coords. Supports absolute {x,y}, fractional
 // {fx,fy} (of the current WORLD_W/H), and {onWater:{kind,index,dx,dy,dyEdge}} which pins
@@ -109,6 +123,8 @@ function buildCollectibles(spec){
 
         // 4) actors — npcs (shops / quest-givers), enemies, critters
         Entities.clear();
+        // Arm the `defeat` objective only when this level actually fields enemies.
+        _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -130,6 +146,12 @@ function buildCollectibles(spec){
         (cfg.firepits||[]).forEach(f=>{
           const p=_resolvePos(f); if(!p) return;
           Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
+        });
+        (cfg.rockfalls||[]).forEach((rf,i)=>{
+          const p=_resolvePos(rf); if(!p) return;
+          const vy=v=>(v==null?undefined:(v<=1 ? WORLD_H*v : v));   // fraction or absolute y
+          Entities.spawn('rockfall', { x:p.x, _i:i, top:vy(rf.top), bottom:vy(rf.bottom),
+            speed:rf.speed, period:rf.period, warn:rf.warn, dmg:rf.dmg, startDelay:rf.startDelay });
         });
 
         // 5) buried treasure — rarity list from the config

@@ -58,6 +58,7 @@ LOAD_ORDER = [
     'levels/meadow3.js',  # 'orchard' augment (extra oak clusters)
     'levels/rocky.js',    # rocky terrain builder (buildRockyWorld) + friends helper
     'levels/frozenpass.js', # 'frozenpass' snowy-pass terrain (Rocky Mountains 2)
+    'levels/cliffside.js',  # 'cliffside' switchback-climb terrain (Rocky Mountains 3)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -70,6 +71,7 @@ LOAD_ORDER = [
     'entities/npc.js',      # NPC kind (interactable)
     'entities/chest.js',    # buried treasure chests (sniff → dig → unlock → loot)
     'entities/firepit.js',  # relightable waystation fires (warmth + `kindle` objective)
+    'entities/rockfall.js', # falling-rock hazard (Cliffside Climb)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers

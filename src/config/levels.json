@@ -249,7 +249,7 @@
     "seed": 30507,
     "size": { "w": 2000, "h": 1400 },
     "spawn": { "x": 220, "y": 240 },
-    "next": null,
+    "next": "rocky-3",
     "cold": true,
     "theme": {
       "grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8",
@@ -288,5 +288,50 @@
     ],
     "chests": ["iron", "iron", "silver"],
     "quest": { "type": "kindle", "label": "Relight the frozen pass" }
+  },
+
+  {
+    "id": "rocky-3",
+    "name": "Cliffside Climb",
+    "seed": 30713,
+    "size": { "w": 1400, "h": 2100 },
+    "spawn": { "x": 700, "y": 1980 },
+    "next": null,
+    "cold": true,
+    "theme": {
+      "grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC",
+      "dirt": "rgba(110,126,140,0.18)",
+      "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6",
+      "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"
+    },
+    "terrain": "cliffside",
+    "collectibles": { "count": 12, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [
+      { "name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?" }
+    ],
+    "npcs": [
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92,
+        "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."
+      },
+      {
+        "name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5,
+        "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.",
+        "wares": [ { "id": "feast", "cost": 8 }, { "id": "trailmix", "cost": 4 }, { "id": "biscuit", "cost": 3 }, { "id": "raincoat", "cost": 9 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "wolf", "fx": 0.7,  "fy": 0.74, "speed": 1.15 },
+      { "kind": "wolf", "fx": 0.3,  "fy": 0.56, "speed": 1.2, "chaseR": 210 },
+      { "kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15 },
+      { "kind": "wolf", "fx": 0.5,  "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4 }
+    ],
+    "rockfalls": [
+      { "fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600 },
+      { "fx": 0.6,  "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200 },
+      { "fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600 }
+    ],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "defeat", "label": "Fight your way to the summit" }
   }
 ]
