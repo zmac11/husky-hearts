@@ -341,7 +341,7 @@
     "seed": 40219,
     "size": { "w": 1800, "h": 1300 },
     "spawn": { "x": 200, "y": 650 },
-    "next": null,
+    "next": "woods-2",
     "dark": true,
     "theme": {
       "grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44",
@@ -381,5 +381,46 @@
     ],
     "chests": ["wooden", "iron"],
     "quest": { "type": "cheer-all", "label": "Cheer the woodland friends" }
+  },
+
+  {
+    "id": "woods-2",
+    "name": "Fungus Hollow",
+    "seed": 40631,
+    "size": { "w": 1900, "h": 1400 },
+    "spawn": { "x": 180, "y": 700 },
+    "next": null,
+    "theme": {
+      "grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047",
+      "dirt": "rgba(40,60,40,0.28)",
+      "fenceA": "#3A2E3A", "fenceB": "#463746", "rail": "#6A4A6A",
+      "minimapGrass": "#2E4A38", "minimapWater": "#3A6E8C"
+    },
+    "terrain": "fungushollow",
+    "collectibles": { "count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Bramble the Alchemist", "look": "tailor", "fx": 0.16, "fy": 0.28,
+        "greeting": "Deeper in grows a pale Mooncap — I need it for the shrine rite ahead. Fetch it for me? Take an antidote; the spores bite.",
+        "wares": [ { "id": "antidote", "cost": 4 }, { "id": "biscuit", "cost": 3 }, { "id": "trailmix", "cost": 4 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "toadstool", "fx": 0.55, "fy": 0.3 },
+      { "kind": "toadstool", "fx": 0.6,  "fy": 0.7 },
+      { "kind": "toadstool", "fx": 0.72, "fy": 0.5, "hp": 5 }
+    ],
+    "critters": [
+      { "species": "squirrel", "fx": 0.3, "fy": 0.4 }
+    ],
+    "sporeclouds": [
+      { "fx": 0.42, "fy": 0.5,  "r": 40 },
+      { "fx": 0.5,  "fy": 0.28, "r": 34 },
+      { "fx": 0.5,  "fy": 0.72, "r": 34 }
+    ],
+    "mooncap": { "fx": 0.72, "fy": 0.5 },
+    "chests": ["iron", "silver"],
+    "quest": { "type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble" }
   }
 ]

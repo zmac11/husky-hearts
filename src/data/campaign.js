@@ -30,7 +30,7 @@ const Campaign = {
     { id:'woods', name:'Whispering Woods', icon:'🌲', color:'#6FA86A', boss:'The Old Grizzly',
       levels:[
         { id:'woods-1', name:'Mossy Trail',   kind:'level', real:true },
-        { id:'woods-2', name:'Fungus Hollow', kind:'level' },
+        { id:'woods-2', name:'Fungus Hollow', kind:'level', real:true },
         { id:'woods-3', name:'Firefly Grove', kind:'level' },
         { id:'woods-boss', name:'The Old Grizzly', kind:'boss' },
       ] },

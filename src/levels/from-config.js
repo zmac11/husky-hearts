@@ -39,7 +39,7 @@ QUEST_TYPES['kindle'] = {
 // every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
 // enemy-less level from counting as instantly won.
 let _defeatArmed = false;
-const _ENEMY_KINDS = ['enemy','wolf','packleader'];
+const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool'];
 QUEST_TYPES['defeat'] = {
   _left(){
     const es=(typeof entities!=='undefined' && entities) ? entities : [];
@@ -47,6 +47,23 @@ QUEST_TYPES['defeat'] = {
   },
   describe(){ return `Enemies left ${this._left()}`; },
   isComplete(){ return _defeatArmed && this._left()===0; },
+};
+
+// 'fetch-from' — retrieve a specific item from somewhere in the level and carry it out
+// (Fungus Hollow's Mooncap). `_fetchItem` is set in generate from the quest config.
+let _fetchItem = null;
+QUEST_TYPES['fetch-from'] = {
+  describe(){
+    if(!_fetchItem) return 'Find the item';
+    const d=(typeof Items!=='undefined') ? Items.get(_fetchItem) : null;
+    const have=(typeof p1!=='undefined' && typeof Inventory!=='undefined') ? Inventory.count(p1,_fetchItem) : 0;
+    return have>0 ? `${d?d.icon:''} Retrieved!` : `Find the ${d?d.name:_fetchItem}`;
+  },
+  isComplete(){
+    if(!_fetchItem) return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>Inventory.count(p,_fetchItem)>0);
+  },
 };
 
 // ---- helpers ----
@@ -124,8 +141,10 @@ function buildCollectibles(spec){
 
         // 4) actors — npcs (shops / quest-givers), enemies, critters
         Entities.clear();
-        // Arm the `defeat` objective only when this level actually fields enemies.
+        // Arm the `defeat` objective only when this level actually fields enemies; remember
+        // the `fetch-from` target item for its describe/isComplete.
         _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
+        _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -158,6 +177,13 @@ function buildCollectibles(spec){
           const p=_resolvePos(l); if(!p) return;
           Entities.spawn('lanternpost', { x:p.x, y:p.y });
         });
+        (cfg.sporeclouds||[]).forEach(s=>{
+          const p=_resolvePos(s); if(!p) return;
+          Entities.spawn('sporecloud', { x:p.x, y:p.y, r:s.r||34, life:-1 });   // permanent choke points
+        });
+        if(cfg.mooncap){
+          const p=_resolvePos(cfg.mooncap); if(p) Entities.spawn('mooncap', { x:p.x, y:p.y });
+        }
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);

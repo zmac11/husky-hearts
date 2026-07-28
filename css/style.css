@@ -52,6 +52,10 @@
   }
   .warmth-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#FF9E4A,#FFC864); transition:width .2s, background .3s; }
   #warmthPanel.cold i{ background:linear-gradient(90deg,#6FB8E6,#A6D8F0); }   /* freezing */
+  /* status-effect chips (poisoned, …) */
+  #statusPanel{ gap:6px; }
+  .status-chip{ display:inline-flex; align-items:center; gap:2px; font-size:13px; }
+  .status-chip b{ font-size:10px; font-weight:bold; color:var(--brown-soft); }
   #fsBtn,.hudbtn{
     font-family:inherit; font-size:12px; font-weight:bold;
     padding:5px 10px; border-radius:10px; border:2px solid var(--brown);

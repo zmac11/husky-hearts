@@ -185,7 +185,16 @@ chains**, and the payoff — the **Ultimate (R)** unlock at Firefly Grove.
   `QUEST_TYPES["deliver"]`. `levels.json`: `terrain:"mossytrail"`, friends (some at dark
   `fx/fy`), `quest:{type:"cheer-all", label:"Cheer the woodland friends"}`.
 
-## 3·2 — Fungus Hollow *(new)*
+## 3·2 — Fungus Hollow *(implemented — first build)*
+
+> **Status:** shipped. The **status-effect system** (`src/status.js` — `poisoned` DoT with a
+> HUD chip; extensible), **spore-cloud** poison zones + the **toadstool spitter** (first
+> ranged enemy — lobs globs that burst into clouds), the **`fetch-from`** clear (retrieve the
+> **Mooncap** pickup), the 🧪 **Antidote** (cures) and 🍄 **Mooncap** items, and the
+> `fungushollow` branching cavern (a rock-cluster ring walling off the Mooncap chamber) are
+> in and verified. *Deferred to a follow-up:* the Spore-Mask resist wearable, a distinct
+> **Myconid** mini-elite (buffed toadstools stand in), bounce-caps, the poisoned-traveller
+> side-quest, and the dim bioluminescent-glow pass (the hollow uses normal lighting for now).
 
 - **Role.** Introduce the **poisoned** status and ranged enemies; the first properly
   **branching** level; middle of the Alchemist chain.

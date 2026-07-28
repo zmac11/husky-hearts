@@ -63,6 +63,10 @@
   }
   .warmth-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#FF9E4A,#FFC864); transition:width .2s, background .3s; }
   #warmthPanel.cold i{ background:linear-gradient(90deg,#6FB8E6,#A6D8F0); }   /* freezing */
+  /* status-effect chips (poisoned, …) */
+  #statusPanel{ gap:6px; }
+  .status-chip{ display:inline-flex; align-items:center; gap:2px; font-size:13px; }
+  .status-chip b{ font-size:10px; font-weight:bold; color:var(--brown-soft); }
   #fsBtn,.hudbtn{
     font-family:inherit; font-size:12px; font-weight:bold;
     padding:5px 10px; border-radius:10px; border:2px solid var(--brown);
@@ -765,6 +769,7 @@
     <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> 🦴<span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
     <div class="panel" id="warmthPanel" title="Warmth — stay near a fire!" style="display:none;">🔥<span class="warmth-bar"><i id="warmthFill"></i></span></div>
+    <div class="panel" id="statusPanel" style="display:none;"></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <span class="hud-mutes">
       <button class="hudbtn" id="muteMusicBtn" title="Mute music">🎵</button>
@@ -958,11 +963,11 @@
 <!-- All game modules bundled into a single script so module-scoped `let` vars are shared -->
 <script>
 // ===== src/config/items.json =====
-const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
+const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "antidote": {"name": "Antidote", "icon": "🧪", "type": "consumable", "value": 5, "cure": "poisoned"}, "mooncap": {"name": "Mooncap", "icon": "🍄", "type": "tool", "value": 6}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
 // ===== src/config/loot.json =====
 const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
 // ===== src/config/levels.json =====
-const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": "rocky-2", "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}, {"id": "rocky-2", "name": "Frozen Pass", "seed": 30507, "size": {"w": 2000, "h": 1400}, "spawn": {"x": 220, "y": 240}, "next": "rocky-3", "cold": true, "theme": {"grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8", "dirt": "rgba(120,140,160,0.16)", "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE", "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"}, "terrain": "frozenpass", "collectibles": {"count": 16, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Shivering Hare", "fx": 0.3, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?"}, {"name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird", "msg": "Brrr! A snack would warm me right up."}], "npcs": [{"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2, "greeting": "Cold enough for you? Bundle up before you press on!", "wares": [{"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "scarf", "cost": 6}, {"id": "raincoat", "cost": 9}]}, {"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86, "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."}], "enemies": [{"kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15}, {"kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210}], "critters": [{"species": "moose", "fx": 0.2, "fy": 0.3}], "firepits": [{"fx": 0.5, "fy": 0.34}, {"fx": 0.28, "fy": 0.58}, {"fx": 0.76, "fy": 0.7}], "chests": ["iron", "iron", "silver"], "quest": {"type": "kindle", "label": "Relight the frozen pass"}}, {"id": "rocky-3", "name": "Cliffside Climb", "seed": 30713, "size": {"w": 1400, "h": 2100}, "spawn": {"x": 700, "y": 1980}, "next": null, "cold": true, "theme": {"grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC", "dirt": "rgba(110,126,140,0.18)", "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6", "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"}, "terrain": "cliffside", "collectibles": {"count": 12, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?"}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92, "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."}, {"name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5, "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.", "wares": [{"id": "feast", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "raincoat", "cost": 9}]}], "enemies": [{"kind": "wolf", "fx": 0.7, "fy": 0.74, "speed": 1.15}, {"kind": "wolf", "fx": 0.3, "fy": 0.56, "speed": 1.2, "chaseR": 210}, {"kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15}, {"kind": "wolf", "fx": 0.5, "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4}], "rockfalls": [{"fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600}, {"fx": 0.6, "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200}, {"fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600}], "chests": ["silver", "golden"], "quest": {"type": "defeat", "label": "Fight your way to the summit"}}, {"id": "woods-1", "name": "Mossy Trail", "seed": 40219, "size": {"w": 1800, "h": 1300}, "spawn": {"x": 200, "y": 650}, "next": null, "dark": true, "theme": {"grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44", "dirt": "rgba(30,44,26,0.30)", "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30", "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"}, "terrain": "mossytrail", "collectibles": {"count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [{"name": "Bristle the Hedgehog", "fx": 0.5, "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..."}, {"name": "Whisper the Owl", "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl", "msg": "Whoo brings light to my lonely branch?"}, {"name": "Dusk the Fox", "fx": 0.24, "fy": 0.8, "need": 3, "kind": "fox", "msg": "I lost the trail in the gloom..."}, {"name": "Fern the Bunny", "fx": 0.7, "fy": 0.3, "need": 2, "kind": "bunny", "msg": "I only come out where it's bright!"}], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52, "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}], "enemies": [{"kind": "shadowlurker", "fx": 0.34, "fy": 0.32}, {"kind": "shadowlurker", "fx": 0.66, "fy": 0.58}, {"kind": "shadowlurker", "fx": 0.28, "fy": 0.6}], "critters": [{"species": "squirrel", "fx": 0.6, "fy": 0.44}], "lanterns": [{"fx": 0.3, "fy": 0.5}, {"fx": 0.5, "fy": 0.5}, {"fx": 0.7, "fy": 0.5}, {"fx": 0.5, "fy": 0.28}, {"fx": 0.5, "fy": 0.72}], "chests": ["wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer the woodland friends"}}];
+const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": "rocky-2", "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}, {"id": "rocky-2", "name": "Frozen Pass", "seed": 30507, "size": {"w": 2000, "h": 1400}, "spawn": {"x": 220, "y": 240}, "next": "rocky-3", "cold": true, "theme": {"grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8", "dirt": "rgba(120,140,160,0.16)", "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE", "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"}, "terrain": "frozenpass", "collectibles": {"count": 16, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Shivering Hare", "fx": 0.3, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?"}, {"name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird", "msg": "Brrr! A snack would warm me right up."}], "npcs": [{"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2, "greeting": "Cold enough for you? Bundle up before you press on!", "wares": [{"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "scarf", "cost": 6}, {"id": "raincoat", "cost": 9}]}, {"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86, "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."}], "enemies": [{"kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15}, {"kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210}], "critters": [{"species": "moose", "fx": 0.2, "fy": 0.3}], "firepits": [{"fx": 0.5, "fy": 0.34}, {"fx": 0.28, "fy": 0.58}, {"fx": 0.76, "fy": 0.7}], "chests": ["iron", "iron", "silver"], "quest": {"type": "kindle", "label": "Relight the frozen pass"}}, {"id": "rocky-3", "name": "Cliffside Climb", "seed": 30713, "size": {"w": 1400, "h": 2100}, "spawn": {"x": 700, "y": 1980}, "next": null, "cold": true, "theme": {"grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC", "dirt": "rgba(110,126,140,0.18)", "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6", "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"}, "terrain": "cliffside", "collectibles": {"count": 12, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?"}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92, "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."}, {"name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5, "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.", "wares": [{"id": "feast", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "raincoat", "cost": 9}]}], "enemies": [{"kind": "wolf", "fx": 0.7, "fy": 0.74, "speed": 1.15}, {"kind": "wolf", "fx": 0.3, "fy": 0.56, "speed": 1.2, "chaseR": 210}, {"kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15}, {"kind": "wolf", "fx": 0.5, "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4}], "rockfalls": [{"fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600}, {"fx": 0.6, "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200}, {"fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600}], "chests": ["silver", "golden"], "quest": {"type": "defeat", "label": "Fight your way to the summit"}}, {"id": "woods-1", "name": "Mossy Trail", "seed": 40219, "size": {"w": 1800, "h": 1300}, "spawn": {"x": 200, "y": 650}, "next": "woods-2", "dark": true, "theme": {"grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44", "dirt": "rgba(30,44,26,0.30)", "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30", "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"}, "terrain": "mossytrail", "collectibles": {"count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [{"name": "Bristle the Hedgehog", "fx": 0.5, "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..."}, {"name": "Whisper the Owl", "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl", "msg": "Whoo brings light to my lonely branch?"}, {"name": "Dusk the Fox", "fx": 0.24, "fy": 0.8, "need": 3, "kind": "fox", "msg": "I lost the trail in the gloom..."}, {"name": "Fern the Bunny", "fx": 0.7, "fy": 0.3, "need": 2, "kind": "bunny", "msg": "I only come out where it's bright!"}], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52, "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}], "enemies": [{"kind": "shadowlurker", "fx": 0.34, "fy": 0.32}, {"kind": "shadowlurker", "fx": 0.66, "fy": 0.58}, {"kind": "shadowlurker", "fx": 0.28, "fy": 0.6}], "critters": [{"species": "squirrel", "fx": 0.6, "fy": 0.44}], "lanterns": [{"fx": 0.3, "fy": 0.5}, {"fx": 0.5, "fy": 0.5}, {"fx": 0.7, "fy": 0.5}, {"fx": 0.5, "fy": 0.28}, {"fx": 0.5, "fy": 0.72}], "chests": ["wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer the woodland friends"}}, {"id": "woods-2", "name": "Fungus Hollow", "seed": 40631, "size": {"w": 1900, "h": 1400}, "spawn": {"x": 180, "y": 700}, "next": null, "theme": {"grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047", "dirt": "rgba(40,60,40,0.28)", "fenceA": "#3A2E3A", "fenceB": "#463746", "rail": "#6A4A6A", "minimapGrass": "#2E4A38", "minimapWater": "#3A6E8C"}, "terrain": "fungushollow", "collectibles": {"count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.16, "fy": 0.28, "greeting": "Deeper in grows a pale Mooncap — I need it for the shrine rite ahead. Fetch it for me? Take an antidote; the spores bite.", "wares": [{"id": "antidote", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}]}], "enemies": [{"kind": "toadstool", "fx": 0.55, "fy": 0.3}, {"kind": "toadstool", "fx": 0.6, "fy": 0.7}, {"kind": "toadstool", "fx": 0.72, "fy": 0.5, "hp": 5}], "critters": [{"species": "squirrel", "fx": 0.3, "fy": 0.4}], "sporeclouds": [{"fx": 0.42, "fy": 0.5, "r": 40}, {"fx": 0.5, "fy": 0.28, "r": 34}, {"fx": 0.5, "fy": 0.72, "r": 34}], "mooncap": {"fx": 0.72, "fy": 0.5}, "chests": ["iron", "silver"], "quest": {"type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble"}}];
 // ===== src/init.js =====
 // ====================== CANVAS INIT ======================
 const canvas = document.getElementById('game');
@@ -1828,7 +1833,7 @@ const Campaign = {
     { id:'woods', name:'Whispering Woods', icon:'🌲', color:'#6FA86A', boss:'The Old Grizzly',
       levels:[
         { id:'woods-1', name:'Mossy Trail',   kind:'level', real:true },
-        { id:'woods-2', name:'Fungus Hollow', kind:'level' },
+        { id:'woods-2', name:'Fungus Hollow', kind:'level', real:true },
         { id:'woods-3', name:'Firefly Grove', kind:'level' },
         { id:'woods-boss', name:'The Old Grizzly', kind:'boss' },
       ] },
@@ -2365,6 +2370,60 @@ const Darkness = {
     });
     g.globalCompositeOperation='source-over';
     mainCtx.drawImage(this._cv, 0, 0, VIEW_W, VIEW_H);
+  },
+};
+
+// ===== src/status.js =====
+// ====================== STATUS EFFECTS ======================
+// Timed conditions on the dog, introduced in Fungus Hollow (Whispering Woods 2). The first is
+// `poisoned` — spore clouds and toadstool spitters inflict it, and it chips away a sliver of
+// health over its duration until it wears off or you use an 🧪 Antidote. Cozy, not lethal:
+// like warmth/chilled, it whittles rather than kills, and a heal always outpaces it.
+//
+// Kept deliberately small and data-shaped so more conditions (chilled already lives in
+// warmth.js; slow/soaked/burning are future biomes) can slot in. State is a per-player map of
+// { name: msLeft }; a save doesn't need it (statuses reset on level entry, like cooldowns).
+
+const Status = {
+  DEFS: {
+    poisoned: { icon:'🤢', chipMs:1000, chip:1, color:'#8FCB5A' },   // 1 hp per second while active
+  },
+
+  _map(p){ return p.status || (p.status = {}); },
+  has(p, name){ return !!(p && p.status && p.status[name] > 0); },
+
+  // Inflict (or refresh) a status for at least `ms`. Never shortens an existing longer timer.
+  apply(p, name, ms){
+    if(!p || !this.DEFS[name] || !(ms>0)) return;
+    const m=this._map(p);
+    const fresh = !(m[name]>0);
+    m[name]=Math.max(m[name]||0, ms);
+    if(fresh){
+      p['_'+name+'T']=0;   // reset the per-status chip accumulator
+      const d=this.DEFS[name];
+      if(name==='poisoned' && typeof showToast==='function') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+      if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-30, d.icon, 'status');
+    }
+  },
+  cure(p, name){ if(p && p.status) p.status[name]=0; },
+  clearAll(p){ if(p) p.status = {}; },
+
+  // Called each frame from updatePlayer.
+  tick(p, dt){
+    if(!p || !p.status) return;
+    let changed=false;
+    for(const name in p.status){
+      let t=p.status[name]; if(!(t>0)) continue;
+      const d=this.DEFS[name]; if(!d){ p.status[name]=0; continue; }
+      t-=dt; p.status[name]=Math.max(0, t);
+      if(d.chip>0){
+        const key='_'+name+'T';
+        p[key]=(p[key]||0)+dt;
+        if(p[key]>=d.chipMs){ p[key]=0; if(typeof Health!=='undefined') Health.damage(p, d.chip); }
+      }
+      if(p.status[name]<=0) changed=true;
+    }
+    if(changed && typeof UI!=='undefined' && UI.updateStatus) UI.updateStatus();
   },
 };
 
@@ -3721,6 +3780,59 @@ function buildMossyTrail(){
 }
 
 TERRAIN.mossytrail = buildMossyTrail;
+
+// ===== src/levels/fungushollow.js =====
+// ====================== TERRAIN: FUNGUS HOLLOW ======================
+// A damp, glowing hollow deep in the Whispering Woods (Whispering Woods 2). Its trick is
+// LAYOUT: rock-cluster walls carve the space into branching routes and a guarded inner
+// chamber (the Mooncap sits there in the level config), so it's the first level you navigate
+// rather than cross. Giant mushrooms, toadstool rings and mossy logs fill it in; toadstool
+// spitters and spore clouds (from the config) supply the poison.
+//
+// A central rock ring walls off the inner chamber, leaving two gaps; scattered rock-cluster
+// clumps make the outer hollow a maze. Existing world-draw kinds only.
+
+function buildFungusHollow(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H; river=null;
+
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  const taken=[];
+  const pt=(minD)=>rand2(40,40,W-40,H-40,minD,taken);
+
+  // ---- inner chamber wall: a rough rock ring around the centre with two entrance gaps ----
+  const cx=W*0.72, cy=H*0.5, R=185;
+  const gapA=Math.PI*0.15, gapB=Math.PI*1.15, gapW=0.42;   // two gaps in the ring
+  for(let a=0; a<Math.PI*2; a+=0.32){
+    if(Math.abs(((a-gapA+Math.PI)%(Math.PI*2))-Math.PI)<gapW) continue;
+    if(Math.abs(((a-gapB+Math.PI)%(Math.PI*2))-Math.PI)<gapW) continue;
+    const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
+    worldObjects.push({kind:'rockcluster',x,y,seed:rnd()*100});
+    addCollider(x-24,y-2,48,16);
+  }
+
+  // ---- maze clumps through the outer hollow ----
+  for(let i=0;i<9;i++){
+    const p=rand2(60,60,W*0.6,H-60,150,taken); taken.push(p);
+    if(Math.hypot(p.x-cx,p.y-cy)<R+40) continue;   // keep the chamber approach clear-ish
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
+    addCollider(p.x-24,p.y-2,48,16);
+  }
+
+  // ---- giant mushrooms, fairy rings + damp forest floor ----
+  for(let i=0;i<34;i++){ const p=pt(40); worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.55}); }
+  for(let i=0;i<8;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100}); }
+  for(let i=0;i<14;i++){ const p=pt(70); taken.push(p); worldObjects.push({kind:'willow',x:p.x,y:p.y}); addCollider(p.x-8,p.y+19,16,15); }
+  for(let i=0;i<8;i++){ const p=pt(90); taken.push(p); worldObjects.push({kind:'log',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-16,p.y-1,32,9); }
+  for(let i=0;i<6;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-8,p.y-1,16,10); }
+  for(let i=0;i<20;i++){ const p=pt(46); worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100}); }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.fungushollow = buildFungusHollow;
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
@@ -6066,6 +6178,159 @@ Entities.register('shadowlurker', {
   },
 });
 
+// ===== src/entities/sporecloud.js =====
+// ====================== ENTITY: SPORE CLOUD (poison zone) ======================
+// A drifting puff of toxic spores in Fungus Hollow. Standing in one keeps you `poisoned`
+// (status.js). Some are permanent fixtures on the map (choke points to time or detour); the
+// ones a toadstool spitter lobs are temporary and fade after a while. Purely a hazard —
+// update + draw, no interaction.
+
+Entities.register('sporecloud', {
+  radius: 0,
+  init(e){
+    e.r    = e.r || 34;
+    e.life = (typeof e.life==='number') ? e.life : -1;   // -1 = permanent fixture
+    e._t   = 0;
+    e._puffs = Array.from({length:5}, ()=>({ a:rand(0,Math.PI*2), rr:rand(0.3,0.95), s:rand(0.7,1.3) }));
+  },
+  update(e, t, dt){
+    e._t=t;
+    if(e.life>0){ e.life-=dt; if(e.life<=0){ Entities.remove(e); return; } }
+    const p=p1;
+    if(p && !p.dead && Math.hypot(p.x-e.x, p.y-e.y) < e.r && typeof Status!=='undefined'){
+      Status.apply(p, 'poisoned', 2400);   // refreshed while you linger inside
+    }
+  },
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    const fade = e.life<0 ? 1 : Math.min(1, e.life/600);   // temporary clouds fade out
+    ctx.save();
+    e._puffs.forEach((pf,i)=>{
+      const wob=Math.sin(t/600 + pf.a*3)*3;
+      const px_=x+Math.cos(pf.a+t/2400)*e.r*0.5*pf.rr;
+      const py_=y+Math.sin(pf.a+t/2400)*e.r*0.32*pf.rr + wob;
+      const rr=e.r*0.5*pf.s;
+      ctx.globalAlpha=0.16*fade;
+      const g=ctx.createRadialGradient(px_,py_,1, px_,py_, rr);
+      g.addColorStop(0,'#B6E86A'); g.addColorStop(1,'rgba(120,180,70,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px_,py_,rr,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  },
+});
+
+// ===== src/entities/toadstool.js =====
+// ====================== ENTITY: TOADSTOOL SPITTER ======================
+// A rooted, hostile mushroom in Fungus Hollow — the first RANGED enemy. It can't move, but
+// every few seconds it lobs a glob of spores in a high arc toward the dog; where the glob
+// lands it bursts into a lingering spore cloud (entities/sporecloud.js) that poisons. Keep
+// moving, break line of sight behind the giant caps, or blast it with an ability (it has hp,
+// so Entities.hurt fells it like any enemy). Guards the Mooncap chamber in packs.
+
+Entities.register('toadstool', {
+  radius: 26,
+
+  init(e){
+    e.hp    = (typeof e.hp==='number') ? e.hp : 3;
+    e.range = e.range || 230;
+    e.cd    = rand(700, 2000);
+    e.globs = [];
+    e.dir   = 1;
+    e.bob   = 0;
+  },
+
+  update(e, t, dt){
+    const p=p1;
+    e.cd-=dt;
+    if(p && !p.dead && e.cd<=0 && Math.hypot(p.x-e.x, p.y-e.y) < e.range){
+      e.cd=rand(2400, 3400);
+      const tx=clamp(p.x+rand(-20,20), 24, WORLD_W-24), ty=clamp(p.y+rand(-16,16), 30, WORLD_H-24);
+      e.globs.push({ x0:e.x, y0:e.y-10, tx, ty, prog:0, dur:720 });
+      e.dir = tx>=e.x ? 1 : -1;
+      if(typeof sfxHowl==='function') sfxHowl();
+    }
+    for(let i=e.globs.length-1;i>=0;i--){
+      const g=e.globs[i]; g.prog += dt/g.dur;
+      if(g.prog>=1){
+        Entities.spawn('sporecloud', { x:g.tx, y:g.ty, r:30, life:5000 });
+        if(typeof spawnSparkles==='function') spawnSparkles(g.tx, g.ty, '#9FD65A', 8);
+        e.globs.splice(i,1);
+      }
+    }
+    if(e.hurtT>0) e.hurtT=Math.max(0, e.hurtT-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/420)*1);
+    // shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+11,13,4,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
+    // stalk
+    px(x-4,y-2,8,12,'#E7E0CE'); px(x-4,y-2,2,12,'#CFC7B2');
+    // angry red cap with pale spots
+    px(x-11,y-12,22,8,'#B23A34'); px(x-9,y-15,18,5,'#C6463E');
+    px(x-8,y-11,3,3,'#F0E6D0'); px(x+1,y-13,3,3,'#F0E6D0'); px(x+6,y-10,2,2,'#F0E6D0');
+    // scowl on the stalk
+    px(x+e.dir*2-4,y+1,3,2,'#2A2A2A'); px(x+e.dir*2+1,y+1,3,2,'#2A2A2A');
+    px(x-3,y+5,6,1,'#3A2E2E');
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-12,y-16,24,26,'#FF6B6B'); ctx.globalAlpha=1; }
+    // in-flight spore globs, arcing
+    e.globs.forEach(g=>{
+      const gx=g.x0+(g.tx-g.x0)*g.prog, gy=g.y0+(g.ty-g.y0)*g.prog - Math.sin(g.prog*Math.PI)*26;
+      ctx.save(); ctx.globalAlpha=0.9;
+      ctx.fillStyle='#9FD65A'; ctx.beginPath(); ctx.arc(Math.round(gx),Math.round(gy),3.4,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.4; ctx.fillStyle='#C6EE86'; ctx.beginPath(); ctx.arc(Math.round(gx)-1,Math.round(gy)-1,1.6,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    Entities.drawAlert(e);
+  },
+});
+
+// ===== src/entities/mooncap.js =====
+// ====================== ENTITY: MOONCAP (quest pickup) ======================
+// The rare, moon-pale mushroom Bramble needs (Fungus Hollow's `fetch-from` objective). It
+// glows softly in the guarded inner chamber; walk into it to pluck it, which drops the
+// 🍄 Mooncap into your bag and completes the fetch. Plain proximity pickup, like a collectible.
+
+Entities.register('mooncap', {
+  radius: 0,
+  init(e){ e.bob=rand(0, Math.PI*2); e.taken=false; e._full=0; },
+
+  update(e, t, dt){
+    if(e.taken) return;
+    const p=p1; if(!p || p.dead) return;
+    if(Math.hypot(p.x-e.x, p.y-e.y) < 24){
+      if(typeof Inventory!=='undefined' && Inventory.roomFor(p,'mooncap') < 1){
+        if(!e._full || t-e._full>2200){ e._full=t; if(typeof showToast==='function') showToast('🎒 Bag full — make room for the Mooncap!',1700); }
+        return;
+      }
+      e.taken=true;
+      Inventory.add(p, 'mooncap', 1);
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9B6FF', 24);
+      if(typeof sfxCheer==='function') sfxCheer();
+      if(typeof showToast==='function') showToast('🍄 You plucked the rare Mooncap!', 2400);
+      if(typeof updateHUD==='function') updateHUD();
+      Entities.remove(e);
+      if(typeof checkWin==='function') checkWin();   // completes the fetch-from objective
+    }
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/500+e.bob)*1.5);
+    // pale moon glow
+    ctx.save();
+    ctx.globalAlpha=0.4+Math.sin(t/300)*0.12;
+    const g=ctx.createRadialGradient(x,y-6,1, x,y-6, 20);
+    g.addColorStop(0,'#D8CBFF'); g.addColorStop(1,'rgba(200,182,255,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-6,20,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    // stalk + domed pale cap with faint spots
+    px(x-2,y-3,4,8,'#EDE9F6');
+    px(x-7,y-11,14,6,'#C9BEEA'); px(x-5,y-14,10,4,'#DAD1F2');
+    px(x-4,y-10,2,2,'#F4F0FF'); px(x+2,y-12,2,2,'#F4F0FF');
+  },
+});
+
 // ===== src/entities/portal.js =====
 // ====================== ENTITY: EXIT PORTAL ======================
 // Spawns when a level's quest completes (update.js checkWin): instead of the world
@@ -7655,7 +7920,7 @@ QUEST_TYPES['kindle'] = {
 // every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
 // enemy-less level from counting as instantly won.
 let _defeatArmed = false;
-const _ENEMY_KINDS = ['enemy','wolf','packleader'];
+const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool'];
 QUEST_TYPES['defeat'] = {
   _left(){
     const es=(typeof entities!=='undefined' && entities) ? entities : [];
@@ -7663,6 +7928,23 @@ QUEST_TYPES['defeat'] = {
   },
   describe(){ return `Enemies left ${this._left()}`; },
   isComplete(){ return _defeatArmed && this._left()===0; },
+};
+
+// 'fetch-from' — retrieve a specific item from somewhere in the level and carry it out
+// (Fungus Hollow's Mooncap). `_fetchItem` is set in generate from the quest config.
+let _fetchItem = null;
+QUEST_TYPES['fetch-from'] = {
+  describe(){
+    if(!_fetchItem) return 'Find the item';
+    const d=(typeof Items!=='undefined') ? Items.get(_fetchItem) : null;
+    const have=(typeof p1!=='undefined' && typeof Inventory!=='undefined') ? Inventory.count(p1,_fetchItem) : 0;
+    return have>0 ? `${d?d.icon:''} Retrieved!` : `Find the ${d?d.name:_fetchItem}`;
+  },
+  isComplete(){
+    if(!_fetchItem) return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>Inventory.count(p,_fetchItem)>0);
+  },
 };
 
 // ---- helpers ----
@@ -7740,8 +8022,10 @@ function buildCollectibles(spec){
 
         // 4) actors — npcs (shops / quest-givers), enemies, critters
         Entities.clear();
-        // Arm the `defeat` objective only when this level actually fields enemies.
+        // Arm the `defeat` objective only when this level actually fields enemies; remember
+        // the `fetch-from` target item for its describe/isComplete.
         _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
+        _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -7774,6 +8058,13 @@ function buildCollectibles(spec){
           const p=_resolvePos(l); if(!p) return;
           Entities.spawn('lanternpost', { x:p.x, y:p.y });
         });
+        (cfg.sporeclouds||[]).forEach(s=>{
+          const p=_resolvePos(s); if(!p) return;
+          Entities.spawn('sporecloud', { x:p.x, y:p.y, r:s.r||34, life:-1 });   // permanent choke points
+        });
+        if(cfg.mooncap){
+          const p=_resolvePos(cfg.mooncap); if(p) Entities.spawn('mooncap', { x:p.x, y:p.y });
+        }
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);
@@ -8023,6 +8314,7 @@ const LevelManager = {
     });
     if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
     if(typeof Warmth!=='undefined') Warmth.reset(p1);   // enter every level toasty-warm
+    if(typeof Status!=='undefined') Status.clearAll(p1);// and free of any lingering conditions
     if(typeof sparkles!=='undefined') sparkles=[];
     if(typeof updateCamera==='function') updateCamera();
     if(typeof updateHUD==='function') updateHUD();
@@ -8071,6 +8363,7 @@ function updatePlayer(p,t,dt){
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
   Abilities.update(p,dt);
   if(Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
@@ -8705,6 +8998,7 @@ const UI = {
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.updateWarmth();
+    this.updateStatus();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -8726,6 +9020,17 @@ const UI = {
     const f=Warmth.frac(p1);
     const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
     panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
+  },
+
+  // ---------- status effects (poisoned, …) ----------
+  // A small HUD chip listing active timed conditions with their icon + seconds left.
+  updateStatus(){
+    const panel=this.$('statusPanel'); if(!panel) return;
+    if(typeof Status==='undefined' || !p1 || !p1.status){ panel.style.display='none'; return; }
+    const active=Object.keys(p1.status).filter(n=>p1.status[n]>0 && Status.DEFS[n]);
+    if(!active.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+    panel.style.display='flex';
+    panel.innerHTML=active.map(n=>`<span class="status-chip" title="${n}">${Status.DEFS[n].icon}<b>${Math.ceil(p1.status[n]/1000)}s</b></span>`).join('');
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
@@ -9279,6 +9584,14 @@ const UI = {
     const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
+      // Cure item (Antidote): clears a status even at full health.
+      if(def.cure){
+        if(typeof Status==='undefined' || !Status.has(p, def.cure)){ showToast('Nothing to cure right now.',1300); return; }
+        Status.cure(p, def.cure); Inventory.removeAt(p, n-1, 1);
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🧪 ${def.name} — the ${def.cure} fades away.`,1500);
+        this.updateHUD(); return;
+      }
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
       const healed=Health.heal(p, def.heal||2);
       Inventory.removeAt(p, n-1, 1);

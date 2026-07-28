@@ -35,6 +35,7 @@ const UI = {
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.updateWarmth();
+    this.updateStatus();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -56,6 +57,17 @@ const UI = {
     const f=Warmth.frac(p1);
     const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
     panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
+  },
+
+  // ---------- status effects (poisoned, …) ----------
+  // A small HUD chip listing active timed conditions with their icon + seconds left.
+  updateStatus(){
+    const panel=this.$('statusPanel'); if(!panel) return;
+    if(typeof Status==='undefined' || !p1 || !p1.status){ panel.style.display='none'; return; }
+    const active=Object.keys(p1.status).filter(n=>p1.status[n]>0 && Status.DEFS[n]);
+    if(!active.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+    panel.style.display='flex';
+    panel.innerHTML=active.map(n=>`<span class="status-chip" title="${n}">${Status.DEFS[n].icon}<b>${Math.ceil(p1.status[n]/1000)}s</b></span>`).join('');
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
@@ -609,6 +621,14 @@ const UI = {
     const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
+      // Cure item (Antidote): clears a status even at full health.
+      if(def.cure){
+        if(typeof Status==='undefined' || !Status.has(p, def.cure)){ showToast('Nothing to cure right now.',1300); return; }
+        Status.cure(p, def.cure); Inventory.removeAt(p, n-1, 1);
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🧪 ${def.name} — the ${def.cure} fades away.`,1500);
+        this.updateHUD(); return;
+      }
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
       const healed=Health.heal(p, def.heal||2);
       Inventory.removeAt(p, n-1, 1);

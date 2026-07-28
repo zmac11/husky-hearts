@@ -36,6 +36,7 @@ function updatePlayer(p,t,dt){
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
   Abilities.update(p,dt);
   if(Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
