@@ -34,6 +34,7 @@ const UI = {
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
+    this.updateWarmth();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -42,6 +43,19 @@ const UI = {
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
     if(this.skillsOpen) this.renderSkills();
+  },
+
+  // ---------- warmth gauge (cold levels only) ----------
+  // Shown only in a `cold` level; the fill shrinks as warmth drains and turns icy-blue as it
+  // empties. Updated both from updateHUD and every frame from Warmth.tick.
+  updateWarmth(){
+    const panel=this.$('warmthPanel'); if(!panel) return;
+    const on = (typeof Warmth!=='undefined') && Warmth.active();
+    panel.style.display = on ? 'flex' : 'none';
+    if(!on) return;
+    const f=Warmth.frac(p1);
+    const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
+    panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------

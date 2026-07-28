@@ -48,6 +48,7 @@ LOAD_ORDER = [
     'inventory.js',       # per-player inventory add/remove/has
     'quests.js',          # NPC quest system (give-item + future types)
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
+    'warmth.js',          # cold-level warmth-survival meter + `chilled` (Frozen Pass)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
@@ -56,6 +57,7 @@ LOAD_ORDER = [
     'levels/meadow2.js',  # 'wildflowers' augment (extra flower scatter)
     'levels/meadow3.js',  # 'orchard' augment (extra oak clusters)
     'levels/rocky.js',    # rocky terrain builder (buildRockyWorld) + friends helper
+    'levels/frozenpass.js', # 'frozenpass' snowy-pass terrain (Rocky Mountains 2)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -67,6 +69,7 @@ LOAD_ORDER = [
     'entities/critter.js',  # friendly wildlife (moose/beaver/loon — positive interaction)
     'entities/npc.js',      # NPC kind (interactable)
     'entities/chest.js',    # buried treasure chests (sniff → dig → unlock → loot)
+    'entities/firepit.js',  # relightable waystation fires (warmth + `kindle` objective)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers

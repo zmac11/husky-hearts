@@ -23,7 +23,7 @@ const Campaign = {
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
       levels:[
         { id:'rocky',       name:'Rocky Mountains', kind:'level', real:true },
-        { id:'rocky-2',     name:'Frozen Pass',     kind:'level' },
+        { id:'rocky-2',     name:'Frozen Pass',     kind:'level', real:true },
         { id:'rocky-3',     name:'Cliffside Climb',  kind:'level' },
         { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss' },
       ] },

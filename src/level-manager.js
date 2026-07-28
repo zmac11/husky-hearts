@@ -104,6 +104,7 @@ const LevelManager = {
       p.dead=false;                 // fallen dogs are revived for the new level
     });
     if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
+    if(typeof Warmth!=='undefined') Warmth.reset(p1);   // enter every level toasty-warm
     if(typeof sparkles!=='undefined') sparkles=[];
     if(typeof updateCamera==='function') updateCamera();
     if(typeof updateHUD==='function') updateHUD();

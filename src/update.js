@@ -15,6 +15,7 @@ function updatePlayer(p,t,dt){
   if(typeof Abilities!=='undefined'){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
+  if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -34,6 +35,7 @@ function updatePlayer(p,t,dt){
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
+  if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
   Abilities.update(p,dt);
   if(Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();

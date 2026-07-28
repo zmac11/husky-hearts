@@ -23,6 +23,18 @@ QUEST_TYPES['none'] = {
   isComplete(){ return false; },
 };
 
+// 'kindle' — relight every firepit in the level (entities/firepit.js). The clear objective of
+// Frozen Pass: rekindle the waystation fires to warm the pass and open the way onward.
+QUEST_TYPES['kindle'] = {
+  _fires(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='firepit');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const f=this._fires(); return `Fires lit ${f.lit}/${f.total}`; },
+  isComplete(){ const f=this._fires(); return f.total>0 && f.lit>=f.total; },
+};
+
 // ---- helpers ----
 // Resolve a placement to absolute world coords. Supports absolute {x,y}, fractional
 // {fx,fy} (of the current WORLD_W/H), and {onWater:{kind,index,dx,dy,dyEdge}} which pins
@@ -77,6 +89,7 @@ function buildCollectibles(spec){
       next: cfg.next || null,
       theme: cfg.theme,
       autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
+      cold: !!cfg.cold,               // drives the warmth-survival meter (warmth.js)
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -113,6 +126,10 @@ function buildCollectibles(spec){
         (cfg.critters||[]).forEach(c=>{
           const p=_resolvePos(c); if(!p) return;
           Entities.spawn('critter', { species:c.species, x:p.x, y:p.y });
+        });
+        (cfg.firepits||[]).forEach(f=>{
+          const p=_resolvePos(f); if(!p) return;
+          Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
         });
 
         // 5) buried treasure — rarity list from the config

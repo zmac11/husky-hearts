@@ -199,7 +199,7 @@
     "seed": 24680,
     "size": { "w": 2400, "h": 1600 },
     "spawn": { "x": 170, "y": 250 },
-    "next": null,
+    "next": "rocky-2",
     "theme": {
       "grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79",
       "dirt": "rgba(122,100,64,0.18)",
@@ -241,5 +241,52 @@
     ],
     "chests": ["wooden", "iron", "iron", "silver"],
     "quest": { "type": "cheer-all", "label": "Cheer up every mountain friend" }
+  },
+
+  {
+    "id": "rocky-2",
+    "name": "Frozen Pass",
+    "seed": 30507,
+    "size": { "w": 2000, "h": 1400 },
+    "spawn": { "x": 220, "y": 240 },
+    "next": null,
+    "cold": true,
+    "theme": {
+      "grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8",
+      "dirt": "rgba(120,140,160,0.16)",
+      "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE",
+      "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"
+    },
+    "terrain": "frozenpass",
+    "collectibles": { "count": 16, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [
+      { "name": "Shivering Hare",  "fx": 0.30, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?" },
+      { "name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird",  "msg": "Brrr! A snack would warm me right up." }
+    ],
+    "npcs": [
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2,
+        "greeting": "Cold enough for you? Bundle up before you press on!",
+        "wares": [ { "id": "trailmix", "cost": 4 }, { "id": "biscuit", "cost": 3 }, { "id": "scarf", "cost": 6 }, { "id": "raincoat", "cost": 9 } ]
+      },
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86,
+        "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."
+      }
+    ],
+    "enemies": [
+      { "kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15 },
+      { "kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210 }
+    ],
+    "critters": [
+      { "species": "moose", "fx": 0.2, "fy": 0.3 }
+    ],
+    "firepits": [
+      { "fx": 0.5, "fy": 0.34 },
+      { "fx": 0.28, "fy": 0.58 },
+      { "fx": 0.76, "fy": 0.7 }
+    ],
+    "chests": ["iron", "iron", "silver"],
+    "quest": { "type": "kindle", "label": "Relight the frozen pass" }
   }
 ]
