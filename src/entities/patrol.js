@@ -75,7 +75,6 @@ Entities.register('patrol', {
     // glowing eyes
     px(hx-4,y-16,3,3,'#E06B6B'); px(hx+1,y-16,3,3,'#E06B6B');
     px(hx-3,y-15,1,1,'#FFD0D0'); px(hx+2,y-15,1,1,'#FFD0D0');
-    ctx.restore();
     Entities.drawAlert(e);
   },
 });

@@ -432,6 +432,7 @@
     "spawn": { "x": 210, "y": 650 },
     "next": "woods-boss",
     "unlockUltimate": true,
+    "dark": true,
     "theme": {
       "grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578",
       "dirt": "rgba(60,60,100,0.24)",
