@@ -333,5 +333,53 @@
     ],
     "chests": ["silver", "golden"],
     "quest": { "type": "defeat", "label": "Fight your way to the summit" }
+  },
+
+  {
+    "id": "woods-1",
+    "name": "Mossy Trail",
+    "seed": 40219,
+    "size": { "w": 1800, "h": 1300 },
+    "spawn": { "x": 200, "y": 650 },
+    "next": null,
+    "dark": true,
+    "theme": {
+      "grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44",
+      "dirt": "rgba(30,44,26,0.30)",
+      "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30",
+      "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"
+    },
+    "terrain": "mossytrail",
+    "collectibles": { "count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0 },
+    "friends": [
+      { "name": "Bristle the Hedgehog", "fx": 0.5,  "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..." },
+      { "name": "Whisper the Owl",      "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl",      "msg": "Whoo brings light to my lonely branch?" },
+      { "name": "Dusk the Fox",         "fx": 0.24, "fy": 0.8,  "need": 3, "kind": "fox",      "msg": "I lost the trail in the gloom..." },
+      { "name": "Fern the Bunny",       "fx": 0.7,  "fy": 0.3,  "need": 2, "kind": "bunny",    "msg": "I only come out where it's bright!" }
+    ],
+    "npcs": [
+      {
+        "name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52,
+        "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?",
+        "wares": [ { "id": "biscuit", "cost": 3 }, { "id": "trailmix", "cost": 4 }, { "id": "ribbon", "cost": 5 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "shadowlurker", "fx": 0.34, "fy": 0.32 },
+      { "kind": "shadowlurker", "fx": 0.66, "fy": 0.58 },
+      { "kind": "shadowlurker", "fx": 0.28, "fy": 0.6 }
+    ],
+    "critters": [
+      { "species": "squirrel", "fx": 0.6, "fy": 0.44 }
+    ],
+    "lanterns": [
+      { "fx": 0.3,  "fy": 0.5 },
+      { "fx": 0.5,  "fy": 0.5 },
+      { "fx": 0.7,  "fy": 0.5 },
+      { "fx": 0.5,  "fy": 0.28 },
+      { "fx": 0.5,  "fy": 0.72 }
+    ],
+    "chests": ["wooden", "iron"],
+    "quest": { "type": "cheer-all", "label": "Cheer the woodland friends" }
   }
 ]

@@ -104,6 +104,7 @@ function buildCollectibles(spec){
       theme: cfg.theme,
       autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
       cold: !!cfg.cold,               // drives the warmth-survival meter (warmth.js)
+      dark: !!cfg.dark,               // drives the darkness/light overlay (darkness.js)
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -152,6 +153,10 @@ function buildCollectibles(spec){
           const vy=v=>(v==null?undefined:(v<=1 ? WORLD_H*v : v));   // fraction or absolute y
           Entities.spawn('rockfall', { x:p.x, _i:i, top:vy(rf.top), bottom:vy(rf.bottom),
             speed:rf.speed, period:rf.period, warn:rf.warn, dmg:rf.dmg, startDelay:rf.startDelay });
+        });
+        (cfg.lanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('lanternpost', { x:p.x, y:p.y });
         });
 
         // 5) buried treasure — rarity list from the config

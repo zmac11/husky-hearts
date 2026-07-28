@@ -49,6 +49,7 @@ LOAD_ORDER = [
     'quests.js',          # NPC quest system (give-item + future types)
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
     'warmth.js',          # cold-level warmth-survival meter + `chilled` (Frozen Pass)
+    'darkness.js',        # dark-level light/shadow overlay + stealth (Whispering Woods)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
@@ -59,6 +60,7 @@ LOAD_ORDER = [
     'levels/rocky.js',    # rocky terrain builder (buildRockyWorld) + friends helper
     'levels/frozenpass.js', # 'frozenpass' snowy-pass terrain (Rocky Mountains 2)
     'levels/cliffside.js',  # 'cliffside' switchback-climb terrain (Rocky Mountains 3)
+    'levels/mossytrail.js', # 'mossytrail' dark-forest terrain (Whispering Woods 1)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -72,6 +74,8 @@ LOAD_ORDER = [
     'entities/chest.js',    # buried treasure chests (sniff → dig → unlock → loot)
     'entities/firepit.js',  # relightable waystation fires (warmth + `kindle` objective)
     'entities/rockfall.js', # falling-rock hazard (Cliffside Climb)
+    'entities/lanternpost.js', # standing light source (Whispering Woods)
+    'entities/shadowlurker.js', # dark-only prowler (Whispering Woods)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers

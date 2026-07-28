@@ -83,7 +83,11 @@ const Entities = {
   // see update.js) the dog is heard from 1.5× as far, so howls near enemies are risky.
   noiseFactor(p){
     const boosted = p && (p.howling || p.noiseT>0);
-    return ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+    let f = ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+    // In a dark level, light betrays you: a bright pool makes you easier to spot, deep
+    // shadow makes you sneakier (Whispering Woods stealth — darkness.js).
+    if(p && typeof Darkness!=='undefined' && Darkness.active()) f *= 0.55 + 0.85*Darkness.ambientAt(p.x, p.y);
+    return f;
   },
 
   // "!" pop above an entity that just noticed a dog. Set `e.alertT=700` on the

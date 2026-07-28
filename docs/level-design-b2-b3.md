@@ -145,7 +145,17 @@ An ancient forest of hush and half-light. Danger becomes *atmosphere* — watchf
 New systems: a **status-effect system** (poison/slow), **night/light & stealth**, **quest
 chains**, and the payoff — the **Ultimate (R)** unlock at Firefly Grove.
 
-## 3·1 — Mossy Trail *(new)*
+## 3·1 — Mossy Trail *(implemented — first build)*
+
+> **Status:** shipped. The **darkness/light overlay** (`src/darkness.js` — dims all but your
+> pool of light, composited over the world), **light-driven stealth** (ambient lantern light
+> raises detection, deep shadow lowers it — via `Entities.noiseFactor`), the **lantern-post**
+> light entity, the **shadow-lurker** (prowls in shadow, recoils in light), the `mossytrail`
+> dark-forest terrain, and the `woods-1` config are in and verified. *Deferred to a
+> follow-up:* the Torch wearable (widens your glow), Pip the Postpigeon + the cross-level
+> `deliver` chain, will-o'-wisp and bramble-slow hazards, and glowing-mushroom light sources
+> (lanterns only for now). **Note:** with the mountains boss not yet built, the journey map's
+> Continue bridges Cliffside Climb → Mossy Trail directly; the Alpha Wolf slots in later.
 
 - **Role.** Introduce **light & darkness** and stealth (built on the existing noise/detection).
 - **Theme & mood.** Stepping under a canopy that swallows the sun. The world contracts to a
