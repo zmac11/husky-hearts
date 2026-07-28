@@ -36,6 +36,7 @@ const UI = {
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.updateWarmth();
     this.updateStatus();
+    this.updateBossBar();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -68,6 +69,18 @@ const UI = {
     if(!active.length){ panel.style.display='none'; panel.innerHTML=''; return; }
     panel.style.display='flex';
     panel.innerHTML=active.map(n=>`<span class="status-chip" title="${n}">${Status.DEFS[n].icon}<b>${Math.ceil(p1.status[n]/1000)}s</b></span>`).join('');
+  },
+
+  // ---------- boss HP bar ----------
+  // Shows over the frame while a boss entity is alive; hides once it's beaten.
+  updateBossBar(){
+    const bar=this.$('bossBar'); if(!bar) return;
+    const boss=(typeof entities!=='undefined' && entities) ? entities.find(e=>e.boss && typeof e.hp==='number' && e.hp>0) : null;
+    const worldVisible = Game.state===SCENES.PLAYING || Game.state===SCENES.PAUSED || Game.state===SCENES.DIALOG;
+    if(!boss || !worldVisible){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    const nm=this.$('bossName'); if(nm) nm.textContent='👑 '+(boss.name||'Boss');
+    const fill=bar.querySelector('#bossHp i'); if(fill) fill.style.width=Math.max(0, Math.min(100, (boss.hp/(boss.maxHp||boss.hp))*100))+'%';
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
@@ -600,6 +613,7 @@ const UI = {
   // Only touches styles/text — no innerHTML rebuild, so it's cheap every frame.
   tickCooldowns(){
     if(!p1) return;
+    this.updateBossBar();   // boss hp changes mid-frame as you damage it
     document.querySelectorAll('.hb-cd').forEach(el=>{
       const id=el.dataset.ability;
       const left=Abilities.cdLeft(p1, id);

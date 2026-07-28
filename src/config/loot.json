@@ -53,7 +53,8 @@
 
   "enemies": {
     "enemy": { "xp": 3, "drops": [ { "item": "bone", "chance": 0.40 } ] },
-    "wolf":  { "xp": 6, "drops": [ { "item": "bone", "chance": 0.40 } ] }
+    "wolf":  { "xp": 6, "drops": [ { "item": "bone", "chance": 0.40 } ] },
+    "alphawolf": { "xp": 40, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "key", "chance": 0.5 } ] }
   },
 
   "chestXp": { "wooden": 2, "iron": 4, "silver": 6, "golden": 12 },

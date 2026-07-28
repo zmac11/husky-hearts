@@ -69,7 +69,8 @@ const Entities = {
       }
       this.remove(e);
       if(typeof sfxDeliver==='function') sfxDeliver();
-      showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);
+      if(e.boss){ if(typeof sfxWin==='function') sfxWin(); showToast('🏆 '+(e.name||'The boss')+' is beaten!', 2600); }
+      else showToast('💨 '+(e.name || (e.kind==='wolf'?'The wolf':'The badger'))+' ran off!', 1400);
       return true;   // defeated
     }
     return false;

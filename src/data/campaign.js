@@ -25,7 +25,7 @@ const Campaign = {
         { id:'rocky',       name:'Rocky Mountains', kind:'level', real:true },
         { id:'rocky-2',     name:'Frozen Pass',     kind:'level', real:true },
         { id:'rocky-3',     name:'Cliffside Climb',  kind:'level', real:true },
-        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss' },
+        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss', real:true },
       ] },
     { id:'woods', name:'Whispering Woods', icon:'🌲', color:'#6FA86A', boss:'The Old Grizzly',
       levels:[

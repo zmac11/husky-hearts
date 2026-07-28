@@ -56,6 +56,15 @@
   #statusPanel{ gap:6px; }
   .status-chip{ display:inline-flex; align-items:center; gap:2px; font-size:13px; }
   .status-chip b{ font-size:10px; font-weight:bold; color:var(--brown-soft); }
+  /* boss HP bar (top-centre of the frame during a boss fight) */
+  #bossBar{
+    position:absolute; top:8px; left:50%; transform:translateX(-50%); z-index:20;
+    width:min(70%,360px); display:flex; flex-direction:column; align-items:center; gap:3px;
+    pointer-events:none;
+  }
+  #bossName{ font-size:11px; font-weight:bold; color:#FFE1E1; text-shadow:1px 1px 0 #4A1414; letter-spacing:0.5px; }
+  #bossHp{ width:100%; height:11px; border-radius:6px; background:rgba(30,10,10,0.55); border:2px solid #6A2A2A; overflow:hidden; box-shadow:0 2px 0 rgba(0,0,0,0.3); }
+  #bossHp i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#E0503C,#F0836A); transition:width .2s; }
   #fsBtn,.hudbtn{
     font-family:inherit; font-size:12px; font-weight:bold;
     padding:5px 10px; border-radius:10px; border:2px solid var(--brown);

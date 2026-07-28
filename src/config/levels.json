@@ -296,7 +296,7 @@
     "seed": 30713,
     "size": { "w": 1400, "h": 2100 },
     "spawn": { "x": 700, "y": 1980 },
-    "next": null,
+    "next": "rocky-boss",
     "cold": true,
     "theme": {
       "grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC",
@@ -462,5 +462,35 @@
     ],
     "chests": ["silver"],
     "quest": { "type": "ritual", "label": "Complete the Moonlit Rite" }
+  },
+
+  {
+    "id": "rocky-boss",
+    "name": "The Alpha Wolf",
+    "seed": 31511,
+    "size": { "w": 1500, "h": 1100 },
+    "spawn": { "x": 750, "y": 980 },
+    "next": "woods-1",
+    "theme": {
+      "grass": "#8FA0A8", "grassDark": "#7E9098", "grassLight": "#A2B2BA",
+      "dirt": "rgba(110,120,130,0.20)",
+      "fenceA": "#5A4A38", "fenceB": "#6C5A44", "rail": "#9A7C50",
+      "minimapGrass": "#8496A0", "minimapWater": "#7FB0CC"
+    },
+    "terrain": "frozenpass",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.94,
+        "greeting": "This is it, pup — the Alpha itself. Dodge its lunge, and when it rears back to howl, hit it hard to break the call. Go get 'em."
+      }
+    ],
+    "enemies": [
+      { "kind": "alphawolf", "fx": 0.5, "fy": 0.34, "maxHp": 34 }
+    ],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Defeat the Alpha Wolf" }
   }
 ]

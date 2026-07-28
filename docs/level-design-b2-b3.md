@@ -154,8 +154,23 @@ chains**, and the payoff — the **Ultimate (R)** unlock at Firefly Grove.
 > dark-forest terrain, and the `woods-1` config are in and verified. *Deferred to a
 > follow-up:* the Torch wearable (widens your glow), Pip the Postpigeon + the cross-level
 > `deliver` chain, will-o'-wisp and bramble-slow hazards, and glowing-mushroom light sources
-> (lanterns only for now). **Note:** with the mountains boss not yet built, the journey map's
-> Continue bridges Cliffside Climb → Mossy Trail directly; the Alpha Wolf slots in later.
+> (lanterns only for now). **Note:** the mountains boss (the Alpha Wolf) is now built, so the
+> campaign runs Cliffside Climb → **The Alpha Wolf** → Mossy Trail; the woods boss (Old
+> Grizzly) is still a follow-up, so Continue bridges Firefly Grove → Seashell Cove for now.
+
+---
+
+## Boss · The Alpha Wolf *(implemented — first real boss fight)*
+
+> **Status:** shipped. `entities/alphawolf.js` — a phased boss on a snowy `rocky-boss` arena
+> (Rocky Mountains finale). Phase 1 stalks + **telegraphs a lunge** (a crouch you sidestep);
+> at half health it **howls to summon pack wolves + buff** — a long wind-up you can
+> **interrupt** by hitting it; below a third it **enrages** (faster, lunges more). A boss **HP
+> bar** (`#bossBar`) rides the top of the frame; it resists knockback (`noKnockback`), drops
+> big loot + XP (`LOOT_DATA.enemies.alphawolf`), and clears via `defeat` → the biome-finale
+> golden chest. Losing is the normal cozy Game Over → Play Again (rebuilds the arena, gear
+> intact). *Deferred:* a distinct multi-attack move-set and a bespoke arena terrain (reuses
+> `frozenpass`). This establishes the boss framework the Old Grizzly + later bosses reuse.
 
 - **Role.** Introduce **light & darkness** and stealth (built on the existing noise/detection).
 - **Theme & mood.** Stepping under a canopy that swallows the sun. The world contracts to a
