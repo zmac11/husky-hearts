@@ -34,6 +34,9 @@ const UI = {
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
+    this.updateWarmth();
+    this.updateStatus();
+    this.updateBossBar();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -42,6 +45,42 @@ const UI = {
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
     if(this.skillsOpen) this.renderSkills();
+  },
+
+  // ---------- warmth gauge (cold levels only) ----------
+  // Shown only in a `cold` level; the fill shrinks as warmth drains and turns icy-blue as it
+  // empties. Updated both from updateHUD and every frame from Warmth.tick.
+  updateWarmth(){
+    const panel=this.$('warmthPanel'); if(!panel) return;
+    const on = (typeof Warmth!=='undefined') && Warmth.active();
+    panel.style.display = on ? 'flex' : 'none';
+    if(!on) return;
+    const f=Warmth.frac(p1);
+    const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
+    panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
+  },
+
+  // ---------- status effects (poisoned, …) ----------
+  // A small HUD chip listing active timed conditions with their icon + seconds left.
+  updateStatus(){
+    const panel=this.$('statusPanel'); if(!panel) return;
+    if(typeof Status==='undefined' || !p1 || !p1.status){ panel.style.display='none'; return; }
+    const active=Object.keys(p1.status).filter(n=>p1.status[n]>0 && Status.DEFS[n]);
+    if(!active.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+    panel.style.display='flex';
+    panel.innerHTML=active.map(n=>`<span class="status-chip" title="${n}">${Status.DEFS[n].icon}<b>${Math.ceil(p1.status[n]/1000)}s</b></span>`).join('');
+  },
+
+  // ---------- boss HP bar ----------
+  // Shows over the frame while a boss entity is alive; hides once it's beaten.
+  updateBossBar(){
+    const bar=this.$('bossBar'); if(!bar) return;
+    const boss=(typeof entities!=='undefined' && entities) ? entities.find(e=>e.boss && typeof e.hp==='number' && e.hp>0) : null;
+    const worldVisible = Game.state===SCENES.PLAYING || Game.state===SCENES.PAUSED || Game.state===SCENES.DIALOG;
+    if(!boss || !worldVisible){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    const nm=this.$('bossName'); if(nm) nm.textContent='👑 '+(boss.name||'Boss');
+    const fill=bar.querySelector('#bossHp i'); if(fill) fill.style.width=Math.max(0, Math.min(100, (boss.hp/(boss.maxHp||boss.hp))*100))+'%';
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
@@ -536,19 +575,21 @@ const UI = {
     // 0/1 are the standard abilities (Q/E); slot 2 is the ULTIMATE (R), styled apart.
     const abilities=(p1&&p1.abilities)||[];
     for(let i=0;i<3;i++){
-      const id=abilities[i];
-      const def=Abilities.get(id);
       const ult=(i===2);
+      // The R slot is the Ultimate (awoken at the Moonlit Rite); Q/E come from the breed.
+      let id=abilities[i], def=Abilities.get(id);
+      if(ult){ id='ultimate'; def=Abilities.get('ultimate'); }
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
       // Abilities are dormant until the first boss awakens them (p1.abilitiesUnlocked);
       // after that they're usable at their mastery rank (0 = the base tier). A carried but
-      // still-dormant ability shows as an empty slot that points at the boss.
+      // still-dormant ability shows as an empty slot that points at the boss. The Ultimate
+      // gates on its own p1.ultimateUnlocked instead.
       const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?0:0);
-      const learned=!!(def && p1 && p1.abilitiesUnlocked);
-      const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
-      const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — awakens after you clear the first boss`
+      const learned = ult ? !!(p1 && p1.ultimateUnlocked) : !!(def && p1 && p1.abilitiesUnlocked);
+      const emptyLabel=ult ? 'Ultimate — awakens at the Moonlit Rite' : 'No ability yet';
+      const title=learned ? `${def.name||'Ability'}${(def&&def.skillNode)?' L'+lvl:''} — press ${key}`
+                : (def && !ult) ? `${def.name} — awakens after you clear the first boss`
                 : emptyLabel;
       html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
@@ -572,6 +613,7 @@ const UI = {
   // Only touches styles/text — no innerHTML rebuild, so it's cheap every frame.
   tickCooldowns(){
     if(!p1) return;
+    this.updateBossBar();   // boss hp changes mid-frame as you damage it
     document.querySelectorAll('.hb-cd').forEach(el=>{
       const id=el.dataset.ability;
       const left=Abilities.cdLeft(p1, id);
@@ -595,6 +637,14 @@ const UI = {
     const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
+      // Cure item (Antidote): clears a status even at full health.
+      if(def.cure){
+        if(typeof Status==='undefined' || !Status.has(p, def.cure)){ showToast('Nothing to cure right now.',1300); return; }
+        Status.cure(p, def.cure); Inventory.removeAt(p, n-1, 1);
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🧪 ${def.name} — the ${def.cure} fades away.`,1500);
+        this.updateHUD(); return;
+      }
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
       const healed=Health.heal(p, def.heal||2);
       Inventory.removeAt(p, n-1, 1);

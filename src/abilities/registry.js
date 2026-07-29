@@ -48,6 +48,9 @@ const Abilities = {
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });
+    // The Ultimate rides the reserved R slot (ability3), gated on its own unlock (the Moonlit
+    // Rite in Firefly Grove) rather than the first-boss one.
+    if(p.ultimateUnlocked){ const u=this.get('ultimate'); if(u && u.update) u.update(p, dt, 'ability3'); }
   },
   _lockedHint(){
     const now=(typeof performance!=='undefined') ? performance.now() : 0;

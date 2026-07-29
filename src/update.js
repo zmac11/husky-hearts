@@ -15,6 +15,7 @@ function updatePlayer(p,t,dt){
   if(typeof Abilities!=='undefined'){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
+  if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -34,6 +35,8 @@ function updatePlayer(p,t,dt){
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
+  if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
   Abilities.update(p,dt);
   if(Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
@@ -139,6 +142,13 @@ function checkWin(){
   // Clearing the level grants skill points (stats) + level-clear XP — fires once, here,
   // guarded by the portal check above.
   if(typeof Progression!=='undefined') Progression.onLevelCleared(p1);
+  // Completing the Moonlit Rite (a level flagged `unlockUltimate`) awakens the R Ultimate,
+  // mirroring how the first boss awakened Q/E — a story-driven power milestone.
+  if(lvl.unlockUltimate && p1 && !p1.ultimateUnlocked){
+    p1.ultimateUnlocked=true;
+    if(typeof Tips!=='undefined') Tips.show('ultimate');
+    if(typeof updateHUD==='function') updateHUD();
+  }
   // The world keeps playing: a biome-themed exit portal appears near the dog, and the
   // player walks into it to reveal the journey map (portal.js runs the old flow).
   // On a biome's final level a golden chest materialises beside it.

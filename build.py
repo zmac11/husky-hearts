@@ -48,6 +48,9 @@ LOAD_ORDER = [
     'inventory.js',       # per-player inventory add/remove/has
     'quests.js',          # NPC quest system (give-item + future types)
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
+    'warmth.js',          # cold-level warmth-survival meter + `chilled` (Frozen Pass)
+    'darkness.js',        # dark-level light/shadow overlay + stealth (Whispering Woods)
+    'status.js',          # timed status conditions (poisoned) (Fungus Hollow)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
     'audio.js',           # audio engine
     'world.js',           # WORLD_W, colliders, world objects, players, friends, collectibles
@@ -56,6 +59,11 @@ LOAD_ORDER = [
     'levels/meadow2.js',  # 'wildflowers' augment (extra flower scatter)
     'levels/meadow3.js',  # 'orchard' augment (extra oak clusters)
     'levels/rocky.js',    # rocky terrain builder (buildRockyWorld) + friends helper
+    'levels/frozenpass.js', # 'frozenpass' snowy-pass terrain (Rocky Mountains 2)
+    'levels/cliffside.js',  # 'cliffside' switchback-climb terrain (Rocky Mountains 3)
+    'levels/mossytrail.js', # 'mossytrail' dark-forest terrain (Whispering Woods 1)
+    'levels/fungushollow.js', # 'fungushollow' branching cave terrain (Whispering Woods 2)
+    'levels/fireflygrove.js', # 'fireflygrove' moonlit-shrine terrain (Whispering Woods 3)
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
@@ -67,6 +75,17 @@ LOAD_ORDER = [
     'entities/critter.js',  # friendly wildlife (moose/beaver/loon — positive interaction)
     'entities/npc.js',      # NPC kind (interactable)
     'entities/chest.js',    # buried treasure chests (sniff → dig → unlock → loot)
+    'entities/firepit.js',  # relightable waystation fires (warmth + `kindle` objective)
+    'entities/rockfall.js', # falling-rock hazard (Cliffside Climb)
+    'entities/lanternpost.js', # standing light source (Whispering Woods)
+    'entities/shadowlurker.js', # dark-only prowler (Whispering Woods)
+    'entities/sporecloud.js', # poison zone (Fungus Hollow)
+    'entities/toadstool.js',  # ranged spore spitter (Fungus Hollow)
+    'entities/mooncap.js',    # Mooncap quest pickup (Fungus Hollow)
+    'entities/shrinelantern.js', # relightable shrine lantern (Firefly Grove rite)
+    'entities/patrol.js',     # sweeping sight-cone stealth threat (Firefly Grove)
+    'entities/alphawolf.js',  # Rocky Mountains boss (phased: lunge + interruptible howl)
+    'entities/grizzly.js',    # Whispering Woods boss (phased: ground-slam + charge)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
@@ -81,6 +100,7 @@ LOAD_ORDER = [
     'abilities/scream.js',      # Lolla E: piercing AOE scream
     'abilities/innerMonster.js',# Ťapka Q: feral melee transform + lifesteal
     'abilities/scurry.js',      # Ťapka E: evasive dash + i-frames
+    'abilities/ultimate.js',    # R Ultimate (Moonburst) — awoken by the Moonlit Rite
     'levels/from-config.js', # register levels from LEVELS_DATA (needs terrain/augment fns + Chests)
     'level-state.js',     # per-level dynamic state so visited levels stay as you left them
     'level-manager.js',   # LevelManager.load/enter (build world + themed ground)

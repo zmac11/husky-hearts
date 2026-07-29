@@ -412,6 +412,7 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
     skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
     mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
     abilitiesUnlocked:false,   // abilities stay dormant until the first boss is passed (world-map.js)
+    ultimateUnlocked:false,    // the R Ultimate awakens at the Moonlit Rite (Firefly Grove)
     xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};

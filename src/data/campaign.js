@@ -23,16 +23,16 @@ const Campaign = {
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
       levels:[
         { id:'rocky',       name:'Rocky Mountains', kind:'level', real:true },
-        { id:'rocky-2',     name:'Frozen Pass',     kind:'level' },
-        { id:'rocky-3',     name:'Cliffside Climb',  kind:'level' },
-        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss' },
+        { id:'rocky-2',     name:'Frozen Pass',     kind:'level', real:true },
+        { id:'rocky-3',     name:'Cliffside Climb',  kind:'level', real:true },
+        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss', real:true },
       ] },
     { id:'woods', name:'Whispering Woods', icon:'🌲', color:'#6FA86A', boss:'The Old Grizzly',
       levels:[
-        { id:'woods-1', name:'Mossy Trail',   kind:'level' },
-        { id:'woods-2', name:'Fungus Hollow', kind:'level' },
-        { id:'woods-3', name:'Firefly Grove', kind:'level' },
-        { id:'woods-boss', name:'The Old Grizzly', kind:'boss' },
+        { id:'woods-1', name:'Mossy Trail',   kind:'level', real:true },
+        { id:'woods-2', name:'Fungus Hollow', kind:'level', real:true },
+        { id:'woods-3', name:'Firefly Grove', kind:'level', real:true },
+        { id:'woods-boss', name:'The Old Grizzly', kind:'boss', real:true },
       ] },
     { id:'cove', name:'Seashell Cove', icon:'🏖️', color:'#F0D9A8', boss:'The Giant Hermit Crab',
       levels:[

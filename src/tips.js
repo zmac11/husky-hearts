@@ -49,6 +49,8 @@ const Tips = {
       body:"Your bag holds treats, food and gear. Drag items to rearrange them, drag them onto the world to drop them, or onto your dog to wear gear. The bottom row is your hotbar — press number keys to use those items quickly." },
     skills:   { icon:'🌳', title:'Skill Tree',
       body:"Spend 🌳 skill points (earned by clearing levels) on lasting character upgrades — more health, faster paws, a keener nose, quieter steps. The 🌳 button glows whenever points are waiting to be spent." },
+    ultimate: { icon:'🌟', title:'Ultimate Awakened!',
+      body:"The Moonlit Rite has awoken your dog's Ultimate — press R to unleash Moonburst: a radiant blast that hits every nearby foe, heals you, and shields you for a moment. It's mighty, so it has a long cooldown." },
     mastery:  { icon:'🎓', title:'Ability Mastery',
       body:"Spend 🎓 mastery points (earned by leveling up) to unlock your dog's abilities and rank them up. Stronger effects, shorter cooldowns — build your dog your way." },
     worldmap: { icon:'🗺️', title:'Your Journey',

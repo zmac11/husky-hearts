@@ -1,9 +1,9 @@
 // ===== src/config/items.json =====
-const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
+const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "antidote": {"name": "Antidote", "icon": "🧪", "type": "consumable", "value": 5, "cure": "poisoned"}, "mooncap": {"name": "Mooncap", "icon": "🍄", "type": "tool", "value": 6}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
 // ===== src/config/loot.json =====
-const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
+const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}, "alphawolf": {"xp": 40, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "key", "chance": 0.5}]}, "grizzly": {"xp": 48, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "antidote"}, {"item": "key", "chance": 0.5}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
 // ===== src/config/levels.json =====
-const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": null, "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}];
+const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": "rocky-2", "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}, {"id": "rocky-2", "name": "Frozen Pass", "seed": 30507, "size": {"w": 2000, "h": 1400}, "spawn": {"x": 220, "y": 240}, "next": "rocky-3", "cold": true, "theme": {"grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8", "dirt": "rgba(120,140,160,0.16)", "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE", "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"}, "terrain": "frozenpass", "collectibles": {"count": 16, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Shivering Hare", "fx": 0.3, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?"}, {"name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird", "msg": "Brrr! A snack would warm me right up."}], "npcs": [{"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2, "greeting": "Cold enough for you? Bundle up before you press on!", "wares": [{"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "scarf", "cost": 6}, {"id": "raincoat", "cost": 9}]}, {"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86, "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."}], "enemies": [{"kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15}, {"kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210}], "critters": [{"species": "moose", "fx": 0.2, "fy": 0.3}], "firepits": [{"fx": 0.5, "fy": 0.34}, {"fx": 0.28, "fy": 0.58}, {"fx": 0.76, "fy": 0.7}], "chests": ["iron", "iron", "silver"], "quest": {"type": "kindle", "label": "Relight the frozen pass"}}, {"id": "rocky-3", "name": "Cliffside Climb", "seed": 30713, "size": {"w": 1400, "h": 2100}, "spawn": {"x": 700, "y": 1980}, "next": "rocky-boss", "cold": true, "theme": {"grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC", "dirt": "rgba(110,126,140,0.18)", "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6", "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"}, "terrain": "cliffside", "collectibles": {"count": 12, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?"}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92, "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."}, {"name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5, "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.", "wares": [{"id": "feast", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "raincoat", "cost": 9}]}], "enemies": [{"kind": "wolf", "fx": 0.7, "fy": 0.74, "speed": 1.15}, {"kind": "wolf", "fx": 0.3, "fy": 0.56, "speed": 1.2, "chaseR": 210}, {"kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15}, {"kind": "wolf", "fx": 0.5, "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4}], "rockfalls": [{"fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600}, {"fx": 0.6, "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200}, {"fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600}], "chests": ["silver", "golden"], "quest": {"type": "defeat", "label": "Fight your way to the summit"}}, {"id": "woods-1", "name": "Mossy Trail", "seed": 40219, "size": {"w": 1800, "h": 1300}, "spawn": {"x": 200, "y": 650}, "next": "woods-2", "dark": true, "theme": {"grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44", "dirt": "rgba(30,44,26,0.30)", "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30", "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"}, "terrain": "mossytrail", "collectibles": {"count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [{"name": "Bristle the Hedgehog", "fx": 0.5, "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..."}, {"name": "Whisper the Owl", "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl", "msg": "Whoo brings light to my lonely branch?"}, {"name": "Dusk the Fox", "fx": 0.24, "fy": 0.8, "need": 3, "kind": "fox", "msg": "I lost the trail in the gloom..."}, {"name": "Fern the Bunny", "fx": 0.7, "fy": 0.3, "need": 2, "kind": "bunny", "msg": "I only come out where it's bright!"}], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52, "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}], "enemies": [{"kind": "shadowlurker", "fx": 0.34, "fy": 0.32}, {"kind": "shadowlurker", "fx": 0.66, "fy": 0.58}, {"kind": "shadowlurker", "fx": 0.28, "fy": 0.6}], "critters": [{"species": "squirrel", "fx": 0.6, "fy": 0.44}], "lanterns": [{"fx": 0.3, "fy": 0.5}, {"fx": 0.5, "fy": 0.5}, {"fx": 0.7, "fy": 0.5}, {"fx": 0.5, "fy": 0.28}, {"fx": 0.5, "fy": 0.72}], "chests": ["wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer the woodland friends"}}, {"id": "woods-2", "name": "Fungus Hollow", "seed": 40631, "size": {"w": 1900, "h": 1400}, "spawn": {"x": 180, "y": 700}, "next": "woods-3", "theme": {"grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047", "dirt": "rgba(40,60,40,0.28)", "fenceA": "#3A2E3A", "fenceB": "#463746", "rail": "#6A4A6A", "minimapGrass": "#2E4A38", "minimapWater": "#3A6E8C"}, "terrain": "fungushollow", "collectibles": {"count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.16, "fy": 0.28, "greeting": "Deeper in grows a pale Mooncap — I need it for the shrine rite ahead. Fetch it for me? Take an antidote; the spores bite.", "wares": [{"id": "antidote", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}]}], "enemies": [{"kind": "toadstool", "fx": 0.55, "fy": 0.3}, {"kind": "toadstool", "fx": 0.6, "fy": 0.7}, {"kind": "toadstool", "fx": 0.72, "fy": 0.5, "hp": 5}], "critters": [{"species": "squirrel", "fx": 0.3, "fy": 0.4}], "sporeclouds": [{"fx": 0.42, "fy": 0.5, "r": 40}, {"fx": 0.5, "fy": 0.28, "r": 34}, {"fx": 0.5, "fy": 0.72, "r": 34}], "mooncap": {"fx": 0.72, "fy": 0.5}, "chests": ["iron", "silver"], "quest": {"type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble"}}, {"id": "woods-3", "name": "Firefly Grove", "seed": 41077, "size": {"w": 1700, "h": 1300}, "spawn": {"x": 210, "y": 650}, "next": "woods-boss", "unlockUltimate": true, "dark": true, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 14, "types": ["bone", "heart", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.3, "greeting": "Old moon-magic sleeps in these lanterns, pup. Light all three of the shrine — mind the shadow that walks — and it will wake the power within you."}, {"name": "Marla the Merchant", "fx": 0.16, "fy": 0.72, "greeting": "Fancy meeting you this deep! A snack before the shrine?", "wares": [{"id": "feast", "cost": 8}, {"id": "biscuit", "cost": 3}, {"id": "antidote", "cost": 4}]}], "enemies": [{"kind": "patrol", "fx": 0.5, "fy": 0.5, "range": 340}], "shrinelanterns": [{"fx": 0.5, "fy": 0.36}, {"fx": 0.62, "fy": 0.62}, {"fx": 0.38, "fy": 0.62}], "chests": ["silver"], "quest": {"type": "ritual", "label": "Complete the Moonlit Rite"}}, {"id": "rocky-boss", "name": "The Alpha Wolf", "seed": 31511, "size": {"w": 1500, "h": 1100}, "spawn": {"x": 750, "y": 980}, "next": "woods-1", "theme": {"grass": "#8FA0A8", "grassDark": "#7E9098", "grassLight": "#A2B2BA", "dirt": "rgba(110,120,130,0.20)", "fenceA": "#5A4A38", "fenceB": "#6C5A44", "rail": "#9A7C50", "minimapGrass": "#8496A0", "minimapWater": "#7FB0CC"}, "terrain": "frozenpass", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "This is it, pup — the Alpha itself. Dodge its lunge, and when it rears back to howl, hit it hard to break the call. Go get 'em."}], "enemies": [{"kind": "alphawolf", "fx": 0.5, "fy": 0.34, "maxHp": 34}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Alpha Wolf"}}, {"id": "woods-boss", "name": "The Old Grizzly", "seed": 41903, "size": {"w": 1500, "h": 1150}, "spawn": {"x": 750, "y": 1030}, "next": null, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "The old bear wakes, pup. It's slow but heavy — when it rears to slam, get clear of the ring; when it paws the ground, step aside. Show it the moonlight in you."}], "enemies": [{"kind": "grizzly", "fx": 0.5, "fy": 0.32, "maxHp": 44}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Old Grizzly"}}];
 // ===== src/init.js =====
 // ====================== CANVAS INIT ======================
 const canvas = document.getElementById('game');
@@ -862,16 +862,16 @@ const Campaign = {
     { id:'mountains', name:'Rocky Mountains', icon:'⛰️', color:'#A6A29B', boss:'The Alpha Wolf',
       levels:[
         { id:'rocky',       name:'Rocky Mountains', kind:'level', real:true },
-        { id:'rocky-2',     name:'Frozen Pass',     kind:'level' },
-        { id:'rocky-3',     name:'Cliffside Climb',  kind:'level' },
-        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss' },
+        { id:'rocky-2',     name:'Frozen Pass',     kind:'level', real:true },
+        { id:'rocky-3',     name:'Cliffside Climb',  kind:'level', real:true },
+        { id:'rocky-boss',  name:'The Alpha Wolf',   kind:'boss', real:true },
       ] },
     { id:'woods', name:'Whispering Woods', icon:'🌲', color:'#6FA86A', boss:'The Old Grizzly',
       levels:[
-        { id:'woods-1', name:'Mossy Trail',   kind:'level' },
-        { id:'woods-2', name:'Fungus Hollow', kind:'level' },
-        { id:'woods-3', name:'Firefly Grove', kind:'level' },
-        { id:'woods-boss', name:'The Old Grizzly', kind:'boss' },
+        { id:'woods-1', name:'Mossy Trail',   kind:'level', real:true },
+        { id:'woods-2', name:'Fungus Hollow', kind:'level', real:true },
+        { id:'woods-3', name:'Firefly Grove', kind:'level', real:true },
+        { id:'woods-boss', name:'The Old Grizzly', kind:'boss', real:true },
       ] },
     { id:'cove', name:'Seashell Cove', icon:'🏖️', color:'#F0D9A8', boss:'The Giant Hermit Crab',
       levels:[
@@ -1262,6 +1262,205 @@ const Health = {
     if(!p) return;
     if(p.hurtTimer>0) p.hurtTimer=Math.max(0, p.hurtTimer-dt);
     if(p.invulnT>0) p.invulnT=Math.max(0, p.invulnT-dt);
+  },
+};
+
+// ===== src/warmth.js =====
+// ====================== WARMTH (cold survival) ======================
+// The first environmental-survival meter, introduced in Frozen Pass (Rocky Mountains 2).
+// In a level flagged `cold`, the dog's warmth slowly drains away from heat; standing near a
+// lit fire (entities/firepit.js) refills it. Hit zero and you're `chilled` — slowed, and
+// losing a sliver of health until you reach a fire. It's cozy, not cruel: warmth never
+// kills on its own, it just herds you fire to fire.
+//
+// Designed to be reusable — the Frostfang Tundra biome turns the same meter up (blizzards,
+// scarcer fires). A level opts in with `cold:true` in its config; everywhere else warmth is
+// full and the gauge hides itself. Warmth is transient (like ability cooldowns): it resets
+// to full on entering a level, and isn't part of the save.
+
+const Warmth = {
+  MAX: 100,
+  DRAIN_PER_SEC: 6,      // away from any fire, in a cold level
+  REFILL_PER_SEC: 40,    // basking next to a lit fire (fast — fires feel like relief)
+  HEAT_R: 95,            // within this of a lit firepit = warming
+  CHILL_CHIP_MS: 1500,   // once frozen, lose 1 hp this often
+  CHILL_SPEED: 0.6,      // movement multiplier while frozen
+
+  // Is the current level a cold one? (LevelManager copies `cold` off the level config.)
+  active(){ return !!(typeof LevelManager!=='undefined' && LevelManager.current && LevelManager.current.cold); },
+
+  reset(p){ if(p){ p.warmth = this.MAX; p.chilled = false; p._chillT = 0; } },
+
+  // Any lit firepit close enough to warm the dog?
+  _nearFire(p){
+    const es = (typeof entities!=='undefined' && entities) ? entities : [];
+    return es.some(e => e.kind==='firepit' && e.lit && Math.hypot(p.x-e.x, p.y-e.y) < this.HEAT_R);
+  },
+
+  // Called each frame from updatePlayer while playing.
+  tick(p, dt){
+    if(!p) return;
+    if(!this.active()){                          // warm level → keep full, gauge hidden
+      if(p.warmth!==this.MAX || p.chilled){ p.warmth=this.MAX; p.chilled=false; p._chillT=0; if(typeof UI!=='undefined' && UI.updateWarmth) UI.updateWarmth(); }
+      return;
+    }
+    if(typeof p.warmth!=='number') p.warmth = this.MAX;
+    const s = dt/1000;
+    if(this._nearFire(p)) p.warmth = Math.min(this.MAX, p.warmth + this.REFILL_PER_SEC*s);
+    else                  p.warmth = Math.max(0,       p.warmth - this.DRAIN_PER_SEC*s);
+
+    const wasChilled = p.chilled;
+    p.chilled = p.warmth <= 0;
+    if(p.chilled){
+      p._chillT = (p._chillT||0) + dt;
+      if(p._chillT >= this.CHILL_CHIP_MS){ p._chillT = 0; if(typeof Health!=='undefined') Health.damage(p, 1); }
+    } else p._chillT = 0;
+    if(!wasChilled && p.chilled && typeof showToast==='function') showToast('🥶 You\'re freezing — get to a fire!', 2200);
+
+    if(typeof UI!=='undefined' && UI.updateWarmth) UI.updateWarmth();
+  },
+
+  // Movement penalty while frozen (composed into updatePlayer's speed, like ability speedMuls).
+  speedMul(p){ return (p && p.chilled) ? this.CHILL_SPEED : 1; },
+
+  // Gauge fill 0..1 for the HUD.
+  frac(p){ return p ? Math.max(0, Math.min(1, (p.warmth==null?this.MAX:p.warmth)/this.MAX)) : 1; },
+};
+
+// ===== src/darkness.js =====
+// ====================== DARKNESS & LIGHT ======================
+// The Whispering Woods lighting layer, introduced on Mossy Trail (Whispering Woods 1). In a
+// level flagged `dark`, the canopy swallows the light: a dark overlay covers the view, with
+// soft holes punched around the dog and every light source (lantern posts; a wider hole if
+// the dog wears a 🔦 Torch). You see only your pool of light — treasure and lurkers hide in
+// the shadows off the trail.
+//
+// Light also drives STEALTH: standing in a bright pool makes you easier to detect, deep
+// shadow makes you sneakier (Entities.noiseFactor reads Darkness.lightAt). Shadow-lurkers
+// (entities/shadowlurker.js) only prowl where it's dark. A level opts in with `dark:true`.
+//
+// Rendered on a small offscreen canvas (fill dark → erase light circles with destination-out
+// → composite over the world), so it needs no per-object draw changes.
+
+const Darkness = {
+  PLAYER_R: 90,     // the dog's own glow radius
+  TORCH_BONUS: 58,  // extra radius while wearing a Torch
+  LANTERN_R: 82,    // a lantern post's pool
+  DIM: 'rgba(8,13,24,0.86)',
+
+  _cv: null, _g: null,
+
+  active(){ return !!(typeof LevelManager!=='undefined' && LevelManager.current && LevelManager.current.dark); },
+
+  _hasTorch(p){ return !!(p && p.equipment && Object.keys(p.equipment).some(s=>p.equipment[s]==='torch')); },
+
+  // Standing light sources in the world — any entity carrying a positive `lightR` (lantern
+  // posts, lit shrine lanterns, …). NOT the dog's own glow.
+  _worldLights(){
+    const L=[];
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    es.forEach(e=>{ if(e && e.lightR>0 && e.lit!==false) L.push({ x:e.x, y:e.y-8, r:e.lightR }); });
+    return L;
+  },
+  // Everything that lights the scene = world lights + the dog's own glow (used for rendering).
+  _lights(){
+    const L=this._worldLights();
+    if(typeof p1!=='undefined' && p1 && !p1.dead) L.push({ x:p1.x, y:p1.y-6, r:this.PLAYER_R + (this._hasTorch(p1)?this.TORCH_BONUS:0) });
+    return L;
+  },
+
+  _brightest(lights, x, y){ let best=0; lights.forEach(L=>{ const d=Math.hypot(x-L.x, y-L.y); if(d<L.r) best=Math.max(best, 1-d/L.r); }); return best; },
+
+  // How lit a point looks (dog glow included): 0 dark .. 1 bright. For rendering/visibility.
+  lightAt(x,y){ return this.active() ? this._brightest(this._lights(), x, y) : 1; },
+
+  // AMBIENT light from the world only (no self-glow): this is what betrays you for stealth —
+  // standing in a lantern pool makes you visible; your own glow doesn't give you away.
+  ambientAt(x,y){ return this.active() ? this._brightest(this._worldLights(), x, y) : 1; },
+
+  _ensure(){
+    if(!this._cv){ this._cv = (typeof document!=='undefined') ? document.createElement('canvas') : null; }
+    if(this._cv){
+      if(this._cv.width!==VIEW_W)  this._cv.width  = VIEW_W;
+      if(this._cv.height!==VIEW_H) this._cv.height = VIEW_H;
+      this._g = this._cv.getContext('2d');
+    }
+  },
+
+  // Composite the darkness over the (already-drawn) world. Call in screen space — after the
+  // camera translate is restored, before the minimap. `cam` is the world camera.
+  render(mainCtx, cam){
+    if(!this.active()) return;
+    this._ensure(); const g=this._g; if(!g) return;
+    g.setTransform(1,0,0,1,0,0);
+    g.globalCompositeOperation='source-over';
+    g.clearRect(0,0,VIEW_W,VIEW_H);
+    g.fillStyle=this.DIM; g.fillRect(0,0,VIEW_W,VIEW_H);
+    // erase light holes
+    g.globalCompositeOperation='destination-out';
+    this._lights().forEach(L=>{
+      const sx=L.x-cam.x, sy=L.y-cam.y;
+      if(sx<-L.r || sx>VIEW_W+L.r || sy<-L.r || sy>VIEW_H+L.r) return;
+      const rad=g.createRadialGradient(sx,sy,L.r*0.15, sx,sy,L.r);
+      rad.addColorStop(0,'rgba(0,0,0,1)'); rad.addColorStop(0.55,'rgba(0,0,0,0.8)'); rad.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle=rad; g.fillRect(sx-L.r, sy-L.r, L.r*2, L.r*2);
+    });
+    g.globalCompositeOperation='source-over';
+    mainCtx.drawImage(this._cv, 0, 0, VIEW_W, VIEW_H);
+  },
+};
+
+// ===== src/status.js =====
+// ====================== STATUS EFFECTS ======================
+// Timed conditions on the dog, introduced in Fungus Hollow (Whispering Woods 2). The first is
+// `poisoned` — spore clouds and toadstool spitters inflict it, and it chips away a sliver of
+// health over its duration until it wears off or you use an 🧪 Antidote. Cozy, not lethal:
+// like warmth/chilled, it whittles rather than kills, and a heal always outpaces it.
+//
+// Kept deliberately small and data-shaped so more conditions (chilled already lives in
+// warmth.js; slow/soaked/burning are future biomes) can slot in. State is a per-player map of
+// { name: msLeft }; a save doesn't need it (statuses reset on level entry, like cooldowns).
+
+const Status = {
+  DEFS: {
+    poisoned: { icon:'🤢', chipMs:1000, chip:1, color:'#8FCB5A' },   // 1 hp per second while active
+  },
+
+  _map(p){ return p.status || (p.status = {}); },
+  has(p, name){ return !!(p && p.status && p.status[name] > 0); },
+
+  // Inflict (or refresh) a status for at least `ms`. Never shortens an existing longer timer.
+  apply(p, name, ms){
+    if(!p || !this.DEFS[name] || !(ms>0)) return;
+    const m=this._map(p);
+    const fresh = !(m[name]>0);
+    m[name]=Math.max(m[name]||0, ms);
+    if(fresh){
+      p['_'+name+'T']=0;   // reset the per-status chip accumulator
+      const d=this.DEFS[name];
+      if(name==='poisoned' && typeof showToast==='function') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+      if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-30, d.icon, 'status');
+    }
+  },
+  cure(p, name){ if(p && p.status) p.status[name]=0; },
+  clearAll(p){ if(p) p.status = {}; },
+
+  // Called each frame from updatePlayer.
+  tick(p, dt){
+    if(!p || !p.status) return;
+    let changed=false;
+    for(const name in p.status){
+      let t=p.status[name]; if(!(t>0)) continue;
+      const d=this.DEFS[name]; if(!d){ p.status[name]=0; continue; }
+      t-=dt; p.status[name]=Math.max(0, t);
+      if(d.chip>0){
+        const key='_'+name+'T';
+        p[key]=(p[key]||0)+dt;
+        if(p[key]>=d.chipMs){ p[key]=0; if(typeof Health!=='undefined') Health.damage(p, d.chip); }
+      }
+      if(p.status[name]<=0) changed=true;
+    }
+    if(changed && typeof UI!=='undefined' && UI.updateStatus) UI.updateStatus();
   },
 };
 
@@ -2186,6 +2385,7 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
     skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
     mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
     abilitiesUnlocked:false,   // abilities stay dormant until the first boss is passed (world-map.js)
+    ultimateUnlocked:false,    // the R Ultimate awakens at the Moonlit Rite (Firefly Grove)
     xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
     howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
@@ -2432,6 +2632,290 @@ function buildRockyWorld(){
 }
 
 TERRAIN.rocky = buildRockyWorld;
+
+// ===== src/levels/frozenpass.js =====
+// ====================== TERRAIN: FROZEN PASS ======================
+// The snowy pass climbing out of the Rocky Mountains valley (Rocky Mountains 2). A colder,
+// tighter route than the open valley — a run of skyline peaks, evergreens, boulders and
+// snowdrifts threaded by a couple of stone paths (the "pass"), with clearer lanes to move
+// through. No water here; it's all snow and stone.
+//
+// Like buildRockyWorld it's a named TERRAIN hook that levels/from-config.js calls by name.
+// It draws only existing world-draw kinds (snowypine/boulder/rockcluster/deadtree/rock/
+// snowpatch/crystal/mountain/stonepath), so it needs no new rendering code.
+
+function buildFrozenPass(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H;
+  river=null;
+
+  // border
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  const taken=[];
+  const pt=(ax,ay,bx,by,minD)=>rand2(ax,ay,bx,by,minD,taken);
+
+  // ---- skyline peaks (drawn behind everything; solid across the base) ----
+  const M=5;
+  for(let i=0;i<M;i++){
+    const mx=W*(0.08+(i/(M-1))*0.84)+rand(-20,20);
+    const baseY=rand(196,214), mh=rand(150,186), mw=rand(340,470);
+    worldObjects.push({kind:'mountain',x:mx,y:baseY,w:mw,h:mh,seed:Math.floor(rnd()*9999)});
+    addCollider(mx-mw*0.4, baseY-4, mw*0.8, 16);
+  }
+
+  // ---- the pass: stone paths threading down/across the map ----
+  worldObjects.push({kind:'stonepath',x1:W*0.5, y1:H*0.12, x2:W*0.5,  y2:H*0.9,  seed:71});
+  worldObjects.push({kind:'stonepath',x1:W*0.2, y1:H*0.36, x2:W*0.8,  y2:H*0.56, seed:72});
+  worldObjects.push({kind:'stonepath',x1:W*0.5, y1:H*0.5,  x2:W*0.16, y2:H*0.78, seed:73});
+
+  // ---- evergreens (snow-dusted spruce) ----
+  for(let i=0;i<26;i++){
+    const p=pt(50,236,W-50,H-50,82); taken.push(p);
+    worldObjects.push({kind:'snowypine',x:p.x,y:p.y});
+    addCollider(p.x-4,p.y+14,8,9);
+  }
+
+  // ---- boulders (big ones block) ----
+  for(let i=0;i<16;i++){
+    const p=pt(60,236,W-60,H-60,112); taken.push(p);
+    const big=rnd()<0.55;
+    worldObjects.push({kind:'boulder',x:p.x,y:p.y,big});
+    addCollider(p.x-(big?16:11), p.y+(big?1:0), big?32:22, big?14:11);
+  }
+
+  // ---- rock clusters ----
+  for(let i=0;i<7;i++){
+    const p=pt(80,236,W-80,H-80,120); taken.push(p);
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
+    addCollider(p.x-24,p.y-2,48,16);
+  }
+
+  // ---- weathered deadfall ----
+  for(let i=0;i<6;i++){
+    const p=pt(60,236,W-60,H-60,110); taken.push(p);
+    worldObjects.push({kind:'deadtree',x:p.x,y:p.y});
+    addCollider(p.x-6,p.y+18,12,11);
+  }
+
+  // ---- loose rocks (big ones block) ----
+  for(let i=0;i<16;i++){
+    const p=pt(60,236,W-60,H-60,60); taken.push(p);
+    const big=rnd()<0.2;
+    worldObjects.push({kind:'rock',x:p.x,y:p.y,big});
+    if(big) addCollider(p.x-12,p.y+2,24,12);
+  }
+
+  // ---- snowdrifts + ice crystals (no colliders — pure decoration) ----
+  for(let i=0;i<30;i++) worldObjects.push({kind:'snowpatch',x:rand(30,W-30),y:rand(228,H-30),seed:rnd()*100});
+  for(let i=0;i<8;i++){ const p=pt(70,236,W-70,H-70,90); worldObjects.push({kind:'crystal',x:p.x,y:p.y,seed:rnd()*100}); }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.frozenpass = buildFrozenPass;
+
+// ===== src/levels/cliffside.js =====
+// ====================== TERRAIN: CLIFFSIDE CLIMB ======================
+// The white-knuckle ascent that ends the Rocky Mountains before the Alpha Wolf (Rocky
+// Mountains 3). A TALL, narrow map read as a climb: a run of rocky ledge-walls with gaps
+// that alternate side to side, so the only way up is to weave back and forth — a switchback.
+// Falling rocks roll down the open lanes (entities/rockfall.js) and wolves hold the ledges.
+//
+// Verticality is a top-down conceit here: the ledge-walls (colliders topped with boulders)
+// force the zig-zag, snow thins toward the summit, and the summit peaks sit at the top edge.
+// Uses only existing world-draw kinds, so no new rendering.
+
+function buildCliffside(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H; river=null;
+
+  // border
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  // ---- summit peaks along the very top; the summit ledge is a solid wall you crest ----
+  for(let i=0;i<3;i++){
+    const mx=W*(0.22+i*0.28)+rand(-16,16);
+    worldObjects.push({kind:'mountain',x:mx,y:rand(210,224),w:rand(360,460),h:rand(150,182),seed:Math.floor(rnd()*9999)});
+  }
+
+  // ---- switchback ledge-walls: horizontal barriers with an alternating gap ----
+  // Each wall spans the width except for a gap (left on even rows, right on odd), so the
+  // climb weaves. Walls are decorated with boulders so they read as rocky ledges.
+  const rows=5, GAP=150, top=430, step=(H-620)/(rows-1);
+  for(let r=0;r<rows;r++){
+    const wy=Math.round(top + r*step);
+    const gapLeft=(r%2===0);
+    const gapX=Math.round(gapLeft ? W*0.20 : W*0.80);
+    if(gapLeft) addCollider(gapX+GAP, wy, W-(gapX+GAP)-14, 22);
+    else        addCollider(14,       wy, gapX-GAP-14,     22);
+    // boulders capping the wall (skip the gap)
+    for(let x=44; x<W-44; x+=68){
+      if(Math.abs(x-gapX)<GAP) continue;
+      worldObjects.push({kind:'boulder',x,y:wy+6,big:rnd()<0.45});
+    }
+  }
+
+  // ---- scattered snowy cover on the ledges (no colliders — decoration) ----
+  const taken=[];
+  const pt=(minD)=>rand2(30,250,W-30,H-40,minD,taken);
+  for(let i=0;i<14;i++){ const p=pt(90); taken.push(p); worldObjects.push({kind:'snowypine',x:p.x,y:p.y}); addCollider(p.x-4,p.y+14,8,9); }
+  for(let i=0;i<10;i++){ const p=pt(70); taken.push(p); worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-24,p.y-2,48,16); }
+  for(let i=0;i<12;i++){ const p=pt(50); const big=rnd()<0.25; worldObjects.push({kind:'rock',x:p.x,y:p.y,big}); if(big) addCollider(p.x-12,p.y+2,24,12); }
+  for(let i=0;i<5;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'deadtree',x:p.x,y:p.y}); addCollider(p.x-6,p.y+18,12,11); }
+  for(let i=0;i<24;i++) worldObjects.push({kind:'snowpatch',x:rand(30,W-30),y:rand(250,H-30),seed:rnd()*100});
+  for(let i=0;i<7;i++){ const p=pt(90); worldObjects.push({kind:'crystal',x:p.x,y:p.y,seed:rnd()*100}); }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.cliffside = buildCliffside;
+
+// ===== src/levels/mossytrail.js =====
+// ====================== TERRAIN: MOSSY TRAIL ======================
+// The way into the Whispering Woods (Whispering Woods 1): a dense, hushed forest where the
+// canopy swallows the light (the level is flagged `dark`, so darkness.js dims all but your
+// pool of light). A winding stone trail threads through crowded oaks, pines and willows, with
+// mushrooms and toadstool rings tucked in the gloom. Lantern posts (spawned from the level
+// config) light the trail; treasure and lurkers hide off it in the dark.
+//
+// Reuses the meadow forest kinds (oak/pine/willow/mushroom/log/stump/bush/tallgrass/stonepath),
+// so no new rendering — the mood comes from the dark theme + the darkness overlay.
+
+function buildMossyTrail(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H; river=null;
+
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  const taken=[];
+  const pt=(minD)=>rand2(40,40,W-40,H-40,minD,taken);
+
+  // ---- the winding trail (lantern posts get placed along it in the config) ----
+  worldObjects.push({kind:'stonepath',x1:W*0.10,y1:H*0.5, x2:W*0.90,y2:H*0.5, seed:11});
+  worldObjects.push({kind:'stonepath',x1:W*0.5, y1:H*0.12,x2:W*0.5, y2:H*0.88,seed:22});
+  worldObjects.push({kind:'stonepath',x1:W*0.5, y1:H*0.5, x2:W*0.82,y2:H*0.8, seed:33});
+
+  // ---- dense oaks (the crowded canopy) ----
+  for(let i=0;i<32;i++){ const p=pt(88); taken.push(p); worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(rnd()*3)}); addCollider(p.x-7,p.y+19,14,13); }
+  // ---- pines ----
+  for(let i=0;i<16;i++){ const p=pt(74); taken.push(p); worldObjects.push({kind:'pine',x:p.x,y:p.y}); addCollider(p.x-4,p.y+15,8,10); }
+  // ---- willows (drooping, eerie) ----
+  for(let i=0;i<8;i++){ const p=pt(100); taken.push(p); worldObjects.push({kind:'willow',x:p.x,y:p.y}); addCollider(p.x-8,p.y+19,16,15); }
+
+  // ---- forest floor: mushrooms + fairy rings, logs, stumps, bushes, moss tufts ----
+  for(let i=0;i<22;i++){ const p=pt(34); worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.35}); }
+  for(let i=0;i<6;i++){ const p=pt(90); taken.push(p); worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100}); }
+  for(let i=0;i<6;i++){ const p=pt(90); taken.push(p); worldObjects.push({kind:'log',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-16,p.y-1,32,9); }
+  for(let i=0;i<5;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-8,p.y-1,16,10); }
+  for(let i=0;i<18;i++){ const p=pt(64); taken.push(p); worldObjects.push({kind:'bush',x:p.x,y:p.y,variant:Math.floor(rnd()*2)}); addCollider(p.x-12,p.y+3,24,13); }
+  for(let i=0;i<26;i++){ const p=pt(40); worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100}); }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.mossytrail = buildMossyTrail;
+
+// ===== src/levels/fungushollow.js =====
+// ====================== TERRAIN: FUNGUS HOLLOW ======================
+// A damp, glowing hollow deep in the Whispering Woods (Whispering Woods 2). Its trick is
+// LAYOUT: rock-cluster walls carve the space into branching routes and a guarded inner
+// chamber (the Mooncap sits there in the level config), so it's the first level you navigate
+// rather than cross. Giant mushrooms, toadstool rings and mossy logs fill it in; toadstool
+// spitters and spore clouds (from the config) supply the poison.
+//
+// A central rock ring walls off the inner chamber, leaving two gaps; scattered rock-cluster
+// clumps make the outer hollow a maze. Existing world-draw kinds only.
+
+function buildFungusHollow(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H; river=null;
+
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  const taken=[];
+  const pt=(minD)=>rand2(40,40,W-40,H-40,minD,taken);
+
+  // ---- inner chamber wall: a rough rock ring around the centre with two entrance gaps ----
+  const cx=W*0.72, cy=H*0.5, R=185;
+  const gapA=Math.PI*0.15, gapB=Math.PI*1.15, gapW=0.42;   // two gaps in the ring
+  for(let a=0; a<Math.PI*2; a+=0.32){
+    if(Math.abs(((a-gapA+Math.PI)%(Math.PI*2))-Math.PI)<gapW) continue;
+    if(Math.abs(((a-gapB+Math.PI)%(Math.PI*2))-Math.PI)<gapW) continue;
+    const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
+    worldObjects.push({kind:'rockcluster',x,y,seed:rnd()*100});
+    addCollider(x-24,y-2,48,16);
+  }
+
+  // ---- maze clumps through the outer hollow ----
+  for(let i=0;i<9;i++){
+    const p=rand2(60,60,W*0.6,H-60,150,taken); taken.push(p);
+    if(Math.hypot(p.x-cx,p.y-cy)<R+40) continue;   // keep the chamber approach clear-ish
+    worldObjects.push({kind:'rockcluster',x:p.x,y:p.y,seed:rnd()*100});
+    addCollider(p.x-24,p.y-2,48,16);
+  }
+
+  // ---- giant mushrooms, fairy rings + damp forest floor ----
+  for(let i=0;i<34;i++){ const p=pt(40); worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.55}); }
+  for(let i=0;i<8;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100}); }
+  for(let i=0;i<14;i++){ const p=pt(70); taken.push(p); worldObjects.push({kind:'willow',x:p.x,y:p.y}); addCollider(p.x-8,p.y+19,16,15); }
+  for(let i=0;i<8;i++){ const p=pt(90); taken.push(p); worldObjects.push({kind:'log',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-16,p.y-1,32,9); }
+  for(let i=0;i<6;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'stump',x:p.x,y:p.y,seed:rnd()*100}); addCollider(p.x-8,p.y-1,16,10); }
+  for(let i=0;i<20;i++){ const p=pt(46); worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100}); }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.fungushollow = buildFungusHollow;
+
+// ===== src/levels/fireflygrove.js =====
+// ====================== TERRAIN: FIREFLY GROVE ======================
+// The luminous clearing that ends the Whispering Woods (Whispering Woods 3) — the calm before
+// the Old Grizzly. A serene moonlit glade, open in the middle for the shrine (three shrine
+// lanterns + fireflies get placed from the level config), ringed by soft woodland. The Moonlit
+// Rite plays out here: relight the three lanterns, dodging the guardian's patrol, to awaken
+// the Ultimate. Butterflies stand in for drifting fireflies; existing draw kinds only.
+
+function buildFireflyGrove(){
+  worldObjects.length=0; colliders.length=0;
+  const W=WORLD_W, H=WORLD_H; river=null;
+
+  addCollider(0,0,W,14); addCollider(0,H-14,W,14);
+  addCollider(0,0,14,H); addCollider(W-14,0,14,H);
+
+  const taken=[];
+  const cx=W*0.5, cy=H*0.5, clear=300;                 // keep the shrine clearing open
+  const pt=(minD)=>{
+    for(let a=0;a<40;a++){ const p=rand2(40,40,W-40,H-40,minD,taken); if(Math.hypot(p.x-cx,p.y-cy)>clear) return p; }
+    return rand2(40,40,W-40,H-40,minD,taken);
+  };
+
+  // ---- soft woodland ring: willows, oaks, pines around the glade ----
+  for(let i=0;i<16;i++){ const p=pt(96); taken.push(p); worldObjects.push({kind:'willow',x:p.x,y:p.y}); addCollider(p.x-8,p.y+19,16,15); }
+  for(let i=0;i<14;i++){ const p=pt(88); taken.push(p); worldObjects.push({kind:'oak',x:p.x,y:p.y,variant:Math.floor(rnd()*3)}); addCollider(p.x-7,p.y+19,14,13); }
+  for(let i=0;i<10;i++){ const p=pt(80); taken.push(p); worldObjects.push({kind:'pine',x:p.x,y:p.y}); addCollider(p.x-4,p.y+15,8,10); }
+
+  // ---- forest floor + a stone approach to the shrine ----
+  worldObjects.push({kind:'stonepath',x1:W*0.12,y1:cy,x2:cx-90,y2:cy,seed:41});
+  worldObjects.push({kind:'stonepath',x1:cx,y1:H*0.16,x2:cx,y2:cy-90,seed:42});
+  for(let i=0;i<10;i++){ const p=pt(70); worldObjects.push({kind:'mushroomring',x:p.x,y:p.y,seed:rnd()*100}); }
+  for(let i=0;i<18;i++){ const p=pt(40); worldObjects.push({kind:'mushroom',x:p.x,y:p.y,big:rnd()<0.3}); }
+  for(let i=0;i<24;i++){ const p=rand2(30,30,W-30,H-30,34,[]); worldObjects.push({kind:'tallgrass',x:p.x,y:p.y,blades:Math.floor(rand(5,10)),seed:rnd()*100}); }
+
+  // ---- drifting fireflies (butterflies recoloured pale-gold/violet by the theme's mood) ----
+  const hues=['#FFF3B0','#E7D6FF','#CDE8B0','#FFE9A0'];
+  for(let i=0;i<22;i++){
+    worldObjects.push({kind:'butterfly', x:rand(60,W-60), y:rand(60,H-60), hue:hues[Math.floor(rnd()*hues.length)], seed:rnd()*1000});
+  }
+
+  worldObjects.sort((a,b)=>(a.y||a.y1||0)-(b.y||b.y1||0));
+}
+
+TERRAIN.fireflygrove = buildFireflyGrove;
 
 // ===== src/draw-helpers.js =====
 // ====================== DRAW HELPERS ======================
@@ -3726,7 +4210,8 @@ const Entities = {
       }
       this.remove(e);
       if(typeof sfxDeliver==='function') sfxDeliver();
-      showToast('💨 The '+(e.kind==='wolf'?'wolf':'badger')+' ran off!', 1400);
+      if(e.boss){ if(typeof sfxWin==='function') sfxWin(); showToast('🏆 '+(e.name||'The boss')+' is beaten!', 2600); }
+      else showToast('💨 '+(e.name || (e.kind==='wolf'?'The wolf':'The badger'))+' ran off!', 1400);
       return true;   // defeated
     }
     return false;
@@ -3740,7 +4225,11 @@ const Entities = {
   // see update.js) the dog is heard from 1.5× as far, so howls near enemies are risky.
   noiseFactor(p){
     const boosted = p && (p.howling || p.noiseT>0);
-    return ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+    let f = ((p && p.stats && p.stats.noiseMul) || 1) * (boosted ? 1.5 : 1);
+    // In a dark level, light betrays you: a bright pool makes you easier to spot, deep
+    // shadow makes you sneakier (Whispering Woods stealth — darkness.js).
+    if(p && typeof Darkness!=='undefined' && Darkness.active()) f *= 0.55 + 0.85*Darkness.ambientAt(p.x, p.y);
+    return f;
   },
 
   // "!" pop above an entity that just noticed a dog. Set `e.alertT=700` on the
@@ -4484,6 +4973,881 @@ Entities.register('chest', {
     }
   },
 });
+
+// ===== src/entities/firepit.js =====
+// ====================== ENTITY: FIREPIT (waystation fire) ======================
+// A cold, dead campfire you rekindle. Walk up, press the action key, and stay close while a
+// progress ring fills (like digging a chest); once lit it blazes, warms you (warmth.js reads
+// lit firepits as heat sources), and counts toward the level's `kindle` objective.
+//
+// Introduced in Frozen Pass (Rocky Mountains 2): relighting the three waystation fires both
+// keeps you alive against the cold and clears the level. State is plain data ({lit,relightT})
+// so it rides through save/level-state like any entity.
+
+Entities.register('firepit', {
+  radius: 30,
+
+  init(e){
+    e.lit      = !!e.lit;
+    e.relightT = 0;                 // remaining relight ms (0 = idle)
+    e._relMax  = 1300;              // time to rekindle
+    e._embT    = 0;                 // ember-spark throttle while relighting
+  },
+
+  update(e, t, dt){
+    if(e.lit || e.relightT<=0) return;
+    const p=p1;
+    if(!p || p.dead || Math.hypot(p.x-e.x, p.y-e.y)>44){ e.relightT=0; return; }   // walked away → abandon
+    e.relightT -= dt;
+    e._embT -= dt;
+    if(e._embT<=0){ e._embT=130; if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-2, '#FFB24A', 3); }
+    if(e.relightT<=0){
+      e.relightT=0; e.lit=true;
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#FFD24A', 22);
+      if(typeof sfxCheer==='function') sfxCheer();
+      if(typeof showToast==='function') showToast('🔥 Waystation fire lit — its warmth spreads.', 1900);
+      if(typeof updateHUD==='function') updateHUD();
+      if(typeof checkWin==='function') checkWin();   // may complete the `kindle` objective
+    }
+  },
+
+  onInteract(e, p){
+    if(e.lit){ if(typeof showToast==='function') showToast('🔥 This fire is already blazing.', 1200); return; }
+    if(e.relightT>0) return;                       // already relighting
+    e.relightT=e._relMax;
+    if(typeof sfxDig==='function') sfxDig();
+    if(typeof showToast==='function') showToast('🪵 Coaxing the embers back to life…', 1000);
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    if(e.lit){ if(typeof drawCampfire==='function') drawCampfire(x, y, t); return; }
+
+    // ---- unlit: a ring of stones around charred, cold logs ----
+    ctx.save();
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x, y+6, 14, 5, 0, 0, Math.PI*2); ctx.fillStyle='#16211C'; ctx.fill(); ctx.globalAlpha=1;
+    for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; px(x+Math.cos(a)*10-2, y+Math.sin(a)*5+1, 4, 3, '#8A8E96'); }
+    px(x-8, y-1, 16, 3, '#4A3A2E'); px(x-1, y-8, 3, 16, '#3A2E24');   // crossed cold logs
+    px(x-4, y+1, 8, 2, '#2A2622');                                     // ash
+    ctx.restore();
+
+    // relight progress ring, or a pulsing prompt within reach
+    if(e.relightT>0){
+      const prog=1-(e.relightT/(e._relMax||1300));
+      ctx.save();
+      ctx.lineWidth=3; ctx.strokeStyle='rgba(74,63,53,0.35)';
+      ctx.beginPath(); ctx.arc(x, y-18, 9, 0, Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='#FFB24A';
+      ctx.beginPath(); ctx.arc(x, y-18, 9, -Math.PI/2, -Math.PI/2+prog*Math.PI*2); ctx.stroke();
+      ctx.restore();
+    } else if(p1 && !p1.dead && Math.hypot(p1.x-e.x, p1.y-e.y)<44){
+      const pulse=1+Math.sin(t/240)*0.12;
+      ctx.save();
+      ctx.translate(x, y-16); ctx.scale(pulse, pulse);
+      ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.lineWidth=3; ctx.strokeStyle='#FFF8EF'; ctx.strokeText('!', 0, 0);
+      ctx.fillStyle='#C08A2A'; ctx.fillText('!', 0, 0);
+      ctx.restore();
+    }
+  },
+});
+
+// ===== src/entities/rockfall.js =====
+// ====================== ENTITY: ROCKFALL (falling-rock hazard) ======================
+// A boulder that tumbles down a lane on Cliffside Climb. It telegraphs first (a shaking
+// crack + dust at the top of its lane), then rolls straight down; touching it costs a heart
+// and knocks the dog back. At the bottom it settles and resets on a timer, so each lane is a
+// rhythm to read and dodge — training the reflexes the Alpha Wolf's telegraphed lunges test.
+//
+// Pure hazard: no interaction, just update + draw. Placed per-lane from a level's `rockfalls`
+// config. Reuses drawBoulder, so no new rendering.
+
+Entities.register('rockfall', {
+  radius: 0,
+
+  init(e){
+    e.top    = (typeof e.top==='number')    ? e.top    : 250;
+    e.bottom = (typeof e.bottom==='number') ? e.bottom : (WORLD_H-40);
+    e.speed  = e.speed  || 3.2;             // roll speed (× dtScale)
+    e.period = e.period || 2600;            // idle gap between rolls (ms)
+    e.warn   = e.warn   || 750;             // telegraph time before a roll (ms)
+    e.dmg    = e.dmg    || 3;               // a bit more than a heart
+    e.state  = 'idle';                      // 'idle' | 'warn' | 'rolling'
+    e.y      = e.top;
+    e.cd     = (e.startDelay!=null) ? e.startDelay : (e._i ? 0 : 400);
+    e.warnT  = 0;
+    e.hitCd  = 0;
+    e._dustT = 0;
+  },
+
+  update(e, t, dt){
+    if(e.hitCd>0) e.hitCd=Math.max(0, e.hitCd-dt);
+
+    if(e.state==='idle'){
+      e.cd-=dt;
+      if(e.cd<=0){ e.state='warn'; e.warnT=e.warn; }
+      return;
+    }
+    if(e.state==='warn'){
+      e.warnT-=dt;
+      e._dustT-=dt;
+      if(e._dustT<=0){ e._dustT=110; if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.top+4, '#B7ADA0', 3); }
+      if(e.warnT<=0){ e.state='rolling'; e.y=e.top; if(typeof sfxHowl==='function') sfxHowl(); }
+      return;
+    }
+    // rolling
+    e.y += e.speed*dtScale;
+    e._dustT-=dt;
+    if(e._dustT<=0){ e._dustT=90; if(typeof spawnSparkles==='function') spawnSparkles(e.x+rand(-6,6), e.y+8, '#C8BEB0', 2); }
+    // hit the dog?
+    const p=p1;
+    if(p && !p.dead && e.hitCd<=0 && !(p.invulnT>0) && Math.hypot(p.x-e.x, p.y-e.y)<20){
+      e.hitCd=700;
+      if(typeof Health!=='undefined') Health.damage(p, e.dmg);
+      const ang=Math.atan2(p.y-e.y, p.x-e.x);
+      p.x=clamp(p.x+Math.cos(ang)*18, 20, WORLD_W-20);
+      p.y=clamp(p.y+Math.sin(ang)*18, 26, WORLD_H-20);
+      if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#E0A0A0', 10);
+      if(typeof showToast==='function') showToast('🪨 A falling rock! Watch the lanes.', 1400);
+    }
+    if(e.y>=e.bottom){ e.state='idle'; e.cd=e.period; e.y=e.top; }
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x);
+    if(e.state==='rolling'){
+      if(typeof drawBoulder==='function') drawBoulder(x, Math.round(e.y), true);
+      else px(x-10, Math.round(e.y)-8, 20, 16, '#8A8177');
+      return;
+    }
+    if(e.state==='warn'){
+      // telegraph: a shaking crack + a faint danger streak down the lane
+      const y=Math.round(e.top);
+      const sh=Math.sin(t/40)*1.2;
+      ctx.save();
+      ctx.globalAlpha=0.35+0.25*Math.sin(t/120);
+      ctx.strokeStyle='#C0463C'; ctx.lineWidth=2; ctx.setLineDash([5,7]);
+      ctx.beginPath(); ctx.moveTo(x, y+6); ctx.lineTo(x, Math.min(e.bottom, y+90)); ctx.stroke();
+      ctx.setLineDash([]);
+      // cracked scree at the lip
+      ctx.globalAlpha=1;
+      px(x-7+sh, y-2, 14, 4, '#6E655B'); px(x-3+sh, y-5, 6, 3, '#857B70');
+      ctx.fillStyle='#3A342E'; ctx.beginPath(); ctx.moveTo(x-4+sh,y); ctx.lineTo(x+1+sh,y-4); ctx.lineTo(x+3+sh,y+1); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    // idle: nothing drawn (the lane looks clear until it warns)
+  },
+});
+
+// ===== src/entities/lanternpost.js =====
+// ====================== ENTITY: LANTERN POST ======================
+// A standing lantern that pools warm light along the Whispering Woods trails. Purely a light
+// source: darkness.js reads lit lantern posts as holes in the dark, and their pools are the
+// safe islands where shadow-lurkers won't follow. No interaction — it just glows.
+
+Entities.register('lanternpost', {
+  radius: 0,
+  init(e){ e.lit = (e.lit!==false); e._fl = rand(0, Math.PI*2);
+    e.lightR = (typeof Darkness!=='undefined') ? Darkness.LANTERN_R : 82; },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    // post + crossarm
+    px(x-1, y-2, 3, 16, '#4A3A2A');
+    px(x-6, y-20, 12, 3, '#3A2E22');
+    // the lantern housing hangs from the arm
+    const lx=x+4, ly=y-16;
+    px(lx-4, ly-3, 8, 10, '#5A4632');
+    px(lx-3, ly-2, 6, 8, e.lit ? '#FFE08A' : '#2A2620');
+    if(e.lit){
+      // warm flicker glow
+      const fl=0.7+Math.sin(t/180+e._fl)*0.18;
+      ctx.save();
+      ctx.globalAlpha=0.5*fl;
+      const g=ctx.createRadialGradient(lx,ly+1,1, lx,ly+1, 22);
+      g.addColorStop(0,'#FFE7A6'); g.addColorStop(1,'rgba(255,231,166,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(lx,ly+1,22,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=fl;
+      px(lx-1, ly+1, 2, 3, '#FFF3C8');
+      ctx.restore();
+    }
+  },
+});
+
+// ===== src/entities/shadowlurker.js =====
+// ====================== ENTITY: SHADOW-LURKER ======================
+// A wispy thing of the dark (Whispering Woods 1). It only hunts where it's shadowed: if the
+// dog is in deep shadow and within range it prowls in and nips; the moment the dog steps into
+// a pool of lantern/torch light it recoils and slinks away. It teaches the whole light
+// mechanic hands-on — light is safety here (even as, later, light also makes you easier for
+// wolves to spot). Reuses the wander→chase shape of the badger, gated on Darkness.lightAt.
+
+function _lurkerTouch(e, p){
+  spawnSparkles(p.x, p.y-8, '#7A5AA0', 10);
+  if(typeof Health!=='undefined') Health.damage(p, 2);
+  if(typeof showToast==='function') showToast('👤 A shadow-lurker nipped you — stay in the light!', 1600);
+  const ang=Math.atan2(p.y-e.y, p.x-e.x);
+  p.x=clamp(p.x+Math.cos(ang)*13, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*13, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
+
+Entities.register('shadowlurker', {
+  radius: 30,
+
+  init(e){
+    e.speed  = e.speed  || 1.0;
+    e.chaseR = e.chaseR || 150;
+    e.hp     = (typeof e.hp==='number') ? e.hp : 3;
+    e.dir    = 1; e.wanderT = 0; e.wanderAng = 0; e.cool = 0; e.bob = 0;
+  },
+
+  update(e, t, dt){
+    const target = (typeof _nearestPlayer==='function') ? _nearestPlayer(e) : null;
+    const dist   = target ? Math.hypot(target.x-e.x, target.y-e.y) : Infinity;
+    // Ambient (lantern) light at the dog — its own glow doesn't keep lurkers away.
+    const dogLit = (target && typeof Darkness!=='undefined' && Darkness.active()) ? Darkness.ambientAt(target.x, target.y) : 0;
+    const inShadow = dogLit < 0.4;
+
+    if(e.fearedT>0 && target){                          // Storm Fang aura — flee, no bite
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.5*dtScale; e.y+=Math.sin(ang)*e.speed*1.5*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1; e._chasing=false;
+    } else if(target && inShadow && dist < e.chaseR*Entities.noiseFactor(target)){
+      if(!e._chasing){ e._chasing=true; e.alertT=700; if(typeof Tips!=='undefined') Tips.show('enemy'); }
+      const ang=Math.atan2(target.y-e.y, target.x-e.x);
+      e.x+=Math.cos(ang)*e.speed*1.35*dtScale; e.y+=Math.sin(ang)*e.speed*1.35*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+      if(dist<20 && e.cool<=0){ _lurkerTouch(e, target); e.cool=1000; }
+    } else if(target && !inShadow && dist<170){         // dog is in the light — recoil away
+      e._chasing=false;
+      const ang=Math.atan2(e.y-target.y, e.x-target.x);
+      e.x+=Math.cos(ang)*e.speed*1.25*dtScale; e.y+=Math.sin(ang)*e.speed*1.25*dtScale;
+      e.dir=Math.cos(ang)>=0?1:-1;
+    } else {                                            // idle drift
+      e._chasing=false;
+      e.wanderT-=dt;
+      if(e.wanderT<=0){ e.wanderAng=Math.random()*Math.PI*2; e.wanderT=rand(700,1700); }
+      e.x+=Math.cos(e.wanderAng)*e.speed*0.7*dtScale; e.y+=Math.sin(e.wanderAng)*e.speed*0.7*dtScale;
+      e.dir=Math.cos(e.wanderAng)>=0?1:-1;
+    }
+
+    e.x=clamp(e.x, 20, WORLD_W-20); e.y=clamp(e.y, 26, WORLD_H-20);
+    if(e.cool>0)   e.cool=Math.max(0, e.cool-dt);
+    if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
+    if(e.hurtT>0)  e.hurtT=Math.max(0, e.hurtT-dt);
+    if(e.fearedT>0)e.fearedT=Math.max(0, e.fearedT-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/300)*1.5);
+    // It fades where it's lit — barely there in a lantern's glow, solid in the dark.
+    const litHere=(typeof Darkness!=='undefined' && Darkness.active()) ? Darkness.lightAt(e.x,e.y) : 0;
+    const solidity=1-Math.min(0.85, litHere*1.1);
+    ctx.save();
+    ctx.globalAlpha=0.22*solidity; ctx.beginPath(); ctx.ellipse(x,y+9,12,4,0,0,Math.PI*2); ctx.fillStyle='#0A0814'; ctx.fill();
+    ctx.globalAlpha=Math.max(0.15, solidity);
+    // wispy dark body with a ragged lower edge
+    px(x-9,y-10,18,16,'#241C36');
+    px(x-11,y-4,4,8,'#1B1528'); px(x+7,y-4,4,8,'#1B1528');
+    px(x-8,y+5,4,4,'#1B1528'); px(x-1,y+6,4,4,'#1B1528'); px(x+5,y+5,4,4,'#1B1528'); // tatters
+    // glowing eyes
+    const D=e.dir;
+    px(x+D*2-4,y-5,3,3,'#B98BFF'); px(x+D*2+2,y-5,3,3,'#B98BFF');
+    px(x+D*2-3,y-4,1,1,'#F0E6FF'); px(x+D*2+3,y-4,1,1,'#F0E6FF');
+    // hurt flash
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-10,y-12,20,20,'#FF6BA0'); }
+    ctx.restore();
+    Entities.drawAlert(e);
+  },
+});
+
+// ===== src/entities/sporecloud.js =====
+// ====================== ENTITY: SPORE CLOUD (poison zone) ======================
+// A drifting puff of toxic spores in Fungus Hollow. Standing in one keeps you `poisoned`
+// (status.js). Some are permanent fixtures on the map (choke points to time or detour); the
+// ones a toadstool spitter lobs are temporary and fade after a while. Purely a hazard —
+// update + draw, no interaction.
+
+Entities.register('sporecloud', {
+  radius: 0,
+  init(e){
+    e.r    = e.r || 34;
+    e.life = (typeof e.life==='number') ? e.life : -1;   // -1 = permanent fixture
+    e._t   = 0;
+    e._puffs = Array.from({length:5}, ()=>({ a:rand(0,Math.PI*2), rr:rand(0.3,0.95), s:rand(0.7,1.3) }));
+  },
+  update(e, t, dt){
+    e._t=t;
+    if(e.life>0){ e.life-=dt; if(e.life<=0){ Entities.remove(e); return; } }
+    const p=p1;
+    if(p && !p.dead && Math.hypot(p.x-e.x, p.y-e.y) < e.r && typeof Status!=='undefined'){
+      Status.apply(p, 'poisoned', 2400);   // refreshed while you linger inside
+    }
+  },
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    const fade = e.life<0 ? 1 : Math.min(1, e.life/600);   // temporary clouds fade out
+    ctx.save();
+    e._puffs.forEach((pf,i)=>{
+      const wob=Math.sin(t/600 + pf.a*3)*3;
+      const px_=x+Math.cos(pf.a+t/2400)*e.r*0.5*pf.rr;
+      const py_=y+Math.sin(pf.a+t/2400)*e.r*0.32*pf.rr + wob;
+      const rr=e.r*0.5*pf.s;
+      ctx.globalAlpha=0.16*fade;
+      const g=ctx.createRadialGradient(px_,py_,1, px_,py_, rr);
+      g.addColorStop(0,'#B6E86A'); g.addColorStop(1,'rgba(120,180,70,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(px_,py_,rr,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  },
+});
+
+// ===== src/entities/toadstool.js =====
+// ====================== ENTITY: TOADSTOOL SPITTER ======================
+// A rooted, hostile mushroom in Fungus Hollow — the first RANGED enemy. It can't move, but
+// every few seconds it lobs a glob of spores in a high arc toward the dog; where the glob
+// lands it bursts into a lingering spore cloud (entities/sporecloud.js) that poisons. Keep
+// moving, break line of sight behind the giant caps, or blast it with an ability (it has hp,
+// so Entities.hurt fells it like any enemy). Guards the Mooncap chamber in packs.
+
+Entities.register('toadstool', {
+  radius: 26,
+
+  init(e){
+    e.hp    = (typeof e.hp==='number') ? e.hp : 3;
+    e.range = e.range || 230;
+    e.cd    = rand(700, 2000);
+    e.globs = [];
+    e.dir   = 1;
+    e.bob   = 0;
+  },
+
+  update(e, t, dt){
+    const p=p1;
+    e.cd-=dt;
+    if(p && !p.dead && e.cd<=0 && Math.hypot(p.x-e.x, p.y-e.y) < e.range){
+      e.cd=rand(2400, 3400);
+      const tx=clamp(p.x+rand(-20,20), 24, WORLD_W-24), ty=clamp(p.y+rand(-16,16), 30, WORLD_H-24);
+      e.globs.push({ x0:e.x, y0:e.y-10, tx, ty, prog:0, dur:720 });
+      e.dir = tx>=e.x ? 1 : -1;
+      if(typeof sfxHowl==='function') sfxHowl();
+    }
+    for(let i=e.globs.length-1;i>=0;i--){
+      const g=e.globs[i]; g.prog += dt/g.dur;
+      if(g.prog>=1){
+        Entities.spawn('sporecloud', { x:g.tx, y:g.ty, r:30, life:5000 });
+        if(typeof spawnSparkles==='function') spawnSparkles(g.tx, g.ty, '#9FD65A', 8);
+        e.globs.splice(i,1);
+      }
+    }
+    if(e.hurtT>0) e.hurtT=Math.max(0, e.hurtT-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/420)*1);
+    // shadow
+    ctx.globalAlpha=0.22; ctx.beginPath(); ctx.ellipse(x,y+11,13,4,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
+    // stalk
+    px(x-4,y-2,8,12,'#E7E0CE'); px(x-4,y-2,2,12,'#CFC7B2');
+    // angry red cap with pale spots
+    px(x-11,y-12,22,8,'#B23A34'); px(x-9,y-15,18,5,'#C6463E');
+    px(x-8,y-11,3,3,'#F0E6D0'); px(x+1,y-13,3,3,'#F0E6D0'); px(x+6,y-10,2,2,'#F0E6D0');
+    // scowl on the stalk
+    px(x+e.dir*2-4,y+1,3,2,'#2A2A2A'); px(x+e.dir*2+1,y+1,3,2,'#2A2A2A');
+    px(x-3,y+5,6,1,'#3A2E2E');
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-12,y-16,24,26,'#FF6B6B'); ctx.globalAlpha=1; }
+    // in-flight spore globs, arcing
+    e.globs.forEach(g=>{
+      const gx=g.x0+(g.tx-g.x0)*g.prog, gy=g.y0+(g.ty-g.y0)*g.prog - Math.sin(g.prog*Math.PI)*26;
+      ctx.save(); ctx.globalAlpha=0.9;
+      ctx.fillStyle='#9FD65A'; ctx.beginPath(); ctx.arc(Math.round(gx),Math.round(gy),3.4,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.4; ctx.fillStyle='#C6EE86'; ctx.beginPath(); ctx.arc(Math.round(gx)-1,Math.round(gy)-1,1.6,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    Entities.drawAlert(e);
+  },
+});
+
+// ===== src/entities/mooncap.js =====
+// ====================== ENTITY: MOONCAP (quest pickup) ======================
+// The rare, moon-pale mushroom Bramble needs (Fungus Hollow's `fetch-from` objective). It
+// glows softly in the guarded inner chamber; walk into it to pluck it, which drops the
+// 🍄 Mooncap into your bag and completes the fetch. Plain proximity pickup, like a collectible.
+
+Entities.register('mooncap', {
+  radius: 0,
+  init(e){ e.bob=rand(0, Math.PI*2); e.taken=false; e._full=0; },
+
+  update(e, t, dt){
+    if(e.taken) return;
+    const p=p1; if(!p || p.dead) return;
+    if(Math.hypot(p.x-e.x, p.y-e.y) < 24){
+      if(typeof Inventory!=='undefined' && Inventory.roomFor(p,'mooncap') < 1){
+        if(!e._full || t-e._full>2200){ e._full=t; if(typeof showToast==='function') showToast('🎒 Bag full — make room for the Mooncap!',1700); }
+        return;
+      }
+      e.taken=true;
+      Inventory.add(p, 'mooncap', 1);
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9B6FF', 24);
+      if(typeof sfxCheer==='function') sfxCheer();
+      if(typeof showToast==='function') showToast('🍄 You plucked the rare Mooncap!', 2400);
+      if(typeof updateHUD==='function') updateHUD();
+      Entities.remove(e);
+      if(typeof checkWin==='function') checkWin();   // completes the fetch-from objective
+    }
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/500+e.bob)*1.5);
+    // pale moon glow
+    ctx.save();
+    ctx.globalAlpha=0.4+Math.sin(t/300)*0.12;
+    const g=ctx.createRadialGradient(x,y-6,1, x,y-6, 20);
+    g.addColorStop(0,'#D8CBFF'); g.addColorStop(1,'rgba(200,182,255,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-6,20,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    // stalk + domed pale cap with faint spots
+    px(x-2,y-3,4,8,'#EDE9F6');
+    px(x-7,y-11,14,6,'#C9BEEA'); px(x-5,y-14,10,4,'#DAD1F2');
+    px(x-4,y-10,2,2,'#F4F0FF'); px(x+2,y-12,2,2,'#F4F0FF');
+  },
+});
+
+// ===== src/entities/shrinelantern.js =====
+// ====================== ENTITY: SHRINE LANTERN ======================
+// One of the three ancient lanterns of the Moonlit Rite (Firefly Grove). Relit like a
+// firepit — press the action key and stay close while a ring fills — but tinted moon-silver.
+// Once lit it also becomes a light source (darkness.js reads its `lightR`), so relighting the
+// shrine literally lights the grove, and completing all three clears the `ritual` objective
+// (which awakens the Ultimate). If the patrol catches you, it re-darkens the nearest one.
+
+Entities.register('shrinelantern', {
+  radius: 30,
+
+  init(e){
+    e.lit      = !!e.lit;
+    e.relightT = 0;
+    e._relMax  = 1500;
+    e._embT    = 0;
+    e.lightR   = e.lit ? 96 : 0;    // darkness.js counts this as a world light when > 0
+  },
+
+  update(e, t, dt){
+    if(e.lit || e.relightT<=0) return;
+    const p=p1;
+    if(!p || p.dead || Math.hypot(p.x-e.x, p.y-e.y)>44){ e.relightT=0; return; }
+    e.relightT -= dt;
+    e._embT -= dt;
+    if(e._embT<=0){ e._embT=130; if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-4, '#CBB6FF', 3); }
+    if(e.relightT<=0){
+      e.relightT=0; e.lit=true; e.lightR=96;
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-8, '#E6DCFF', 24);
+      if(typeof sfxCheer==='function') sfxCheer();
+      if(typeof showToast==='function') showToast('🔮 A shrine lantern flares to moonlight.', 1900);
+      if(typeof updateHUD==='function') updateHUD();
+      if(typeof checkWin==='function') checkWin();   // completes the ritual when all three are lit
+    }
+  },
+
+  // The patrol re-darkens a lantern when it catches you (a setback, not a failure).
+  douse(e){ if(e.lit){ e.lit=false; e.lightR=0; if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#3A3358', 12); } },
+
+  onInteract(e, p){
+    if(e.lit){ if(typeof showToast==='function') showToast('🔮 This lantern already glows.', 1200); return; }
+    if(e.relightT>0) return;
+    e.relightT=e._relMax;
+    if(typeof sfxDig==='function') sfxDig();
+    if(typeof showToast==='function') showToast('🔮 Kindling the moonlight…', 1000);
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    // stone plinth
+    px(x-6,y+4,12,6,'#6A6478'); px(x-8,y+9,16,3,'#544E64');
+    // lantern housing
+    px(x-5,y-14,10,16,'#4A4460');
+    px(x-3,y-12,6,12, e.lit ? '#DCD2FF' : '#241F36');
+    if(e.lit){
+      const fl=0.7+Math.sin(t/200+x)*0.18;
+      ctx.save();
+      ctx.globalAlpha=0.5*fl;
+      const g=ctx.createRadialGradient(x,y-8,1, x,y-8, 26);
+      g.addColorStop(0,'#E4DAFF'); g.addColorStop(1,'rgba(206,190,255,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y-8,26,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    } else if(e.relightT>0){
+      const prog=1-(e.relightT/(e._relMax||1500));
+      ctx.save(); ctx.lineWidth=3; ctx.strokeStyle='rgba(74,63,53,0.35)';
+      ctx.beginPath(); ctx.arc(x,y-22,9,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='#CBB6FF';
+      ctx.beginPath(); ctx.arc(x,y-22,9,-Math.PI/2,-Math.PI/2+prog*Math.PI*2); ctx.stroke(); ctx.restore();
+    } else if(p1 && !p1.dead && Math.hypot(p1.x-e.x,p1.y-e.y)<44){
+      const pulse=1+Math.sin(t/240)*0.12;
+      ctx.save(); ctx.translate(x,y-20); ctx.scale(pulse,pulse);
+      ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.lineWidth=3; ctx.strokeStyle='#FFF8EF'; ctx.strokeText('!',0,0);
+      ctx.fillStyle='#8A6ABF'; ctx.fillText('!',0,0); ctx.restore();
+    }
+  },
+});
+
+// ===== src/entities/patrol.js =====
+// ====================== ENTITY: PATROL (grove guardian shadow) ======================
+// The looming shadow that circles the Moonlit Rite in Firefly Grove — the Old Grizzly's
+// roving presence. It sweeps a fixed beat back and forth, sweeping a SIGHT CONE ahead of it;
+// stray into the cone and it spots you: a shove backwards and, worse, it snuffs out the
+// nearest lit shrine lantern (a setback, never a death). You don't fight it — you time your
+// dashes to the lanterns between its passes. Purely update + draw.
+
+Entities.register('patrol', {
+  radius: 0,
+
+  init(e){
+    e.speed = e.speed || 0.9;
+    e.dir   = e.dir   || 1;
+    e.coneR = e.coneR || 165;
+    e.coneA = e.coneA || 0.55;     // half-angle of the sight cone
+    e.range = e.range || 320;      // sweep distance from its start x
+    e.x0    = e.x;
+    e.cool  = 0; e.alertT = 0; e.bob = 0;
+  },
+
+  update(e, t, dt){
+    // sweep back and forth
+    e.x += e.dir*e.speed*dtScale;
+    if(e.x > e.x0+e.range){ e.x=e.x0+e.range; e.dir=-1; }
+    if(e.x < e.x0-e.range){ e.x=e.x0-e.range; e.dir=1; }
+    e.x=clamp(e.x, 30, WORLD_W-30);
+
+    const p=p1;
+    if(p && !p.dead && e.cool<=0){
+      const dx=p.x-e.x, dy=p.y-e.y, dist=Math.hypot(dx,dy);
+      const facing = e.dir>=0 ? 0 : Math.PI;
+      const diff = Math.abs(((Math.atan2(dy,dx)-facing+Math.PI)%(Math.PI*2))-Math.PI);
+      if(dist<e.coneR && diff<e.coneA){
+        e.cool=2600; e.alertT=800;
+        // shove the dog back out of the cone
+        const k=Math.atan2(p.y-e.y, p.x-e.x);
+        p.x=clamp(p.x+Math.cos(k)*42, 20, WORLD_W-20);
+        p.y=clamp(p.y+Math.sin(k)*42, 26, WORLD_H-20);
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#8A6ABF', 12);
+        if(typeof showToast==='function') showToast('👁️ The guardian shadow spotted you!', 1900);
+        // snuff the nearest lit shrine lantern
+        let best=null, bd=Infinity;
+        (typeof entities!=='undefined'?entities:[]).forEach(o=>{
+          if(o.kind==='shrinelantern' && o.lit){ const d=Math.hypot(o.x-p.x, o.y-p.y); if(d<bd){ bd=d; best=o; } }
+        });
+        const def=Entities.def('shrinelantern');
+        if(best && def && def.douse){ def.douse(best); if(typeof showToast==='function') showToast('🔮 A shrine lantern went dark!', 1700); if(typeof updateHUD==='function') updateHUD(); }
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+    }
+    if(e.cool>0)   e.cool=Math.max(0, e.cool-dt);
+    if(e.alertT>0) e.alertT=Math.max(0, e.alertT-dt);
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y+Math.sin(t/360)*1.5);
+    const facing = e.dir>=0 ? 0 : Math.PI;
+    // sight cone
+    ctx.save();
+    ctx.globalAlpha=e.alertT>0 ? 0.22 : 0.12;
+    ctx.fillStyle=e.alertT>0 ? '#E0503C' : '#7A6AA6';
+    ctx.beginPath(); ctx.moveTo(x,y);
+    ctx.arc(x, y, e.coneR, facing-e.coneA, facing+e.coneA); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    // shadow beast body
+    ctx.save();
+    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y+13,18,5,0,0,Math.PI*2); ctx.fillStyle='#0A0814'; ctx.fill(); ctx.restore();
+    px(x-14,y-14,28,20,'#171226');
+    px(x-16,y-6,5,10,'#100C1C'); px(x+11,y-6,5,10,'#100C1C');
+    // hunched head toward facing
+    const hx=x+(e.dir>=0?10:-10);
+    px(hx-7,y-20,14,10,'#1E1730');
+    px(hx-8,y-24,5,6,'#120E20'); px(hx+3,y-24,5,6,'#120E20');   // ears
+    // glowing eyes
+    px(hx-4,y-16,3,3,'#E06B6B'); px(hx+1,y-16,3,3,'#E06B6B');
+    px(hx-3,y-15,1,1,'#FFD0D0'); px(hx+2,y-15,1,1,'#FFD0D0');
+    Entities.drawAlert(e);
+  },
+});
+
+// ===== src/entities/alphawolf.js =====
+// ====================== ENTITY: ALPHA WOLF (Rocky Mountains boss) ======================
+// The first real boss fight — a huge pack leader that tests the combat the biome taught. It
+// stalks you, TELEGRAPHS a lunge (a crouch you sidestep), and at half health starts HOWLING
+// to summon pack-mates and buff itself — but the howl has a long wind-up you can INTERRUPT by
+// hitting it, so an ability landed at the right moment saves you a two-front fight. Below a
+// third health it enrages: faster, and it lunges more often.
+//
+// Losing is cozy: run out of hearts and it's the normal Game Over → Play Again, which rebuilds
+// this arena with your dog and gear intact. Beating it (Entities.hurt on 0 hp) drops the
+// biome-finale loot and, since it's the last real level of the mountains, a golden chest via
+// checkWin. It sets `boss:true` (so it resists knockback and gets the boss defeat banner) and
+// `name` for the HP bar + banners.
+
+function _awNearest(e){
+  let best=null, bd=Infinity;
+  for(const p of Game.players){ if(!p || p.dead) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bd){ bd=d; best=p; } }
+  return best;
+}
+
+Entities.register('alphawolf', {
+  radius: 42,
+
+  init(e){
+    e.name    = e.name || 'The Alpha Wolf';
+    e.boss    = true;
+    e.noKnockback = true;
+    e.maxHp   = e.maxHp || 34;
+    e.hp      = (typeof e.hp==='number' && e.hp<=e.maxHp) ? e.hp : e.maxHp;
+    e.speed   = e.speed || 1.05;
+    e.dmg     = e.dmg   || 3;
+    e.dir     = -1;
+    e.state   = 'chase';      // 'chase' | 'windup' | 'lunge' | 'howl'
+    e.actT    = 0;            // remaining ms in the current scripted state
+    e.lungeCd = 2400; e.summonCd = 7000;
+    e.lvx=0; e.lvy=0; e.touchCd=0; e.bob=0; e.summoned=0;
+  },
+
+  update(e, t, dt){
+    const p=_awNearest(e);
+    if(!p){ e.bob=t; return; }
+    const dist=Math.hypot(p.x-e.x, p.y-e.y);
+    const frac=e.hp/e.maxHp;
+    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const enraged = phase===3;
+    const spd = e.speed * (enraged ? 1.35 : 1);
+
+    e.lungeCd=Math.max(0,e.lungeCd-dt); e.summonCd=Math.max(0,e.summonCd-dt);
+    if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
+    if(e.hurtT>0)   e.hurtT=Math.max(0,e.hurtT-dt);
+    if(e.alertT>0)  e.alertT=Math.max(0,e.alertT-dt);
+
+    // ---- scripted states ----
+    if(e.state==='windup'){                      // crouch, then explode into a lunge
+      e.actT-=dt;
+      if(e.actT<=0){ e.state='lunge'; e.actT=360; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=enraged?9:7.5; e.lvx=Math.cos(a)*L; e.lvy=Math.sin(a)*L; if(typeof sfxHowl==='function') sfxHowl(); }
+      e.bob=t; return;
+    }
+    if(e.state==='lunge'){
+      e.x=clamp(e.x+e.lvx*dtScale, 20, WORLD_W-20);
+      e.y=clamp(e.y+e.lvy*dtScale, 26, WORLD_H-20);
+      e.dir=e.lvx>=0?1:-1;
+      if(dist<30 && e.touchCd<=0){ _awBite(e,p); e.touchCd=700; }
+      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.lungeCd=enraged?1600:2600; }
+      e.bob=t; return;
+    }
+    if(e.state==='howl'){
+      // interruptible: a solid hit during the wind-up cancels it and staggers the wolf
+      if(e.hurtT>0){ e.state='chase'; e.summonCd=3000; e.actT=0; if(typeof showToast==='function') showToast('💫 You interrupted the howl!',1600); e.bob=t; return; }
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='chase'; e.summonCd = enraged?9000:12000;
+        const n = enraged?2:1;
+        for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('wolf',{ x:clamp(e.x+Math.cos(a)*60,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*60,40,WORLD_H-40), speed:1.15 }); }
+        e.summoned+=n;
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-10,'#C9C9E0',18);
+        if(typeof showToast==='function') showToast('🐺 The Alpha calls the pack!',1700);
+      }
+      e.bob=t; return;
+    }
+
+    // ---- decide the next move (chase) ----
+    if(phase>=2 && e.summonCd<=0 && dist<440 && e.summoned<(enraged?6:4)){
+      e.state='howl'; e.actT= enraged?800:1000; e.alertT=700;   // long, interruptible wind-up
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-16,'#B9B9D8',6);
+      e.bob=t; return;
+    }
+    if(e.lungeCd<=0 && dist<300){
+      e.state='windup'; e.actT= enraged?420:560; e.alertT=500;  // brief crouch tell
+      e.bob=t; return;
+    }
+    // otherwise pad toward the dog
+    const a=Math.atan2(p.y-e.y, p.x-e.x);
+    e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 20, WORLD_W-20);
+    e.y=clamp(e.y+Math.sin(a)*spd*dtScale, 26, WORLD_H-20);
+    e.dir=Math.cos(a)>=0?1:-1;
+    if(dist<26 && e.touchCd<=0){ _awBite(e,p); e.touchCd=900; }
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y + (e.state==='windup'?2:Math.sin(t/300)*1));
+    const D=e.dir, crouch=(e.state==='windup');
+    // shadow (big)
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+14,20,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A1A'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell: a red crouch aura
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.3+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; ctx.beginPath(); ctx.ellipse(x,y+6,26,12,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // body (large dark-grey wolf)
+    const bodyY=y-(crouch?2:6);
+    px(x-18,bodyY-6,36,20,'#5A5E68'); px(x-14,bodyY+2,28,10,'#7A7E88');
+    px(x-14,bodyY+12,6,7,'#3A3E46'); px(x+8,bodyY+12,6,7,'#3A3E46');   // legs
+    // tail
+    const tw=Math.sin(t/160)*4;
+    px(x-D*20,bodyY-4+tw*0.4,6,12,'#4A4E56');
+    // head toward facing
+    const hx=x+D*14;
+    px(hx-8,bodyY-14,16,14,'#4E525C');
+    px(hx-8,bodyY-18,5,7,'#3A3E46'); px(hx+3,bodyY-18,5,7,'#3A3E46'); // ears
+    px(hx+D*2-4,bodyY-8,3,3,'#FFC83A'); px(hx+D*2+2,bodyY-8,3,3,'#FFC83A'); // amber eyes
+    px(hx+D*5-2,bodyY-4,4,3,'#2A2E36'); // snout
+    // howl tell: head-back + rings
+    if(e.state==='howl'){
+      ctx.save(); ctx.globalAlpha=0.5*(0.5+0.5*Math.sin(t/120)); ctx.strokeStyle='#C9C9E0'; ctx.lineWidth=2;
+      for(let i=1;i<=2;i++){ ctx.beginPath(); ctx.arc(hx, bodyY-14, 10+i*8+(t/40%10), -Math.PI*0.9, -Math.PI*0.1); ctx.stroke(); }
+      ctx.restore();
+    }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-20,y-22,40,36,'#FF5B5B'); ctx.globalAlpha=1; }
+    Entities.drawAlert(e);
+  },
+});
+
+function _awBite(e, p){
+  spawnSparkles(p.x, p.y-8, '#E05555', 12);
+  if(typeof Health!=='undefined') Health.damage(p, (e.dmg||3));
+  const ang=Math.atan2(p.y-e.y, p.x-e.x);
+  p.x=clamp(p.x+Math.cos(ang)*18, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*18, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
+
+// ===== src/entities/grizzly.js =====
+// ====================== ENTITY: OLD GRIZZLY (Whispering Woods boss) ======================
+// The second boss — a slow, immense bear that guards the grove. Where the Alpha Wolf darts
+// and summons, the Grizzly is all weight: it lumbers after you and unleashes two big,
+// telegraphed attacks you read and dodge —
+//   • SLAM — it rears up, then ground-pounds; a shockwave ring blooms out, so get clear of it.
+//   • CHARGE — it paws the ground, then barrels in a straight line; sidestep and it rumbles past.
+// Below a third health it enrages: quicker, and it chains its attacks. It's tankier than the
+// wolf but has no summons, so the fight is pure dodging — a test of the reflexes the whole
+// biome (and Cliffside's rockfalls) trained.
+//
+// Reuses the boss framework: boss:true (HP bar + banner + knockback-resist), phased scripted
+// states, config loot/XP (LOOT_DATA.enemies.grizzly), and `defeat` to clear. Being the last
+// real level of the woods, beating it drops the biome-finale golden chest.
+
+function _grizNearest(e){
+  let best=null, bd=Infinity;
+  for(const p of Game.players){ if(!p || p.dead) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bd){ bd=d; best=p; } }
+  return best;
+}
+
+Entities.register('grizzly', {
+  radius: 46,
+
+  init(e){
+    e.name='The Old Grizzly'; e.boss=true; e.noKnockback=true;
+    e.maxHp = e.maxHp || 44;
+    e.hp    = (typeof e.hp==='number' && e.hp<=e.maxHp) ? e.hp : e.maxHp;
+    e.speed = e.speed || 0.68;      // slow and heavy
+    e.dmg   = e.dmg   || 4;
+    e.slamR = e.slamR || 100;
+    e.dir=-1; e.state='chase'; e.actT=0;
+    e.slamCd=3200; e.chargeCd=5200; e.touchCd=0;
+    e.cvx=0; e.cvy=0; e.slamRingT=0; e.bob=0;
+  },
+
+  update(e, t, dt){
+    const p=_grizNearest(e);
+    if(!p){ e.bob=t; return; }
+    const dist=Math.hypot(p.x-e.x, p.y-e.y);
+    const frac=e.hp/e.maxHp;
+    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const enraged = phase===3;
+    const spd = e.speed * (enraged ? 1.45 : 1);
+
+    e.slamCd=Math.max(0,e.slamCd-dt); e.chargeCd=Math.max(0,e.chargeCd-dt);
+    if(e.touchCd>0)  e.touchCd=Math.max(0,e.touchCd-dt);
+    if(e.slamRingT>0)e.slamRingT=Math.max(0,e.slamRingT-dt);
+    if(e.hurtT>0)    e.hurtT=Math.max(0,e.hurtT-dt);
+    if(e.alertT>0)   e.alertT=Math.max(0,e.alertT-dt);
+
+    // ---- scripted states ----
+    if(e.state==='slamwind'){                 // reared up
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='chase'; e.slamCd = enraged?2200:3600; e.slamRingT=520;
+        if(dist < e.slamR){ _grizHit(e, p, e.dmg+1); }     // caught in the pound
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+6, '#9A7C50', 16);
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='chargewind'){                // pawing the ground
+      e.actT-=dt;
+      if(e.actT<=0){ e.state='charge'; e.actT= enraged?560:480; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=enraged?8.5:7; e.cvx=Math.cos(a)*L; e.cvy=Math.sin(a)*L; e.dir=e.cvx>=0?1:-1; if(typeof sfxHowl==='function') sfxHowl(); }
+      e.bob=t; return;
+    }
+    if(e.state==='charge'){
+      e.x=clamp(e.x+e.cvx*dtScale, 20, WORLD_W-20);
+      e.y=clamp(e.y+e.cvy*dtScale, 26, WORLD_H-20);
+      if(dist<34 && e.touchCd<=0){ _grizHit(e, p, e.dmg+1); e.touchCd=800; }
+      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.chargeCd = enraged?3200:5200; }
+      e.bob=t; return;
+    }
+
+    // ---- decide the next move ----
+    if(e.chargeCd<=0 && dist>150 && dist<440){
+      e.state='chargewind'; e.actT= enraged?520:680; e.alertT=600;
+      e.bob=t; return;
+    }
+    if(e.slamCd<=0 && dist<130){
+      e.state='slamwind'; e.actT= enraged?560:760; e.alertT=600;
+      e.bob=t; return;
+    }
+    // lumber toward the dog
+    const a=Math.atan2(p.y-e.y, p.x-e.x);
+    e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 20, WORLD_W-20);
+    e.y=clamp(e.y+Math.sin(a)*spd*dtScale, 26, WORLD_H-20);
+    e.dir=Math.cos(a)>=0?1:-1;
+    if(dist<30 && e.touchCd<=0){ _grizHit(e, p, e.dmg); e.touchCd=1000; }
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const rear=(e.state==='slamwind');
+    const x=Math.round(e.x), y=Math.round(e.y + (rear? -3 : Math.sin(t/340)*1));
+    const D=e.dir;
+    // slam shockwave ring
+    if(e.slamRingT>0){
+      const prog=1-e.slamRingT/520;
+      ctx.save(); ctx.globalAlpha=0.5*(1-prog); ctx.lineWidth=5; ctx.strokeStyle='#C7A56A';
+      ctx.beginPath(); ctx.arc(x, y+8, 10+prog*e.slamR, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+    // shadow
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,22,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
+    // charge tell (dust) / slam tell (rear aura)
+    if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; px(x-D*4-22,y+8,44,4,'#E0503C'); ctx.restore(); }
+    if(rear){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,30,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // body (big brown bear)
+    const by=y-(rear?4:8);
+    px(x-20,by-8,40,24,'#6E4A2E'); px(x-15,by+2,30,12,'#835A38');
+    px(x-16,by+14,8,8,'#4A3018'); px(x+8,by+14,8,8,'#4A3018');   // legs/paws
+    // hump + head
+    px(x-8,by-14,16,8,'#5E3E26');
+    const hx=x+D*16;
+    px(hx-9,by-10,18,15,'#5A3A22');
+    px(hx-9,by-15,6,7,'#4A3018'); px(hx+3,by-15,6,7,'#4A3018');   // ears
+    px(hx+D*2-4,by-4,3,3,'#2A1A10'); px(hx+D*2+2,by-4,3,3,'#2A1A10'); // eyes
+    px(hx+D*6-3,by,5,4,'#3A2414');   // snout
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-22,by-16,44,40,'#FF6B6B'); ctx.globalAlpha=1; }
+    Entities.drawAlert(e);
+  },
+});
+
+function _grizHit(e, p, dmg){
+  spawnSparkles(p.x, p.y-8, '#E0A055', 12);
+  if(typeof Health!=='undefined') Health.damage(p, dmg);
+  const ang=Math.atan2(p.y-e.y, p.x-e.x);
+  p.x=clamp(p.x+Math.cos(ang)*22, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*22, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
 
 // ===== src/entities/portal.js =====
 // ====================== ENTITY: EXIT PORTAL ======================
@@ -5300,6 +6664,9 @@ const Abilities = {
     (p.abilities||[]).forEach((id,slot)=>{
       const d=this.get(id); if(d && d.update) d.update(p, dt, 'ability'+(slot+1));
     });
+    // The Ultimate rides the reserved R slot (ability3), gated on its own unlock (the Moonlit
+    // Rite in Firefly Grove) rather than the first-boss one.
+    if(p.ultimateUnlocked){ const u=this.get('ultimate'); if(u && u.update) u.update(p, dt, 'ability3'); }
   },
   _lockedHint(){
     const now=(typeof performance!=='undefined') ? performance.now() : 0;
@@ -6032,6 +7399,61 @@ const Abilities = {
   Abilities.register('scurry', { name:'Scurry', icon:'💨', skillNode:'scurry', spawn, reset, update, speedMul });
 })();
 
+// ===== src/abilities/ultimate.js =====
+// ====================== ABILITY: ULTIMATE — MOONBURST ======================
+// The dog's ultimate, fired on the R key. It stays dormant through the whole early game and
+// is AWAKENED by the Moonlit Rite in Firefly Grove (checkWin sets p.ultimateUnlocked when a
+// level flagged `unlockUltimate` is cleared) — the story counterpart to the abilities the
+// first boss unlocked.
+//
+// For now every breed shares one generic Ultimate: a radiant Moonburst that blasts every
+// nearby foe, heals the dog, and grants a blink of invulnerability, on a long cooldown.
+// (Per-breed ultimates — Dinno's thunderstorm, Lolla's barrage, Ťapka's frenzy — are a
+// planned follow-up; they'll gate on the same `ultimateUnlocked` flag and R dispatch.)
+
+(function(){
+  const CD=38000, R=135, DMG=4, HEAL=4;
+  const HOSTILE=['enemy','wolf','packleader','shadowlurker','toadstool'];
+
+  function activate(p){
+    if(!p || !p.ultimateUnlocked) return;
+    const cd=Abilities.cdLeft(p,'ultimate');
+    if(cd>0){ if(typeof showToast==='function') showToast(`⏳ Ultimate recharging (${Math.ceil(cd/1000)}s)`,1400); return; }
+    Abilities.startCd(p,'ultimate',CD);
+    (typeof entities!=='undefined'?entities:[]).slice().forEach(e=>{
+      if(typeof e.hp==='number' && HOSTILE.indexOf(e.kind)!==-1 && Math.hypot(e.x-p.x, e.y-p.y)<R){
+        Entities.hurt(e, DMG, p.x, p.y, 22);
+      }
+    });
+    if(typeof Health!=='undefined') Health.heal(p, HEAL);
+    p.ultBurstT=650;
+    p.invulnT=Math.max(p.invulnT||0, 550);
+    if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#C9B6FF', 40);
+    if(typeof sfxCheer==='function') sfxCheer();
+    if(typeof showToast==='function') showToast('🌟 Moonburst!', 1400);
+  }
+
+  function update(p, dt, trigger){
+    const held=(typeof Input!=='undefined') && Input.held(trigger);
+    if(held && !p._ultHeld) activate(p);
+    p._ultHeld=held;
+    if(p.ultBurstT>0) p.ultBurstT=Math.max(0, p.ultBurstT-dt);
+  }
+
+  function drawWorld(t){
+    const p=(typeof p1!=='undefined')?p1:null; if(!p || !(p.ultBurstT>0)) return;
+    const prog=1-p.ultBurstT/650;
+    ctx.save();
+    ctx.globalAlpha=0.55*(1-prog); ctx.lineWidth=5; ctx.strokeStyle='#C9B6FF';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 12+prog*R, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=0.35*(1-prog); ctx.lineWidth=2; ctx.strokeStyle='#F4EEFF';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 12+prog*R*0.7, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  Abilities.register('ultimate', { name:'Moonburst', icon:'🌟', ultimate:true, spawn(){}, reset(){}, update, drawWorld });
+})();
+
 // ===== src/levels/from-config.js =====
 // ====================== LEVELS FROM CONFIG ======================
 // Turns each entry in src/config/levels.json (baked into LEVELS_DATA) into a registered
@@ -6056,6 +7478,61 @@ QUEST_TYPES['cheer-all'] = {
 QUEST_TYPES['none'] = {
   describe(){ return 'Walk to the portal'; },
   isComplete(){ return false; },
+};
+
+// 'kindle' — relight every firepit in the level (entities/firepit.js). The clear objective of
+// Frozen Pass: rekindle the waystation fires to warm the pass and open the way onward.
+QUEST_TYPES['kindle'] = {
+  _fires(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='firepit');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const f=this._fires(); return `Fires lit ${f.lit}/${f.total}`; },
+  isComplete(){ const f=this._fires(); return f.total>0 && f.lit>=f.total; },
+};
+
+// 'ritual' — light every shrine lantern (entities/shrinelantern.js). The Moonlit Rite in
+// Firefly Grove; completing it (a level flagged `unlockUltimate`) awakens the R Ultimate.
+QUEST_TYPES['ritual'] = {
+  _lamps(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='shrinelantern');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const l=this._lamps(); return `Shrine lanterns lit ${l.lit}/${l.total}`; },
+  isComplete(){ const l=this._lamps(); return l.total>0 && l.lit>=l.total; },
+};
+
+// 'defeat' — clear the level's guardians (enemies). Cliffside Climb's gauntlet: drive off
+// every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
+// enemy-less level from counting as instantly won.
+let _defeatArmed = false;
+const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool','alphawolf','grizzly'];
+QUEST_TYPES['defeat'] = {
+  _left(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    return es.filter(e=>_ENEMY_KINDS.indexOf(e.kind)!==-1).length;
+  },
+  describe(){ return `Enemies left ${this._left()}`; },
+  isComplete(){ return _defeatArmed && this._left()===0; },
+};
+
+// 'fetch-from' — retrieve a specific item from somewhere in the level and carry it out
+// (Fungus Hollow's Mooncap). `_fetchItem` is set in generate from the quest config.
+let _fetchItem = null;
+QUEST_TYPES['fetch-from'] = {
+  describe(){
+    if(!_fetchItem) return 'Find the item';
+    const d=(typeof Items!=='undefined') ? Items.get(_fetchItem) : null;
+    const have=(typeof p1!=='undefined' && typeof Inventory!=='undefined') ? Inventory.count(p1,_fetchItem) : 0;
+    return have>0 ? `${d?d.icon:''} Retrieved!` : `Find the ${d?d.name:_fetchItem}`;
+  },
+  isComplete(){
+    if(!_fetchItem) return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>Inventory.count(p,_fetchItem)>0);
+  },
 };
 
 // ---- helpers ----
@@ -6112,6 +7589,9 @@ function buildCollectibles(spec){
       next: cfg.next || null,
       theme: cfg.theme,
       autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
+      cold: !!cfg.cold,               // drives the warmth-survival meter (warmth.js)
+      dark: !!cfg.dark,               // drives the darkness/light overlay (darkness.js)
+      unlockUltimate: !!cfg.unlockUltimate,   // clearing this level awakens the R Ultimate
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -6131,6 +7611,10 @@ function buildCollectibles(spec){
 
         // 4) actors — npcs (shops / quest-givers), enemies, critters
         Entities.clear();
+        // Arm the `defeat` objective only when this level actually fields enemies; remember
+        // the `fetch-from` target item for its describe/isComplete.
+        _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
+        _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -6149,6 +7633,31 @@ function buildCollectibles(spec){
           const p=_resolvePos(c); if(!p) return;
           Entities.spawn('critter', { species:c.species, x:p.x, y:p.y });
         });
+        (cfg.firepits||[]).forEach(f=>{
+          const p=_resolvePos(f); if(!p) return;
+          Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
+        });
+        (cfg.rockfalls||[]).forEach((rf,i)=>{
+          const p=_resolvePos(rf); if(!p) return;
+          const vy=v=>(v==null?undefined:(v<=1 ? WORLD_H*v : v));   // fraction or absolute y
+          Entities.spawn('rockfall', { x:p.x, _i:i, top:vy(rf.top), bottom:vy(rf.bottom),
+            speed:rf.speed, period:rf.period, warn:rf.warn, dmg:rf.dmg, startDelay:rf.startDelay });
+        });
+        (cfg.lanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('lanternpost', { x:p.x, y:p.y });
+        });
+        (cfg.shrinelanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('shrinelantern', { x:p.x, y:p.y, lit:!!l.lit });
+        });
+        (cfg.sporeclouds||[]).forEach(s=>{
+          const p=_resolvePos(s); if(!p) return;
+          Entities.spawn('sporecloud', { x:p.x, y:p.y, r:s.r||34, life:-1 });   // permanent choke points
+        });
+        if(cfg.mooncap){
+          const p=_resolvePos(cfg.mooncap); if(p) Entities.spawn('mooncap', { x:p.x, y:p.y });
+        }
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);
@@ -6397,6 +7906,8 @@ const LevelManager = {
       p.dead=false;                 // fallen dogs are revived for the new level
     });
     if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
+    if(typeof Warmth!=='undefined') Warmth.reset(p1);   // enter every level toasty-warm
+    if(typeof Status!=='undefined') Status.clearAll(p1);// and free of any lingering conditions
     if(typeof sparkles!=='undefined') sparkles=[];
     if(typeof updateCamera==='function') updateCamera();
     if(typeof updateHUD==='function') updateHUD();
@@ -6424,6 +7935,7 @@ function updatePlayer(p,t,dt){
   if(typeof Abilities!=='undefined'){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
+  if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -6443,6 +7955,8 @@ function updatePlayer(p,t,dt){
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
+  if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
   Abilities.update(p,dt);
   if(Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
@@ -6548,6 +8062,13 @@ function checkWin(){
   // Clearing the level grants skill points (stats) + level-clear XP — fires once, here,
   // guarded by the portal check above.
   if(typeof Progression!=='undefined') Progression.onLevelCleared(p1);
+  // Completing the Moonlit Rite (a level flagged `unlockUltimate`) awakens the R Ultimate,
+  // mirroring how the first boss awakened Q/E — a story-driven power milestone.
+  if(lvl.unlockUltimate && p1 && !p1.ultimateUnlocked){
+    p1.ultimateUnlocked=true;
+    if(typeof Tips!=='undefined') Tips.show('ultimate');
+    if(typeof updateHUD==='function') updateHUD();
+  }
   // The world keeps playing: a biome-themed exit portal appears near the dog, and the
   // player walks into it to reveal the journey map (portal.js runs the old flow).
   // On a biome's final level a golden chest materialises beside it.
@@ -6736,6 +8257,8 @@ const Tips = {
       body:"Your bag holds treats, food and gear. Drag items to rearrange them, drag them onto the world to drop them, or onto your dog to wear gear. The bottom row is your hotbar — press number keys to use those items quickly." },
     skills:   { icon:'🌳', title:'Skill Tree',
       body:"Spend 🌳 skill points (earned by clearing levels) on lasting character upgrades — more health, faster paws, a keener nose, quieter steps. The 🌳 button glows whenever points are waiting to be spent." },
+    ultimate: { icon:'🌟', title:'Ultimate Awakened!',
+      body:"The Moonlit Rite has awoken your dog's Ultimate — press R to unleash Moonburst: a radiant blast that hits every nearby foe, heals you, and shields you for a moment. It's mighty, so it has a long cooldown." },
     mastery:  { icon:'🎓', title:'Ability Mastery',
       body:"Spend 🎓 mastery points (earned by leveling up) to unlock your dog's abilities and rank them up. Stronger effects, shorter cooldowns — build your dog your way." },
     worldmap: { icon:'🗺️', title:'Your Journey',
@@ -6852,7 +8375,7 @@ const Save = {
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
              skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
              mastery:Object.assign({}, p.mastery), masteryPoints:p.masteryPoints||0,
-             abilitiesUnlocked:!!p.abilitiesUnlocked,
+             abilitiesUnlocked:!!p.abilitiesUnlocked, ultimateUnlocked:!!p.ultimateUnlocked,
              xp:p.xp||0, dogLevel:p.dogLevel||1 };
   },
 
@@ -6955,6 +8478,7 @@ const Save = {
       // Abilities are unlocked if the save says so, or (back-compat for saves made before
       // the boss unlock existed) if any ability was already ranked up.
       pl.abilitiesUnlocked = !!sp.abilitiesUnlocked || Object.keys(pl.mastery).some(k=>pl.mastery[k]>0);
+      pl.ultimateUnlocked = !!sp.ultimateUnlocked;
       pl.xp = sp.xp || 0;
       pl.dogLevel = sp.dogLevel || 1;
       if(typeof Mastery!=='undefined') Mastery.migrate(pl);   // pre-split saves: skills→mastery
@@ -7076,6 +8600,9 @@ const UI = {
     set('questProgress', lvl && lvl.quest ? lvl.quest.describe() : '—');
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
+    this.updateWarmth();
+    this.updateStatus();
+    this.updateBossBar();
     this.renderHotbar();
     this.renderTreeButtons();
     this.renderQuestTracker();
@@ -7084,6 +8611,42 @@ const UI = {
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
     if(this.skillsOpen) this.renderSkills();
+  },
+
+  // ---------- warmth gauge (cold levels only) ----------
+  // Shown only in a `cold` level; the fill shrinks as warmth drains and turns icy-blue as it
+  // empties. Updated both from updateHUD and every frame from Warmth.tick.
+  updateWarmth(){
+    const panel=this.$('warmthPanel'); if(!panel) return;
+    const on = (typeof Warmth!=='undefined') && Warmth.active();
+    panel.style.display = on ? 'flex' : 'none';
+    if(!on) return;
+    const f=Warmth.frac(p1);
+    const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
+    panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
+  },
+
+  // ---------- status effects (poisoned, …) ----------
+  // A small HUD chip listing active timed conditions with their icon + seconds left.
+  updateStatus(){
+    const panel=this.$('statusPanel'); if(!panel) return;
+    if(typeof Status==='undefined' || !p1 || !p1.status){ panel.style.display='none'; return; }
+    const active=Object.keys(p1.status).filter(n=>p1.status[n]>0 && Status.DEFS[n]);
+    if(!active.length){ panel.style.display='none'; panel.innerHTML=''; return; }
+    panel.style.display='flex';
+    panel.innerHTML=active.map(n=>`<span class="status-chip" title="${n}">${Status.DEFS[n].icon}<b>${Math.ceil(p1.status[n]/1000)}s</b></span>`).join('');
+  },
+
+  // ---------- boss HP bar ----------
+  // Shows over the frame while a boss entity is alive; hides once it's beaten.
+  updateBossBar(){
+    const bar=this.$('bossBar'); if(!bar) return;
+    const boss=(typeof entities!=='undefined' && entities) ? entities.find(e=>e.boss && typeof e.hp==='number' && e.hp>0) : null;
+    const worldVisible = Game.state===SCENES.PLAYING || Game.state===SCENES.PAUSED || Game.state===SCENES.DIALOG;
+    if(!boss || !worldVisible){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    const nm=this.$('bossName'); if(nm) nm.textContent='👑 '+(boss.name||'Boss');
+    const fill=bar.querySelector('#bossHp i'); if(fill) fill.style.width=Math.max(0, Math.min(100, (boss.hp/(boss.maxHp||boss.hp))*100))+'%';
   },
 
   // ---------- upgrade-tree buttons (🌳 skills / 🎓 mastery) ----------
@@ -7578,19 +9141,21 @@ const UI = {
     // 0/1 are the standard abilities (Q/E); slot 2 is the ULTIMATE (R), styled apart.
     const abilities=(p1&&p1.abilities)||[];
     for(let i=0;i<3;i++){
-      const id=abilities[i];
-      const def=Abilities.get(id);
       const ult=(i===2);
+      // The R slot is the Ultimate (awoken at the Moonlit Rite); Q/E come from the breed.
+      let id=abilities[i], def=Abilities.get(id);
+      if(ult){ id='ultimate'; def=Abilities.get('ultimate'); }
       const b=Input.bindings['ability'+(i+1)];
       const key=Input.keyName(b[0]||b[1]);
       // Abilities are dormant until the first boss awakens them (p1.abilitiesUnlocked);
       // after that they're usable at their mastery rank (0 = the base tier). A carried but
-      // still-dormant ability shows as an empty slot that points at the boss.
+      // still-dormant ability shows as an empty slot that points at the boss. The Ultimate
+      // gates on its own p1.ultimateUnlocked instead.
       const lvl=(def && def.skillNode && typeof Skills!=='undefined' && p1) ? Skills.level(p1,def.skillNode) : (def?0:0);
-      const learned=!!(def && p1 && p1.abilitiesUnlocked);
-      const emptyLabel=ult ? 'Ultimate — coming soon' : 'No ability yet';
-      const title=learned ? `${def.name||'Ability'}${def.skillNode?' L'+lvl:''} — press ${key}`
-                : def ? `${def.name} — awakens after you clear the first boss`
+      const learned = ult ? !!(p1 && p1.ultimateUnlocked) : !!(def && p1 && p1.abilitiesUnlocked);
+      const emptyLabel=ult ? 'Ultimate — awakens at the Moonlit Rite' : 'No ability yet';
+      const title=learned ? `${def.name||'Ability'}${(def&&def.skillNode)?' L'+lvl:''} — press ${key}`
+                : (def && !ult) ? `${def.name} — awakens after you clear the first boss`
                 : emptyLabel;
       html+=`<button class="hb-slot hb-ability${ult?' hb-ultimate':''}${learned?'':' empty'}" ${def&&def.skillNode?`data-ability="${def.skillNode}"`:''} title="${title}">`
         + `<span class="hb-key">${key}</span>`
@@ -7614,6 +9179,7 @@ const UI = {
   // Only touches styles/text — no innerHTML rebuild, so it's cheap every frame.
   tickCooldowns(){
     if(!p1) return;
+    this.updateBossBar();   // boss hp changes mid-frame as you damage it
     document.querySelectorAll('.hb-cd').forEach(el=>{
       const id=el.dataset.ability;
       const left=Abilities.cdLeft(p1, id);
@@ -7637,6 +9203,14 @@ const UI = {
     const cell=Inventory.at(p, n-1); if(!cell) return;
     const def=Items.get(cell.id);
     if(def && def.type==='consumable'){
+      // Cure item (Antidote): clears a status even at full health.
+      if(def.cure){
+        if(typeof Status==='undefined' || !Status.has(p, def.cure)){ showToast('Nothing to cure right now.',1300); return; }
+        Status.cure(p, def.cure); Inventory.removeAt(p, n-1, 1);
+        if(typeof sfxCollect==='function') sfxCollect();
+        showToast(`🧪 ${def.name} — the ${def.cure} fades away.`,1500);
+        this.updateHUD(); return;
+      }
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
       const healed=Health.heal(p, def.heal||2);
       Inventory.removeAt(p, n-1, 1);
@@ -8506,6 +10080,9 @@ function loop(now){
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();drawXpOrbs(now);drawFloaters(now);
     ctx.restore();
+    // Darkness overlay (Whispering Woods): dims everything but your pool of light. Drawn in
+    // screen space over the world, under the minimap HUD.
+    if(typeof Darkness!=='undefined') Darkness.render(ctx, cam);
     drawMinimap();
   }
   requestAnimationFrame(loop);

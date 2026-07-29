@@ -20,6 +20,8 @@
   "trailmix":    { "name": "Trail Mix",    "icon": "🥜", "type": "consumable", "value": 4, "heal": 6 },
 
   "key":      { "name": "Chest Key",   "icon": "🗝️", "type": "tool",       "value": 8 },
+  "antidote": { "name": "Antidote",    "icon": "🧪", "type": "consumable", "value": 5, "cure": "poisoned" },
+  "mooncap":  { "name": "Mooncap",     "icon": "🍄", "type": "tool",       "value": 6 },
   "feast":    { "name": "Feast",       "icon": "🍖", "type": "consumable", "value": 7, "heal": 12 },
   "goldbone": { "name": "Golden Bone", "icon": "🏅", "type": "treat",      "value": 5 },
 

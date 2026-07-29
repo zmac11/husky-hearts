@@ -23,6 +23,61 @@ QUEST_TYPES['none'] = {
   isComplete(){ return false; },
 };
 
+// 'kindle' — relight every firepit in the level (entities/firepit.js). The clear objective of
+// Frozen Pass: rekindle the waystation fires to warm the pass and open the way onward.
+QUEST_TYPES['kindle'] = {
+  _fires(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='firepit');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const f=this._fires(); return `Fires lit ${f.lit}/${f.total}`; },
+  isComplete(){ const f=this._fires(); return f.total>0 && f.lit>=f.total; },
+};
+
+// 'ritual' — light every shrine lantern (entities/shrinelantern.js). The Moonlit Rite in
+// Firefly Grove; completing it (a level flagged `unlockUltimate`) awakens the R Ultimate.
+QUEST_TYPES['ritual'] = {
+  _lamps(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    const all=es.filter(e=>e.kind==='shrinelantern');
+    return { lit:all.filter(e=>e.lit).length, total:all.length };
+  },
+  describe(){ const l=this._lamps(); return `Shrine lanterns lit ${l.lit}/${l.total}`; },
+  isComplete(){ const l=this._lamps(); return l.total>0 && l.lit>=l.total; },
+};
+
+// 'defeat' — clear the level's guardians (enemies). Cliffside Climb's gauntlet: drive off
+// every wolf to open the summit gate. `_armed` (set in generate when enemies spawn) stops an
+// enemy-less level from counting as instantly won.
+let _defeatArmed = false;
+const _ENEMY_KINDS = ['enemy','wolf','packleader','shadowlurker','toadstool','alphawolf','grizzly'];
+QUEST_TYPES['defeat'] = {
+  _left(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    return es.filter(e=>_ENEMY_KINDS.indexOf(e.kind)!==-1).length;
+  },
+  describe(){ return `Enemies left ${this._left()}`; },
+  isComplete(){ return _defeatArmed && this._left()===0; },
+};
+
+// 'fetch-from' — retrieve a specific item from somewhere in the level and carry it out
+// (Fungus Hollow's Mooncap). `_fetchItem` is set in generate from the quest config.
+let _fetchItem = null;
+QUEST_TYPES['fetch-from'] = {
+  describe(){
+    if(!_fetchItem) return 'Find the item';
+    const d=(typeof Items!=='undefined') ? Items.get(_fetchItem) : null;
+    const have=(typeof p1!=='undefined' && typeof Inventory!=='undefined') ? Inventory.count(p1,_fetchItem) : 0;
+    return have>0 ? `${d?d.icon:''} Retrieved!` : `Find the ${d?d.name:_fetchItem}`;
+  },
+  isComplete(){
+    if(!_fetchItem) return false;
+    const players=(typeof Game!=='undefined' && Game.players) ? Game.players : [];
+    return players.some(p=>Inventory.count(p,_fetchItem)>0);
+  },
+};
+
 // ---- helpers ----
 // Resolve a placement to absolute world coords. Supports absolute {x,y}, fractional
 // {fx,fy} (of the current WORLD_W/H), and {onWater:{kind,index,dx,dy,dyEdge}} which pins
@@ -77,6 +132,9 @@ function buildCollectibles(spec){
       next: cfg.next || null,
       theme: cfg.theme,
       autoPortal: !!cfg.autoPortal,   // spawn the exit portal on entry (boss test level)
+      cold: !!cfg.cold,               // drives the warmth-survival meter (warmth.js)
+      dark: !!cfg.dark,               // drives the darkness/light overlay (darkness.js)
+      unlockUltimate: !!cfg.unlockUltimate,   // clearing this level awakens the R Ultimate
 
       generate(){
         // 1) terrain (+ optional decoration) — procedural, from the named code hooks.
@@ -96,6 +154,10 @@ function buildCollectibles(spec){
 
         // 4) actors — npcs (shops / quest-givers), enemies, critters
         Entities.clear();
+        // Arm the `defeat` objective only when this level actually fields enemies; remember
+        // the `fetch-from` target item for its describe/isComplete.
+        _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
+        _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -114,6 +176,31 @@ function buildCollectibles(spec){
           const p=_resolvePos(c); if(!p) return;
           Entities.spawn('critter', { species:c.species, x:p.x, y:p.y });
         });
+        (cfg.firepits||[]).forEach(f=>{
+          const p=_resolvePos(f); if(!p) return;
+          Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
+        });
+        (cfg.rockfalls||[]).forEach((rf,i)=>{
+          const p=_resolvePos(rf); if(!p) return;
+          const vy=v=>(v==null?undefined:(v<=1 ? WORLD_H*v : v));   // fraction or absolute y
+          Entities.spawn('rockfall', { x:p.x, _i:i, top:vy(rf.top), bottom:vy(rf.bottom),
+            speed:rf.speed, period:rf.period, warn:rf.warn, dmg:rf.dmg, startDelay:rf.startDelay });
+        });
+        (cfg.lanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('lanternpost', { x:p.x, y:p.y });
+        });
+        (cfg.shrinelanterns||[]).forEach(l=>{
+          const p=_resolvePos(l); if(!p) return;
+          Entities.spawn('shrinelantern', { x:p.x, y:p.y, lit:!!l.lit });
+        });
+        (cfg.sporeclouds||[]).forEach(s=>{
+          const p=_resolvePos(s); if(!p) return;
+          Entities.spawn('sporecloud', { x:p.x, y:p.y, r:s.r||34, life:-1 });   // permanent choke points
+        });
+        if(cfg.mooncap){
+          const p=_resolvePos(cfg.mooncap); if(p) Entities.spawn('mooncap', { x:p.x, y:p.y });
+        }
 
         // 5) buried treasure — rarity list from the config
         if(typeof Chests!=='undefined') Chests.spawnForLevel(cfg.id, cfg.chests);

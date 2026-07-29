@@ -52,6 +52,9 @@ function loop(now){
     riverBridges.filter(o=>!deckBridges.includes(o)).forEach(o=>drawBridge(o.x,o.y,o.horizontal,now,'stone',o.span));
     drawSparkles();drawXpOrbs(now);drawFloaters(now);
     ctx.restore();
+    // Darkness overlay (Whispering Woods): dims everything but your pool of light. Drawn in
+    // screen space over the world, under the minimap HUD.
+    if(typeof Darkness!=='undefined') Darkness.render(ctx, cam);
     drawMinimap();
   }
   requestAnimationFrame(loop);
