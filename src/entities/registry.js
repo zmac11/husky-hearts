@@ -14,6 +14,11 @@
 
 let entities = [];   // rebuilt per level by generate() via Entities.clear()/spawn()
 
+// How much bigger the bosses (and, equally, all their attacks/telegraphs) render and hit
+// than their base pixel art. One shared factor so every boss — and every ability — scales
+// by the same amount. Each boss reads it in init as `e.scale` (overridable per spawn).
+const BOSS_SCALE = 1.8;
+
 const Entities = {
   _kinds: {},
 
@@ -71,6 +76,10 @@ const Entities = {
       if(typeof sfxDeliver==='function') sfxDeliver();
       if(e.boss){ if(typeof sfxWin==='function') sfxWin(); showToast('🏆 '+(e.name||'The boss')+' is beaten!', 2600); }
       else showToast('💨 '+(e.name || (e.kind==='wolf'?'The wolf':'The badger'))+' ran off!', 1400);
+      // A kill may have completed a `defeat` objective (drive off every enemy / down the
+      // boss) — poke checkWin so the exit portal + finale chest appear. It re-checks the
+      // level's quest and is a no-op (guarded on the portal) for cheer/fetch/… levels.
+      if(typeof checkWin==='function') checkWin();
       return true;   // defeated
     }
     return false;

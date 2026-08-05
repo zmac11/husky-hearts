@@ -16,11 +16,30 @@ QUEST_TYPES['cheer-all'] = {
   isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
 };
 
-// 'none' — no win condition. Used by the first-boss test level, which just walks you to an
-// auto-spawned portal (level-manager _armExit) with no reward flow (checkWin never fires).
+// 'none' — no win condition. A walk-to-the-portal placeholder for auto-portal test levels
+// (level-manager _armExit); checkWin never fires. No live level uses it now.
 QUEST_TYPES['none'] = {
   describe(){ return 'Walk to the portal'; },
   isComplete(){ return false; },
+};
+
+// 'trap' — outwit the Badger Baron (entities/badgerbaron.js) by tricking his charges into
+// the leaf-covered pit traps (entities/pittrap.js). The first boss, won without dealing any
+// damage: the third pit-fall finishes him and calls checkWin() itself. `_trapArmed` (set in
+// generate when the Baron spawns) stops a Baron-less level from counting as instantly won.
+let _trapArmed = false;
+QUEST_TYPES['trap'] = {
+  _baron(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    return es.find(e=>e.kind==='badgerbaron') || null;
+  },
+  describe(){
+    const b=this._baron();
+    if(!b) return _trapArmed ? 'The Baron is beaten!' : 'Outwit the Baron';
+    const total=b.maxHp||3, sprung=Math.max(0, total-(b.hp||0));
+    return `Pits sprung ${sprung}/${total}`;
+  },
+  isComplete(){ return _trapArmed && !this._baron(); },
 };
 
 // 'kindle' — relight every firepit in the level (entities/firepit.js). The clear objective of
@@ -158,6 +177,7 @@ function buildCollectibles(spec){
         // the `fetch-from` target item for its describe/isComplete.
         _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
         _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
+        _trapArmed   = (cfg.quest && cfg.quest.type==='trap') && (cfg.enemies||[]).some(en=>en.kind==='badgerbaron');
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -179,6 +199,11 @@ function buildCollectibles(spec){
         (cfg.firepits||[]).forEach(f=>{
           const p=_resolvePos(f); if(!p) return;
           Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
+        });
+        (cfg.pits||[]).forEach(pt=>{
+          const p=_resolvePos(pt); if(!p) return;
+          if(typeof nudgeOutOfWater==='function') nudgeOutOfWater(p, 30);   // keep the Baron's traps on dry land
+          Entities.spawn('pittrap', { x:p.x, y:p.y, state:'armed' });
         });
         (cfg.rockfalls||[]).forEach((rf,i)=>{
           const p=_resolvePos(rf); if(!p) return;

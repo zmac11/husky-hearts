@@ -11,10 +11,28 @@
 const Status = {
   DEFS: {
     poisoned: { icon:'🤢', chipMs:1000, chip:1, color:'#8FCB5A' },   // 1 hp per second while active
+    bleeding: { icon:'🩸', chipMs:600,  chip:1, color:'#D64545' },   // faster chip — Alpha Wolf bites
+    stunned:  { icon:'💫', chipMs:0,     chip:0, color:'#E6C84A', noMove:true },   // can't move — Grizzly roar
+    slow:     { icon:'🐌', chipMs:0,     chip:0, color:'#8FB4E0', speedMul:0.5 },  // sluggish (reserved)
   },
 
   _map(p){ return p.status || (p.status = {}); },
   has(p, name){ return !!(p && p.status && p.status[name] > 0); },
+
+  // Movement multiplier from any active `speedMul` status (composed into spdMul in updatePlayer,
+  // mirroring Warmth.speedMul). Returns 1 when nothing slows the dog.
+  speedMul(p){
+    if(!p || !p.status) return 1;
+    let m=1;
+    for(const name in p.status){ const d=this.DEFS[name]; if(d && d.speedMul && p.status[name]>0) m*=d.speedMul; }
+    return m;
+  },
+  // True while any active status locks movement (e.g. stunned) — updatePlayer freezes input.
+  blocksMove(p){
+    if(!p || !p.status) return false;
+    for(const name in p.status){ const d=this.DEFS[name]; if(d && d.noMove && p.status[name]>0) return true; }
+    return false;
+  },
 
   // Inflict (or refresh) a status for at least `ms`. Never shortens an existing longer timer.
   apply(p, name, ms){
@@ -25,7 +43,11 @@ const Status = {
     if(fresh){
       p['_'+name+'T']=0;   // reset the per-status chip accumulator
       const d=this.DEFS[name];
-      if(name==='poisoned' && typeof showToast==='function') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+      if(typeof showToast==='function'){
+        if(name==='poisoned') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+        else if(name==='bleeding') showToast('🩸 Bleeding! It stings for a bit.', 1500);
+        else if(name==='stunned') showToast('💫 Stunned! Shake it off!', 1300);
+      }
       if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-30, d.icon, 'status');
     }
   },

@@ -53,6 +53,7 @@
 
   "enemies": {
     "enemy": { "xp": 3, "drops": [ { "item": "bone", "chance": 0.40 } ] },
+    "badgerbaron": { "xp": 24, "drops": [ { "item": "goldbone" }, { "item": "biscuit", "qty": 2 }, { "item": "key", "chance": 0.5 } ] },
     "wolf":  { "xp": 6, "drops": [ { "item": "bone", "chance": 0.40 } ] },
     "alphawolf": { "xp": 40, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "key", "chance": 0.5 } ] },
     "grizzly":   { "xp": 48, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "antidote" }, { "item": "key", "chance": 0.5 } ] }

@@ -1,9 +1,9 @@
 // ===== src/config/items.json =====
 const ITEMS_DATA = {"bone": {"name": "Bone", "icon": "🦴", "type": "treat", "value": 1}, "heart": {"name": "Heart", "icon": "💛", "type": "treat", "value": 1}, "ball": {"name": "Ball", "icon": "🎾", "type": "toy", "value": 2}, "flower": {"name": "Flower", "icon": "🌸", "type": "treat", "value": 1}, "fish": {"name": "Fish", "icon": "🐟", "type": "food", "value": 2}, "biscuit": {"name": "Biscuit", "icon": "🍪", "type": "consumable", "value": 3, "heal": 4}, "ribbon": {"name": "Ribbon", "icon": "🎀", "type": "wearable", "value": 5, "slot": "head", "render": "ribbon"}, "tophat": {"name": "Top Hat", "icon": "🎩", "type": "wearable", "value": 8, "slot": "head", "render": "tophat", "mods": {"smartsPrice": -0.05}}, "ballcap": {"name": "Ball Cap", "icon": "🧢", "type": "wearable", "value": 6, "slot": "head", "render": "ballcap", "abilityMods": {"cannon": {"capacity": 1}}}, "shades": {"name": "Cool Shades", "icon": "🕶️", "type": "wearable", "value": 7, "slot": "face", "render": "shades", "mods": {"noiseMul": -0.1}}, "scarf": {"name": "Cozy Scarf", "icon": "🧣", "type": "wearable", "value": 6, "slot": "neck", "render": "scarf", "mods": {"maxHp": 2}}, "raincoat": {"name": "Rain Coat", "icon": "🧥", "type": "wearable", "value": 9, "slot": "body", "render": "raincoat", "mods": {"maxHp": 4}}, "cape": {"name": "Hero Cape", "icon": "🦸", "type": "wearable", "value": 10, "slot": "back", "render": "cape", "mods": {"maxHp": 2, "speed": 0.06}}, "beanie": {"name": "Wool Beanie", "icon": "🧶", "type": "wearable", "value": 6, "slot": "head", "render": "beanie", "mods": {"maxHp": 2}}, "snowgoggles": {"name": "Snow Goggles", "icon": "🥽", "type": "wearable", "value": 8, "slot": "face", "render": "snowgoggles", "mods": {"scentR": 30}}, "trailmix": {"name": "Trail Mix", "icon": "🥜", "type": "consumable", "value": 4, "heal": 6}, "key": {"name": "Chest Key", "icon": "🗝️", "type": "tool", "value": 8}, "antidote": {"name": "Antidote", "icon": "🧪", "type": "consumable", "value": 5, "cure": "poisoned"}, "mooncap": {"name": "Mooncap", "icon": "🍄", "type": "tool", "value": 6}, "feast": {"name": "Feast", "icon": "🍖", "type": "consumable", "value": 7, "heal": 12}, "goldbone": {"name": "Golden Bone", "icon": "🏅", "type": "treat", "value": 5}, "crown": {"name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown", "mods": {"maxHp": 4, "speed": 0.06}, "abilityMods": {"stormfang": {"cdMs": -5000}, "monster": {"dmg": 1}}}};
 // ===== src/config/loot.json =====
-const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}, "alphawolf": {"xp": 40, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "key", "chance": 0.5}]}, "grizzly": {"xp": 48, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "antidote"}, {"item": "key", "chance": 0.5}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
+const LOOT_DATA = {"chests": {"wooden": {"name": "Wooden Chest", "locked": false, "digMs": 1000, "base": "#8B6340", "band": "#6B4A28", "lid": "#A07040", "glow": null, "loot": {"treats": [3, 6], "drops": [{"item": "biscuit", "chance": 0.4}, {"item": "key", "chance": 0.1}]}}, "iron": {"name": "Iron Chest", "locked": false, "digMs": 1400, "base": "#9AA0AA", "band": "#6A6E78", "lid": "#B4BAC4", "glow": null, "loot": {"treats": [6, 10], "drops": [{"oneOf": ["biscuit", "trailmix"]}, {"item": "key", "chance": 0.25}, {"oneOf": ["ribbon", "ballcap", "scarf"], "chance": 0.15}]}}, "silver": {"name": "Silver Chest", "locked": true, "digMs": 1800, "base": "#D8DCE4", "band": "#AAB2C0", "lid": "#EAEDF2", "glow": "rgba(220,228,240,0.35)", "loot": {"treats": [10, 16], "drops": [{"item": "feast"}, {"oneOf": ["shades", "tophat", "raincoat", "beanie", "snowgoggles"], "chance": 0.6}, {"item": "goldbone", "chance": 0.3}, {"item": "key", "chance": 0.2}]}}, "golden": {"name": "Golden Chest", "locked": false, "digMs": 0, "base": "#F2C94C", "band": "#D9A82E", "lid": "#F8DC74", "glow": "rgba(255,216,80,0.45)", "crownReward": true, "loot": {"treats": [20, 20], "drops": [{"item": "feast", "qty": 2}, {"item": "goldbone"}, {"item": "key"}]}}}, "enemies": {"enemy": {"xp": 3, "drops": [{"item": "bone", "chance": 0.4}]}, "badgerbaron": {"xp": 24, "drops": [{"item": "goldbone"}, {"item": "biscuit", "qty": 2}, {"item": "key", "chance": 0.5}]}, "wolf": {"xp": 6, "drops": [{"item": "bone", "chance": 0.4}]}, "alphawolf": {"xp": 40, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "key", "chance": 0.5}]}, "grizzly": {"xp": 48, "drops": [{"item": "goldbone"}, {"item": "feast"}, {"item": "antidote"}, {"item": "key", "chance": 0.5}]}}, "chestXp": {"wooden": 2, "iron": 4, "silver": 6, "golden": 12}, "xp": {"quest": 6, "cheer": 4, "level": 12}};
 // ===== src/config/levels.json =====
-const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1280, "h": 960}, "spawn": {"x": 200, "y": 200}, "next": "rocky", "autoPortal": true, "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 6, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42, "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"}], "enemies": [], "critters": [], "chests": [], "quest": {"type": "none", "label": "Reach the Badger Baron's den"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": "rocky-2", "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}, {"id": "rocky-2", "name": "Frozen Pass", "seed": 30507, "size": {"w": 2000, "h": 1400}, "spawn": {"x": 220, "y": 240}, "next": "rocky-3", "cold": true, "theme": {"grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8", "dirt": "rgba(120,140,160,0.16)", "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE", "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"}, "terrain": "frozenpass", "collectibles": {"count": 16, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Shivering Hare", "fx": 0.3, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?"}, {"name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird", "msg": "Brrr! A snack would warm me right up."}], "npcs": [{"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2, "greeting": "Cold enough for you? Bundle up before you press on!", "wares": [{"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "scarf", "cost": 6}, {"id": "raincoat", "cost": 9}]}, {"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86, "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."}], "enemies": [{"kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15}, {"kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210}], "critters": [{"species": "moose", "fx": 0.2, "fy": 0.3}], "firepits": [{"fx": 0.5, "fy": 0.34}, {"fx": 0.28, "fy": 0.58}, {"fx": 0.76, "fy": 0.7}], "chests": ["iron", "iron", "silver"], "quest": {"type": "kindle", "label": "Relight the frozen pass"}}, {"id": "rocky-3", "name": "Cliffside Climb", "seed": 30713, "size": {"w": 1400, "h": 2100}, "spawn": {"x": 700, "y": 1980}, "next": "rocky-boss", "cold": true, "theme": {"grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC", "dirt": "rgba(110,126,140,0.18)", "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6", "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"}, "terrain": "cliffside", "collectibles": {"count": 12, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?"}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92, "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."}, {"name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5, "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.", "wares": [{"id": "feast", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "raincoat", "cost": 9}]}], "enemies": [{"kind": "wolf", "fx": 0.7, "fy": 0.74, "speed": 1.15}, {"kind": "wolf", "fx": 0.3, "fy": 0.56, "speed": 1.2, "chaseR": 210}, {"kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15}, {"kind": "wolf", "fx": 0.5, "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4}], "rockfalls": [{"fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600}, {"fx": 0.6, "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200}, {"fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600}], "chests": ["silver", "golden"], "quest": {"type": "defeat", "label": "Fight your way to the summit"}}, {"id": "woods-1", "name": "Mossy Trail", "seed": 40219, "size": {"w": 1800, "h": 1300}, "spawn": {"x": 200, "y": 650}, "next": "woods-2", "dark": true, "theme": {"grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44", "dirt": "rgba(30,44,26,0.30)", "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30", "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"}, "terrain": "mossytrail", "collectibles": {"count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [{"name": "Bristle the Hedgehog", "fx": 0.5, "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..."}, {"name": "Whisper the Owl", "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl", "msg": "Whoo brings light to my lonely branch?"}, {"name": "Dusk the Fox", "fx": 0.24, "fy": 0.8, "need": 3, "kind": "fox", "msg": "I lost the trail in the gloom..."}, {"name": "Fern the Bunny", "fx": 0.7, "fy": 0.3, "need": 2, "kind": "bunny", "msg": "I only come out where it's bright!"}], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52, "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}], "enemies": [{"kind": "shadowlurker", "fx": 0.34, "fy": 0.32}, {"kind": "shadowlurker", "fx": 0.66, "fy": 0.58}, {"kind": "shadowlurker", "fx": 0.28, "fy": 0.6}], "critters": [{"species": "squirrel", "fx": 0.6, "fy": 0.44}], "lanterns": [{"fx": 0.3, "fy": 0.5}, {"fx": 0.5, "fy": 0.5}, {"fx": 0.7, "fy": 0.5}, {"fx": 0.5, "fy": 0.28}, {"fx": 0.5, "fy": 0.72}], "chests": ["wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer the woodland friends"}}, {"id": "woods-2", "name": "Fungus Hollow", "seed": 40631, "size": {"w": 1900, "h": 1400}, "spawn": {"x": 180, "y": 700}, "next": "woods-3", "theme": {"grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047", "dirt": "rgba(40,60,40,0.28)", "fenceA": "#3A2E3A", "fenceB": "#463746", "rail": "#6A4A6A", "minimapGrass": "#2E4A38", "minimapWater": "#3A6E8C"}, "terrain": "fungushollow", "collectibles": {"count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.16, "fy": 0.28, "greeting": "Deeper in grows a pale Mooncap — I need it for the shrine rite ahead. Fetch it for me? Take an antidote; the spores bite.", "wares": [{"id": "antidote", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}]}], "enemies": [{"kind": "toadstool", "fx": 0.55, "fy": 0.3}, {"kind": "toadstool", "fx": 0.6, "fy": 0.7}, {"kind": "toadstool", "fx": 0.72, "fy": 0.5, "hp": 5}], "critters": [{"species": "squirrel", "fx": 0.3, "fy": 0.4}], "sporeclouds": [{"fx": 0.42, "fy": 0.5, "r": 40}, {"fx": 0.5, "fy": 0.28, "r": 34}, {"fx": 0.5, "fy": 0.72, "r": 34}], "mooncap": {"fx": 0.72, "fy": 0.5}, "chests": ["iron", "silver"], "quest": {"type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble"}}, {"id": "woods-3", "name": "Firefly Grove", "seed": 41077, "size": {"w": 1700, "h": 1300}, "spawn": {"x": 210, "y": 650}, "next": "woods-boss", "unlockUltimate": true, "dark": true, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 14, "types": ["bone", "heart", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.3, "greeting": "Old moon-magic sleeps in these lanterns, pup. Light all three of the shrine — mind the shadow that walks — and it will wake the power within you."}, {"name": "Marla the Merchant", "fx": 0.16, "fy": 0.72, "greeting": "Fancy meeting you this deep! A snack before the shrine?", "wares": [{"id": "feast", "cost": 8}, {"id": "biscuit", "cost": 3}, {"id": "antidote", "cost": 4}]}], "enemies": [{"kind": "patrol", "fx": 0.5, "fy": 0.5, "range": 340}], "shrinelanterns": [{"fx": 0.5, "fy": 0.36}, {"fx": 0.62, "fy": 0.62}, {"fx": 0.38, "fy": 0.62}], "chests": ["silver"], "quest": {"type": "ritual", "label": "Complete the Moonlit Rite"}}, {"id": "rocky-boss", "name": "The Alpha Wolf", "seed": 31511, "size": {"w": 1500, "h": 1100}, "spawn": {"x": 750, "y": 980}, "next": "woods-1", "theme": {"grass": "#8FA0A8", "grassDark": "#7E9098", "grassLight": "#A2B2BA", "dirt": "rgba(110,120,130,0.20)", "fenceA": "#5A4A38", "fenceB": "#6C5A44", "rail": "#9A7C50", "minimapGrass": "#8496A0", "minimapWater": "#7FB0CC"}, "terrain": "frozenpass", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "This is it, pup — the Alpha itself. Dodge its lunge, and when it rears back to howl, hit it hard to break the call. Go get 'em."}], "enemies": [{"kind": "alphawolf", "fx": 0.5, "fy": 0.34, "maxHp": 34}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Alpha Wolf"}}, {"id": "woods-boss", "name": "The Old Grizzly", "seed": 41903, "size": {"w": 1500, "h": 1150}, "spawn": {"x": 750, "y": 1030}, "next": null, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "The old bear wakes, pup. It's slow but heavy — when it rears to slam, get clear of the ring; when it paws the ground, step aside. Show it the moonlight in you."}], "enemies": [{"kind": "grizzly", "fx": 0.5, "fy": 0.32, "maxHp": 44}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Old Grizzly"}}];
+const LEVELS_DATA = [{"id": "meadow", "name": "Sunny Meadow", "seed": 12345, "size": {"w": 1920, "h": 1280}, "spawn": {"x": 200, "y": 200}, "next": "meadow-2", "theme": {"grass": "#9ED87A", "grassDark": "#8DCF6A", "grassLight": "#AADE88", "dirt": "rgba(190,155,100,0.15)", "fenceA": "#8B6340", "fenceB": "#A07040", "rail": "#C4904A", "minimapGrass": "#4A9A3A", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Cat in the tree", "x": 280, "y": 200, "need": 3, "kind": "cat", "msg": "I'm stuck here and lonely... got any treats?"}, {"name": "Lonely Bunny", "x": 1580, "y": 240, "need": 3, "kind": "bunny", "msg": "I lost my family's flower patch..."}, {"name": "Sad Bird", "x": 300, "y": 980, "need": 3, "kind": "bird", "msg": "My nest fell apart! Bring me treats?"}, {"name": "Shy Hedgehog", "x": 1600, "y": 1020, "need": 3, "kind": "hedgehog", "msg": "I'm too shy to come out... bring me treats?"}, {"name": "Old Tortoise", "x": 960, "y": 640, "need": 4, "kind": "tortoise", "msg": "It's been so quiet around here lately."}], "npcs": [], "enemies": [], "critters": [], "chests": ["wooden", "wooden"], "quest": {"type": "cheer-all", "label": "Cheer up every lonely friend"}}, {"id": "meadow-2", "name": "Wildflower Field", "seed": 13579, "size": {"w": 1600, "h": 1120}, "spawn": {"x": 200, "y": 200}, "next": "meadow-3", "theme": {"grass": "#A6DE86", "grassDark": "#96D573", "grassLight": "#BCEA98", "dirt": "rgba(210,160,120,0.14)", "fenceA": "#9A7048", "fenceB": "#B0824E", "rail": "#D4A45E", "minimapGrass": "#5AAA46", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "wildflowers", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Sunny the Cat", "fx": 0.24, "fy": 0.3, "need": 2, "kind": "cat", "msg": "Ooh, are those treats for me?"}, {"name": "Hoppy Bunny", "fx": 0.78, "fy": 0.34, "need": 2, "kind": "bunny", "msg": "I'd love a snack, thank you!"}, {"name": "Chirpy Bird", "fx": 0.5, "fy": 0.74, "need": 3, "kind": "bird", "msg": "Tweet! Any treats to share?"}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.3, "greeting": "Lovely day for a stroll! Fresh biscuits and ribbons here.", "wares": [{"id": "biscuit", "cost": 3}, {"id": "ribbon", "cost": 5}]}, {"name": "Nella the Nurse", "look": "tailor", "fx": 0.3, "fy": 0.4, "greeting": "Hello, dear pup!", "quest": {"id": "nella-bones", "type": "give", "give": {"item": "bone", "count": 3}, "offer": "Oh, hello dear! My little pups are so hungry — could you fetch me 3 🦴 bones?", "ready": "Three whole bones? You're a darling — may I take them?", "progress": "Still hunting for bones? I need 3 in all. Thank you, pup!", "done": "Bless you! The pups are chewing away happily now. 💛", "reward": {"treats": 6}}}, {"name": "Wade the Wader", "fx": 0.16, "fy": 0.6, "greeting": "Morning, pup!", "quest": {"id": "m2-ducks", "type": "greet", "greet": {"species": ["duck"], "count": 2}, "offer": "The two ducks out on the ponds hardly get any visitors. Would you paddle over and say hello to both of them?", "ready": "You met both ducks? They'll be quacking about it all day!", "progress": "Just {remaining} more duck to greet — they're out on the ponds.", "done": "The ponds feel friendlier already. Thank you, pup! 🦆", "reward": {"treats": 4}}}, {"name": "Acorn", "fx": 0.85, "fy": 0.52, "greeting": "Psst — up here!", "quest": {"id": "m2-squirrels", "type": "greet", "greet": {"species": ["squirrel"], "count": 2}, "offer": "Two shy squirrels are hiding in the tall grass. Could you go and greet them both to cheer them up?", "ready": "Both squirrels? How lovely of you!", "progress": "{remaining} squirrel is still waiting for a hello.", "done": "They're chattering away happily now — thank you! 🐿️", "reward": {"item": "biscuit", "count": 1}}}], "enemies": [], "critters": [{"species": "duck", "onWater": {"kind": "pond", "index": 0}}, {"species": "duck", "onWater": {"kind": "pond", "index": 1}}, {"species": "squirrel", "fx": 0.68, "fy": 0.62}, {"species": "squirrel", "fx": 0.3, "fy": 0.58}], "chests": ["wooden", "wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the field"}}, {"id": "meadow-3", "name": "Old Orchard Path", "seed": 20241, "size": {"w": 1760, "h": 1200}, "spawn": {"x": 200, "y": 200}, "next": "meadow-boss", "theme": {"grass": "#9CCB6E", "grassDark": "#8ABF5C", "grassLight": "#B0D982", "dirt": "rgba(196,150,96,0.18)", "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#BE8C48", "minimapGrass": "#4E9838", "minimapWater": "#4AACDC"}, "terrain": "meadow", "augment": "orchard", "collectibles": {"count": 24, "types": ["bone", "heart", "ball", "flower"], "fish": 6}, "friends": [{"name": "Prickle the Hedgehog", "fx": 0.22, "fy": 0.28, "need": 3, "kind": "hedgehog", "msg": "Oh! You startled me... got a treat?"}, {"name": "Shelly the Tortoise", "fx": 0.8, "fy": 0.3, "need": 3, "kind": "tortoise", "msg": "Slow day in the orchard, isn't it?"}, {"name": "Clover Bunny", "fx": 0.28, "fy": 0.78, "need": 3, "kind": "bunny", "msg": "These apples aren't ripe yet..."}, {"name": "Robin the Bird", "fx": 0.76, "fy": 0.76, "need": 3, "kind": "bird", "msg": "Chirp! My nest could use some cheer."}], "npcs": [{"name": "Marla the Merchant", "fx": 0.5, "fy": 0.28, "greeting": "Stock up before the trail, pup — biscuits keep your hearts full!", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}, {"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.62, "fy": 0.5, "greeting": "Heading for the mountains? Let's find you something warm to wear!", "wares": [{"id": "ballcap", "cost": 6}, {"id": "scarf", "cost": 6}, {"id": "shades", "cost": 7}, {"id": "raincoat", "cost": 9}, {"id": "cape", "cost": 10}]}, {"name": "Pippa the Orchard Keeper", "fx": 0.16, "fy": 0.52, "greeting": "Oh, a visitor!", "quest": {"id": "m3-critters", "type": "greet", "greet": {"count": 3}, "offer": "A few new faces have wandered into the orchard. Would you welcome all three of them with a friendly hello?", "ready": "You met everyone? They already feel at home!", "progress": "{remaining} orchard critter still hasn't been greeted.", "done": "The whole orchard is a little cheerier now. Thank you, pup! 🍎", "reward": {"treats": 6}}}], "enemies": [{"kind": "enemy", "fx": 0.5, "fy": 0.6, "speed": 0.8, "chaseR": 90}], "critters": [{"species": "squirrel", "fx": 0.4, "fy": 0.4}, {"species": "squirrel", "fx": 0.72, "fy": 0.7}, {"species": "duck", "onWater": {"kind": "pond", "index": 0}}], "chests": ["wooden", "wooden", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every friend in the orchard"}}, {"id": "meadow-boss", "name": "The Badger Baron", "seed": 30011, "size": {"w": 1440, "h": 1120}, "spawn": {"x": 220, "y": 960}, "next": "rocky", "theme": {"grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E", "dirt": "rgba(150,110,70,0.20)", "fenceA": "#6E4A2C", "fenceB": "#835838", "rail": "#AE7C40", "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"}, "terrain": "meadow", "collectibles": {"count": 8, "types": ["bone", "heart"], "fish": 0}, "friends": [], "npcs": [{"name": "Digby the Mole", "fx": 0.11, "fy": 0.86, "greeting": "The Baron? All muscle, no sense, that one. You can't bite him — but he can't stop once he charges. Stand behind one of my covered pits and let him barrel right in. Three good tumbles and he'll quit!"}], "enemies": [{"kind": "badgerbaron", "fx": 0.5, "fy": 0.55, "maxHp": 3}], "critters": [], "pits": [{"fx": 0.3, "fy": 0.52}, {"fx": 0.7, "fy": 0.6}, {"fx": 0.5, "fy": 0.83}], "chests": [], "quest": {"type": "trap", "label": "Outwit the Badger Baron"}}, {"id": "rocky", "name": "Rocky Mountains", "seed": 24680, "size": {"w": 2400, "h": 1600}, "spawn": {"x": 170, "y": 250}, "next": "rocky-2", "theme": {"grass": "#86A867", "grassDark": "#71934F", "grassLight": "#9BBC79", "dirt": "rgba(122,100,64,0.18)", "fenceA": "#6B4A2E", "fenceB": "#7C5636", "rail": "#A9793F", "minimapGrass": "#5E8A46", "minimapWater": "#3FC8C0"}, "terrain": "rocky", "collectibles": {"count": 30, "types": ["bone", "heart", "ball", "flower"], "fish": 6, "yMin": 240, "fishMargin": 160}, "friends": [{"name": "Rusty the Fox", "fx": 0.17, "fy": 0.28, "need": 4, "kind": "fox", "msg": "The cold nights are so lonely up here..."}, {"name": "Old Billy Goat", "fx": 0.84, "fy": 0.26, "need": 4, "kind": "goat", "msg": "My herd wandered off over the ridge."}, {"name": "Hoot the Owl", "fx": 0.52, "fy": 0.16, "need": 4, "kind": "owl", "msg": "Whoo will keep me company tonight?"}, {"name": "Pip the Marmot", "fx": 0.15, "fy": 0.82, "need": 5, "kind": "marmot", "msg": "I burrowed too far from my friends..."}, {"name": "Bramble the Cub", "fx": 0.85, "fy": 0.8, "need": 5, "kind": "bearcub", "msg": "I can't find my way back to the den."}, {"name": "Ridge the Raven", "fx": 0.52, "fy": 0.78, "need": 4, "kind": "bird", "msg": "The peaks are quiet and grey today."}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.6, "fy": 0.22, "greeting": "Welcome to the valley, pup! Gear up before the wolves catch your scent.", "wares": [{"id": "beanie", "cost": 6}, {"id": "snowgoggles", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "cape", "cost": 10}, {"id": "key", "cost": 8}]}], "enemies": [{"kind": "wolf", "fx": 0.4, "fy": 0.52, "speed": 1.15}, {"kind": "wolf", "fx": 0.68, "fy": 0.66, "speed": 1.2}, {"kind": "wolf", "fx": 0.3, "fy": 0.74, "speed": 1.1, "chaseR": 220}, {"kind": "enemy", "fx": 0.78, "fy": 0.44, "speed": 1.0}], "critters": [{"species": "loon", "onWater": {"kind": "lake", "index": 0, "dx": -80}}, {"species": "loon", "onWater": {"kind": "lake", "index": 2, "dx": 50}}, {"species": "beaver", "onWater": {"kind": "lake", "index": 1, "dyEdge": true, "dy": 16}}, {"species": "moose", "fx": 0.34, "fy": 0.28}], "chests": ["wooden", "iron", "iron", "silver"], "quest": {"type": "cheer-all", "label": "Cheer up every mountain friend"}}, {"id": "rocky-2", "name": "Frozen Pass", "seed": 30507, "size": {"w": 2000, "h": 1400}, "spawn": {"x": 220, "y": 240}, "next": "rocky-3", "cold": true, "theme": {"grass": "#DCE6EC", "grassDark": "#CBD9E2", "grassLight": "#ECF3F8", "dirt": "rgba(120,140,160,0.16)", "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE", "minimapGrass": "#B8CBD8", "minimapWater": "#8FC0DC"}, "terrain": "frozenpass", "collectibles": {"count": 16, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Shivering Hare", "fx": 0.3, "fy": 0.66, "need": 2, "kind": "bunny", "msg": "S-so cold out here... got a treat?"}, {"name": "Frosted Ptarmigan", "fx": 0.74, "fy": 0.5, "need": 2, "kind": "bird", "msg": "Brrr! A snack would warm me right up."}], "npcs": [{"name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2, "greeting": "Cold enough for you? Bundle up before you press on!", "wares": [{"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "scarf", "cost": 6}, {"id": "raincoat", "cost": 9}]}, {"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86, "greeting": "The pass fires have gone cold. Relight all three and the way opens — mind the wolves."}], "enemies": [{"kind": "wolf", "fx": 0.42, "fy": 0.44, "speed": 1.15}, {"kind": "wolf", "fx": 0.6, "fy": 0.72, "speed": 1.2, "chaseR": 210}], "critters": [{"species": "moose", "fx": 0.2, "fy": 0.3}], "firepits": [{"fx": 0.5, "fy": 0.34}, {"fx": 0.28, "fy": 0.58}, {"fx": 0.76, "fy": 0.7}], "chests": ["iron", "iron", "silver"], "quest": {"type": "kindle", "label": "Relight the frozen pass"}}, {"id": "rocky-3", "name": "Cliffside Climb", "seed": 30713, "size": {"w": 1400, "h": 2100}, "spawn": {"x": 700, "y": 1980}, "next": "rocky-boss", "cold": true, "theme": {"grass": "#C9D4DC", "grassDark": "#B8C6D0", "grassLight": "#DCE6EC", "dirt": "rgba(110,126,140,0.18)", "fenceA": "#586674", "fenceB": "#697886", "rail": "#94A6B6", "minimapGrass": "#AEC0CE", "minimapWater": "#8FC0DC"}, "terrain": "cliffside", "collectibles": {"count": 12, "types": ["bone", "heart", "ball"], "fish": 0}, "friends": [{"name": "Stranded Marmot", "fx": 0.16, "fy": 0.28, "need": 2, "kind": "marmot", "msg": "I climbed too high and got stuck! A treat, please?"}], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.92, "greeting": "Last stretch before the Baron's kin. Beat back the wolves to open the summit gate — and mind the falling rock."}, {"name": "Cliffside Lookout", "fx": 0.78, "fy": 0.5, "greeting": "Last chance to stock up before the top. You'll want a full belly for what's up there.", "wares": [{"id": "feast", "cost": 8}, {"id": "trailmix", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "raincoat", "cost": 9}]}], "enemies": [{"kind": "wolf", "fx": 0.7, "fy": 0.74, "speed": 1.15}, {"kind": "wolf", "fx": 0.3, "fy": 0.56, "speed": 1.2, "chaseR": 210}, {"kind": "wolf", "fx": 0.66, "fy": 0.36, "speed": 1.15}, {"kind": "wolf", "fx": 0.5, "fy": 0.19, "speed": 1.3, "chaseR": 250, "hp": 12, "dmg": 4}], "rockfalls": [{"fx": 0.36, "top": 0.14, "bottom": 0.97, "period": 2600}, {"fx": 0.6, "top": 0.14, "bottom": 0.97, "period": 3000, "startDelay": 1200}, {"fx": 0.78, "top": 0.14, "bottom": 0.97, "period": 2400, "startDelay": 600}], "chests": ["silver", "golden"], "quest": {"type": "defeat", "label": "Fight your way to the summit"}}, {"id": "woods-1", "name": "Mossy Trail", "seed": 40219, "size": {"w": 1800, "h": 1300}, "spawn": {"x": 200, "y": 650}, "next": "woods-2", "dark": true, "theme": {"grass": "#3C5A3A", "grassDark": "#33502F", "grassLight": "#476A44", "dirt": "rgba(30,44,26,0.30)", "fenceA": "#3A2E22", "fenceB": "#463726", "rail": "#5E4A30", "minimapGrass": "#2E4A2A", "minimapWater": "#3A6E8C"}, "terrain": "mossytrail", "collectibles": {"count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [{"name": "Bristle the Hedgehog", "fx": 0.5, "fy": 0.24, "need": 2, "kind": "hedgehog", "msg": "Is someone there? It's so dark..."}, {"name": "Whisper the Owl", "fx": 0.82, "fy": 0.74, "need": 3, "kind": "owl", "msg": "Whoo brings light to my lonely branch?"}, {"name": "Dusk the Fox", "fx": 0.24, "fy": 0.8, "need": 3, "kind": "fox", "msg": "I lost the trail in the gloom..."}, {"name": "Fern the Bunny", "fx": 0.7, "fy": 0.3, "need": 2, "kind": "bunny", "msg": "I only come out where it's bright!"}], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.5, "fy": 0.52, "greeting": "Mind the shadows, pup — things lurk where the lantern-light doesn't reach. A biscuit for the road?", "wares": [{"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}, {"id": "ribbon", "cost": 5}]}], "enemies": [{"kind": "shadowlurker", "fx": 0.34, "fy": 0.32}, {"kind": "shadowlurker", "fx": 0.66, "fy": 0.58}, {"kind": "shadowlurker", "fx": 0.28, "fy": 0.6}], "critters": [{"species": "squirrel", "fx": 0.6, "fy": 0.44}], "lanterns": [{"fx": 0.3, "fy": 0.5}, {"fx": 0.5, "fy": 0.5}, {"fx": 0.7, "fy": 0.5}, {"fx": 0.5, "fy": 0.28}, {"fx": 0.5, "fy": 0.72}], "chests": ["wooden", "iron"], "quest": {"type": "cheer-all", "label": "Cheer the woodland friends"}}, {"id": "woods-2", "name": "Fungus Hollow", "seed": 40631, "size": {"w": 1900, "h": 1400}, "spawn": {"x": 180, "y": 700}, "next": "woods-3", "theme": {"grass": "#33503C", "grassDark": "#2C4633", "grassLight": "#3E6047", "dirt": "rgba(40,60,40,0.28)", "fenceA": "#3A2E3A", "fenceB": "#463746", "rail": "#6A4A6A", "minimapGrass": "#2E4A38", "minimapWater": "#3A6E8C"}, "terrain": "fungushollow", "collectibles": {"count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "Bramble the Alchemist", "look": "tailor", "fx": 0.16, "fy": 0.28, "greeting": "Deeper in grows a pale Mooncap — I need it for the shrine rite ahead. Fetch it for me? Take an antidote; the spores bite.", "wares": [{"id": "antidote", "cost": 4}, {"id": "biscuit", "cost": 3}, {"id": "trailmix", "cost": 4}]}], "enemies": [{"kind": "toadstool", "fx": 0.55, "fy": 0.3}, {"kind": "toadstool", "fx": 0.6, "fy": 0.7}, {"kind": "toadstool", "fx": 0.72, "fy": 0.5, "hp": 5}], "critters": [{"species": "squirrel", "fx": 0.3, "fy": 0.4}], "sporeclouds": [{"fx": 0.42, "fy": 0.5, "r": 40}, {"fx": 0.5, "fy": 0.28, "r": 34}, {"fx": 0.5, "fy": 0.72, "r": 34}], "mooncap": {"fx": 0.72, "fy": 0.5}, "chests": ["iron", "silver"], "quest": {"type": "fetch-from", "item": "mooncap", "label": "Fetch the Mooncap for Bramble"}}, {"id": "woods-3", "name": "Firefly Grove", "seed": 41077, "size": {"w": 1700, "h": 1300}, "spawn": {"x": 210, "y": 650}, "next": "woods-boss", "unlockUltimate": true, "dark": true, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 14, "types": ["bone", "heart", "flower"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.3, "greeting": "Old moon-magic sleeps in these lanterns, pup. Light all three of the shrine — mind the shadow that walks — and it will wake the power within you."}, {"name": "Marla the Merchant", "fx": 0.16, "fy": 0.72, "greeting": "Fancy meeting you this deep! A snack before the shrine?", "wares": [{"id": "feast", "cost": 8}, {"id": "biscuit", "cost": 3}, {"id": "antidote", "cost": 4}]}], "enemies": [{"kind": "patrol", "fx": 0.5, "fy": 0.5, "range": 340}], "shrinelanterns": [{"fx": 0.5, "fy": 0.36}, {"fx": 0.62, "fy": 0.62}, {"fx": 0.38, "fy": 0.62}], "chests": ["silver"], "quest": {"type": "ritual", "label": "Complete the Moonlit Rite"}}, {"id": "rocky-boss", "name": "The Alpha Wolf", "seed": 31511, "size": {"w": 1500, "h": 1100}, "spawn": {"x": 750, "y": 980}, "next": "woods-1", "theme": {"grass": "#8FA0A8", "grassDark": "#7E9098", "grassLight": "#A2B2BA", "dirt": "rgba(110,120,130,0.20)", "fenceA": "#5A4A38", "fenceB": "#6C5A44", "rail": "#9A7C50", "minimapGrass": "#8496A0", "minimapWater": "#7FB0CC"}, "terrain": "frozenpass", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "This is it, pup — the Alpha itself. Dodge its lunge, and when it rears back to howl, hit it hard to break the call. Go get 'em."}], "enemies": [{"kind": "alphawolf", "fx": 0.5, "fy": 0.34, "maxHp": 34}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Alpha Wolf"}}, {"id": "woods-boss", "name": "The Old Grizzly", "seed": 41903, "size": {"w": 1500, "h": 1150}, "spawn": {"x": 750, "y": 1030}, "next": null, "theme": {"grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578", "dirt": "rgba(60,60,100,0.24)", "fenceA": "#3A3A52", "fenceB": "#46466A", "rail": "#6A6A9A", "minimapGrass": "#3A4468", "minimapWater": "#4A6AA0"}, "terrain": "fireflygrove", "collectibles": {"count": 8, "types": ["heart", "bone"], "fish": 0}, "friends": [], "npcs": [{"name": "The Grove Guardian", "look": "ranger", "fx": 0.5, "fy": 0.94, "greeting": "The old bear wakes, pup. It's slow but heavy — when it rears to slam, get clear of the ring; when it paws the ground, step aside. Show it the moonlight in you."}], "enemies": [{"kind": "grizzly", "fx": 0.5, "fy": 0.32, "maxHp": 44}], "critters": [], "chests": [], "quest": {"type": "defeat", "label": "Defeat the Old Grizzly"}}];
 // ===== src/init.js =====
 // ====================== CANVAS INIT ======================
 const canvas = document.getElementById('game');
@@ -1424,10 +1424,28 @@ const Darkness = {
 const Status = {
   DEFS: {
     poisoned: { icon:'🤢', chipMs:1000, chip:1, color:'#8FCB5A' },   // 1 hp per second while active
+    bleeding: { icon:'🩸', chipMs:600,  chip:1, color:'#D64545' },   // faster chip — Alpha Wolf bites
+    stunned:  { icon:'💫', chipMs:0,     chip:0, color:'#E6C84A', noMove:true },   // can't move — Grizzly roar
+    slow:     { icon:'🐌', chipMs:0,     chip:0, color:'#8FB4E0', speedMul:0.5 },  // sluggish (reserved)
   },
 
   _map(p){ return p.status || (p.status = {}); },
   has(p, name){ return !!(p && p.status && p.status[name] > 0); },
+
+  // Movement multiplier from any active `speedMul` status (composed into spdMul in updatePlayer,
+  // mirroring Warmth.speedMul). Returns 1 when nothing slows the dog.
+  speedMul(p){
+    if(!p || !p.status) return 1;
+    let m=1;
+    for(const name in p.status){ const d=this.DEFS[name]; if(d && d.speedMul && p.status[name]>0) m*=d.speedMul; }
+    return m;
+  },
+  // True while any active status locks movement (e.g. stunned) — updatePlayer freezes input.
+  blocksMove(p){
+    if(!p || !p.status) return false;
+    for(const name in p.status){ const d=this.DEFS[name]; if(d && d.noMove && p.status[name]>0) return true; }
+    return false;
+  },
 
   // Inflict (or refresh) a status for at least `ms`. Never shortens an existing longer timer.
   apply(p, name, ms){
@@ -1438,7 +1456,11 @@ const Status = {
     if(fresh){
       p['_'+name+'T']=0;   // reset the per-status chip accumulator
       const d=this.DEFS[name];
-      if(name==='poisoned' && typeof showToast==='function') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+      if(typeof showToast==='function'){
+        if(name==='poisoned') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
+        else if(name==='bleeding') showToast('🩸 Bleeding! It stings for a bit.', 1500);
+        else if(name==='stunned') showToast('💫 Stunned! Shake it off!', 1300);
+      }
       if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-30, d.icon, 'status');
     }
   },
@@ -4155,6 +4177,11 @@ function drawFriend(f,t){
 
 let entities = [];   // rebuilt per level by generate() via Entities.clear()/spawn()
 
+// How much bigger the bosses (and, equally, all their attacks/telegraphs) render and hit
+// than their base pixel art. One shared factor so every boss — and every ability — scales
+// by the same amount. Each boss reads it in init as `e.scale` (overridable per spawn).
+const BOSS_SCALE = 1.8;
+
 const Entities = {
   _kinds: {},
 
@@ -4212,6 +4239,10 @@ const Entities = {
       if(typeof sfxDeliver==='function') sfxDeliver();
       if(e.boss){ if(typeof sfxWin==='function') sfxWin(); showToast('🏆 '+(e.name||'The boss')+' is beaten!', 2600); }
       else showToast('💨 '+(e.name || (e.kind==='wolf'?'The wolf':'The badger'))+' ran off!', 1400);
+      // A kill may have completed a `defeat` objective (drive off every enemy / down the
+      // boss) — poke checkWin so the exit portal + finale chest appear. It re-checks the
+      // level's quest and is a no-op (guarded on the portal) for cheer/fetch/… levels.
+      if(typeof checkWin==='function') checkWin();
       return true;   // defeated
     }
     return false;
@@ -5304,6 +5335,89 @@ Entities.register('sporecloud', {
   },
 });
 
+// ===== src/entities/groundzone.js =====
+// ====================== ENTITY: GROUND ZONE (telegraphed AoE) ======================
+// A stationary "danger circle" that WARNS, then STRIKES once, then fades — the reusable
+// building block for the bosses' ranged/area attacks. It's the rockfall telegraph
+// (warn → strike → reset) shaped as a fixed circle, and structured like a sporecloud
+// (update + draw only, non-interactive, self-removing).
+//
+// Spawn it where an attack will land: Entities.spawn('groundzone', { x, y, r, warnMs, dmg,
+// color, scale }). During `warn` it paints a pulsing danger ring (with a shrinking inner
+// ring counting down to impact) so the player can step clear; on impact it damages + shoves
+// anyone still inside (respecting i-frames), flashes, and removes itself.
+//
+// Used by: the Badger Baron's wall-crash stomp, the Alpha Wolf's pounce landing, and the Old
+// Grizzly's hurled boulder + erupting fissures.
+
+Entities.register('groundzone', {
+  radius: 0,   // not interactable
+
+  init(e){
+    e.r      = e.r || 60;
+    e.warnMs = (typeof e.warnMs==='number') ? e.warnMs : 650;
+    e.dmg    = (typeof e.dmg==='number')    ? e.dmg    : 4;
+    e.color  = e.color || '#E0503C';
+    e.scale  = e.scale || 1;
+    e.state  = 'warn';       // 'warn' | 'fade'
+    e.warnT  = e.warnMs;
+    e.fadeT  = 0;
+    e._sparkT= 0;
+  },
+
+  update(e, t, dt){
+    if(e.state==='warn'){
+      e.warnT-=dt;
+      // throttled dust rising off the marked ground
+      e._sparkT-=dt;
+      if(e._sparkT<=0){ e._sparkT=120; if(typeof spawnSparkles==='function') spawnSparkles(e.x+rand(-e.r,e.r)*0.6, e.y+rand(-e.r,e.r)*0.35, e.color, 2); }
+      if(e.warnT<=0){
+        // STRIKE — one-shot AoE on everyone still inside the circle
+        for(const p of Game.players){
+          if(!p || p.dead || p.hp<=0 || p.invulnT>0) continue;
+          if(Math.hypot(p.x-e.x, p.y-e.y) < e.r){
+            if(typeof Health!=='undefined') Health.damage(p, e.dmg);
+            const ang=Math.atan2(p.y-e.y, p.x-e.x), K=18*(e.scale||1);
+            p.x=clamp(p.x+Math.cos(ang)*K, 20, WORLD_W-20);
+            p.y=clamp(p.y+Math.sin(ang)*K, 26, WORLD_H-20);
+          }
+        }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y, e.color, 22);
+        if(typeof sfxThunder==='function') sfxThunder();
+        e.state='fade'; e.fadeT=260;
+      }
+      return;
+    }
+    // fade → remove
+    e.fadeT-=dt;
+    if(e.fadeT<=0) Entities.remove(e);
+  },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y), ry=e.r*0.6;
+    ctx.save();
+    if(e.state==='warn'){
+      const prog=1-e.warnT/e.warnMs;                 // 0 → 1 as impact nears
+      ctx.globalAlpha=0.12+0.22*prog;                // danger fill deepens
+      ctx.fillStyle=e.color;
+      ctx.beginPath(); ctx.ellipse(x,y,e.r,ry,0,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.5+0.4*Math.abs(Math.sin(t/70));
+      ctx.lineWidth=3; ctx.strokeStyle=e.color;
+      ctx.beginPath(); ctx.ellipse(x,y,e.r,ry,0,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=0.6;                           // shrinking countdown ring
+      const k=1-prog*0.85;
+      ctx.beginPath(); ctx.ellipse(x,y,e.r*k,ry*k,0,0,Math.PI*2); ctx.stroke();
+    } else {
+      const f=Math.max(0, e.fadeT/260);              // impact flash bursting out
+      ctx.globalAlpha=0.65*f;
+      ctx.lineWidth=5; ctx.strokeStyle='#FFE6B0';
+      const g=1+(1-f)*0.35;
+      ctx.beginPath(); ctx.ellipse(x,y,e.r*g,ry*g,0,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  },
+});
+
 // ===== src/entities/toadstool.js =====
 // ====================== ENTITY: TOADSTOOL SPITTER ======================
 // A rooted, hostile mushroom in Fungus Hollow — the first RANGED enemy. It can't move, but
@@ -5576,6 +5690,241 @@ Entities.register('patrol', {
   },
 });
 
+// ===== src/entities/pittrap.js =====
+// ====================== ENTITY: PIT TRAP (Badger Baron arena) ======================
+// A leaf-covered pit — the tool you beat the first boss with. Your abilities don't awaken
+// until AFTER the Badger Baron (world-map.js), so you can't hurt him; instead you trick him.
+// The dog is far too light to spring one of these, but when the Baron BARRELS across a
+// covered pit mid-charge, the cover snaps and he crashes in (see entities/badgerbaron.js).
+//
+// Two states: 'armed' (a covered mound of leaves & twigs, with a hairline crack if you look
+// closely) and 'sprung' (an inert open hole once he's fallen in). It has no onInteract, so
+// the player just walks over it freely — it only ever springs under the charging Baron.
+
+Entities.register('pittrap', {
+  radius: 30,          // how near the charging Baron's center must get to tumble in
+
+  init(e){
+    e.state = e.state || 'armed';   // 'armed' (covered) | 'sprung' (open hole)
+    e.wob = 0;
+  },
+
+  update(e, t, dt){ e.wob = t; },
+
+  draw(e, t){
+    const x=Math.round(e.x), y=Math.round(e.y);
+    if(e.state==='sprung'){
+      // open hole: a dark oval mouth with broken cover scattered at the rim
+      ctx.globalAlpha=0.92; ctx.beginPath(); ctx.ellipse(x,y+2,27,15,0,0,Math.PI*2); ctx.fillStyle='#241A10'; ctx.fill(); ctx.globalAlpha=1;
+      ctx.beginPath(); ctx.ellipse(x,y+4,20,10,0,0,Math.PI*2); ctx.fillStyle='#3A2A18'; ctx.fill();
+      px(x-25,y-6,9,3,'#7A5A34'); px(x+16,y-3,9,3,'#6B4A28'); px(x-6,y+12,10,3,'#7A5A34'); // snapped planks
+    } else {
+      // covered pit: a low mound of leaf litter over crossed twigs, faint crack telegraph
+      ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x,y+4,26,14,0,0,Math.PI*2); ctx.fillStyle='#4A3A1E'; ctx.fill(); ctx.globalAlpha=1;
+      const cols=['#6FA84E','#8ABF5C','#C4903A','#9A6636'];
+      for(let i=0;i<9;i++){ const a=i/9*Math.PI*2 + (e.wob||0)/6000; const rx=Math.cos(a)*(10+i%3*5), ry=Math.sin(a)*(6+i%2*3); px(x+rx-2,y+ry-1,4,3,cols[i%cols.length]); }
+      px(x-14,y+2,28,2,'#7A5A34'); px(x-2,y-8,3,22,'#6B4A28');   // crossed twigs
+      ctx.globalAlpha=0.20; px(x-16,y-2,32,1,'#20140A'); ctx.globalAlpha=1;   // hairline crack
+    }
+  },
+});
+
+// ===== src/entities/badgerbaron.js =====
+// ====================== ENTITY: THE BADGER BARON (Sunny Meadows boss) ======================
+// The FIRST boss — and the one fight you win with your wits, not your teeth. Your abilities
+// don't awaken until AFTER this den (world-map.js), so the Baron simply can't be damaged
+// head-on. He's all brawn, no brains: he winds up and CHARGES in a straight line, and the
+// meadow den is dotted with leaf-covered PIT TRAPS (entities/pittrap.js). Line a covered pit
+// up between you and him, bait the charge, and he crashes straight in — losing a third of his
+// bluster each time. Three sprung pits and the Baron throws in the towel.
+//
+// He can still hurt YOU (a shoulder-barge on contact / mid-charge), so losing is the normal
+// cozy Game Over -> Play Again. Reuses the boss framework: boss:true (HP bar + defeat banner
+// + knockback-resist), a maxHp of 3 that the pits chip down, and config loot/XP
+// (LOOT_DATA.enemies.badgerbaron). Because a trap-fall — not a hit — finishes him, the final
+// tumble runs the standard defeat via Entities.hurt and then calls checkWin() itself, the way
+// firepit/mooncap/shrinelantern complete their own objectives.
+
+function _bbNearest(e){
+  let best=null, bd=Infinity;
+  for(const p of Game.players){ if(!p || p.dead) continue; const d=Math.hypot(p.x-e.x, p.y-e.y); if(d<bd){ bd=d; best=p; } }
+  return best;
+}
+
+// The first ARMED pit whose mouth the charging Baron has barreled into (null if none).
+// The bigger the Baron (scale), the wider his body, so he tumbles in from a touch farther.
+function _bbArmedPit(e, scale){
+  const es=(typeof entities!=='undefined' && entities) ? entities : [];
+  for(const pit of es){
+    if(pit.kind!=='pittrap' || pit.state!=='armed') continue;
+    if(Math.hypot(pit.x-e.x, pit.y-e.y) < (pit.radius||30)*(scale||1)) return pit;
+  }
+  return null;
+}
+
+Entities.register('badgerbaron', {
+  radius: 40,
+
+  init(e){
+    e.name='The Badger Baron'; e.boss=true; e.noKnockback=true;
+    e.maxHp = e.maxHp || 3;     // = number of pit traps in the arena; each fall costs 1
+    e.hp    = (typeof e.hp==='number' && e.hp<=e.maxHp) ? e.hp : e.maxHp;
+    e.speed = e.speed || 0.85;
+    e.dmg   = e.dmg   || 3;
+    e.scale = e.scale || BOSS_SCALE;   // body + charge reach + tumble range scale by this
+    e.dir=-1; e.state='chase'; e.actT=0;
+    e.chargeCd=2400; e.touchCd=0;
+    e.cvx=0; e.cvy=0; e.bob=0; e.daze=0;
+  },
+
+  update(e, t, dt){
+    const p=_bbNearest(e);
+    if(!p){ e.bob=t; return; }
+    const dist=Math.hypot(p.x-e.x, p.y-e.y);
+    const rage=(e.maxHp-e.hp);          // 0,1,2 — angrier as pits chip him down
+    const spd = e.speed * (1 + rage*0.18);
+    const S = e.scale || 1;   // scales charge reach, barge range and the tumble-in radius
+
+    e.chargeCd=Math.max(0,e.chargeCd-dt);
+    if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
+    if(e.hurtT>0)   e.hurtT=Math.max(0,e.hurtT-dt);
+    if(e.alertT>0)  e.alertT=Math.max(0,e.alertT-dt);
+
+    // ---- scripted states ----
+    if(e.state==='trapped'){                    // wedged in a pit, struggling free
+      e.actT-=dt; e.daze=Math.sin(t/40)*2;
+      if(e.actT<=0){ e.state='chase'; e.chargeCd=1200; e.daze=0; e.alertT=500; }
+      e.bob=t; return;
+    }
+    if(e.state==='stomp'){                      // reared after crashing into a wall — dazed beat
+      e.actT-=dt; e.daze=Math.sin(t/50)*1.6;
+      if(e.actT<=0){ e.state='chase'; e.chargeCd=1600; e.daze=0; }
+      e.bob=t; return;
+    }
+    if(e.state==='chargewind'){                 // paws the ground — the tell to read
+      e.actT-=dt;
+      if(e.actT<=0){
+        // FEINT: once angry, he sometimes fakes the charge — a stutter-hop back, then re-winds —
+        // to bait a premature dodge. Teaches the player to read the real tell.
+        if(rage>=1 && !e._feinted && Math.random()<0.33){
+          e._feinted=true; e.actT=260; e.alertT=300;
+          const a0=Math.atan2(p.y-e.y, p.x-e.x);
+          e.x=clamp(e.x-Math.cos(a0)*8, 20, WORLD_W-20);
+          e.y=clamp(e.y-Math.sin(a0)*8, 26, WORLD_H-20);
+          if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+8, '#C4903A', 4);
+          e.bob=t; return;
+        }
+        e._feinted=false;
+        e.state='charge'; e.actT= 720 - rage*40;
+        const a=Math.atan2(p.y-e.y, p.x-e.x); const L=(7 + rage*1.2)*S;
+        e.cvx=Math.cos(a)*L; e.cvy=Math.sin(a)*L; e.dir=e.cvx>=0?1:-1;
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='charge'){
+      e.x=clamp(e.x+e.cvx*dtScale, 20, WORLD_W-20);
+      e.y=clamp(e.y+e.cvy*dtScale, 26, WORLD_H-20);
+      const pit=_bbArmedPit(e, S);
+      if(pit){ _bbFall(e, pit); e.bob=t; return; }          // crashed into a covered pit
+      if(dist<32*S && e.touchCd<=0){ _bbBarge(e,p); e.touchCd=800; }
+      const atWall = e.x<=22||e.x>=WORLD_W-22||e.y<=28||e.y>=WORLD_H-22;
+      if(atWall){
+        // FRUSTRATED STOMP: he brains himself on the wall, rears, and drops a shockwave —
+        // step out of the ring. Rewards luring the charge into a wall.
+        e.state='stomp'; e.actT=520; e.alertT=500; e.daze=0;
+        Entities.spawn('groundzone', { x:e.x, y:e.y+6, r:46*S, warnMs:480, dmg:e.dmg, color:'#C4903A', scale:S });
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+8, '#C4903A', 16);
+        if(typeof sfxHowl==='function') sfxHowl();
+        e.bob=t; return;
+      }
+      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.chargeCd= 2200 - rage*300; }
+      e.bob=t; return;
+    }
+
+    // ---- chase / decide next move ----
+    if(e.chargeCd<=0 && dist<380){
+      e.state='chargewind'; e.actT= 760 - rage*120; e.alertT=600;   // brief paw-the-ground tell
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+8, '#C4903A', 6);
+      e.bob=t; return;
+    }
+    const a=Math.atan2(p.y-e.y, p.x-e.x);
+    e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 20, WORLD_W-20);
+    e.y=clamp(e.y+Math.sin(a)*spd*dtScale, 26, WORLD_H-20);
+    e.dir=Math.cos(a)>=0?1:-1;
+    if(dist<26*S && e.touchCd<=0){ _bbBarge(e,p); e.touchCd=1000; }
+    e.bob=t;
+  },
+
+  draw(e, t){
+    const S=e.scale||1;
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(S, S); ctx.translate(-e.x, -e.y);
+    const trapped=(e.state==='trapped');
+    const wind=(e.state==='chargewind');
+    const stomp=(e.state==='stomp');
+    const x=Math.round(e.x + ((trapped||stomp)?e.daze:0));
+    const y=Math.round(e.y + (trapped? 9 : (stomp? -2 : Math.sin(t/300)*1)));   // sunk in pit / reared on stomp
+    const D=e.dir;
+    // shadow
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+13,20,6,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+    // charge wind-up tell: a red dust streak in the facing direction
+    if(wind){ ctx.save(); ctx.globalAlpha=0.32+0.2*Math.sin(t/60); px(x+D*4-24,y+8,48,4,'#E0503C'); ctx.restore(); }
+    // stomp tell: a brown dust puff kicked up around the feet
+    if(stomp){ ctx.save(); ctx.globalAlpha=0.30+0.18*Math.sin(t/55); ctx.fillStyle='#C4903A'; ctx.beginPath(); ctx.ellipse(x,y+9,26,8,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // body (big grey badger)
+    const by=y-(trapped?0:4);
+    px(x-18,by-6,36,20,'#5A5650');
+    px(x-13,by+3,26,10,'#8A8680');                              // pale belly
+    px(x-13,by+13,6,7,'#3A3630'); px(x+7,by+13,6,7,'#3A3630');  // legs
+    // head toward facing, with the badger's white stripe
+    const hx=x+D*14;
+    px(hx-9,by-13,18,15,'#4A4640');
+    px(hx-1,by-13,3,15,'#F0ECE4');
+    px(hx-9,by-17,5,5,'#3A3630'); px(hx+4,by-17,5,5,'#3A3630'); // ears
+    px(hx+D*3-5,by-7,3,3,'#FF3030'); px(hx+D*3+2,by-7,3,3,'#FF3030'); // angry red eyes
+    px(hx+D*5-2,by-2,4,3,'#1A1616');                            // snout
+    // the Baron's little gold crown
+    px(x-7,by-19,14,3,'#F2C94C');
+    px(x-7,by-23,3,4,'#F8DC74'); px(x-1,by-24,3,5,'#F8DC74'); px(x+5,by-23,3,4,'#F8DC74');
+    px(x-1,by-21,2,2,'#E0503C');                                // crown jewel
+    // dazed stars while trapped
+    if(trapped){ ctx.save(); ctx.fillStyle='#FFD93D'; ctx.font='11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      for(let i=0;i<3;i++){ const a=t/300+i*2.1; ctx.globalAlpha=0.9; ctx.fillText('★', x+Math.cos(a)*12, by-20+Math.sin(a)*4); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-20,by-16,40,34,'#FF5B5B'); ctx.globalAlpha=1; }
+    ctx.restore();
+    Entities.drawAlert(e);   // drawn unscaled so the "!" stays a normal-size pop
+  },
+});
+
+// A charging Baron crashes into a covered pit: spring it, chip a third of his bluster. The
+// third fall finishes him — run the standard enemy defeat (loot/XP/poof/banner) via
+// Entities.hurt, then complete the level like the other objective entities do.
+function _bbFall(e, pit){
+  pit.state='sprung';
+  if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+6, '#8A6A3A', 24);
+  if((e.hp-1) <= 0){
+    if(typeof Entities!=='undefined') Entities.hurt(e, e.hp, e.x, e.y, 0);   // -> loot/XP/poof + "🏆 …is beaten!"
+    if(typeof checkWin==='function') checkWin();                             // spawn the exit portal + finale chest
+    return;
+  }
+  e.hp-=1; e.hurtT=320; e.state='trapped'; e.actT= 1900 - (e.maxHp-e.hp)*220;
+  if(typeof spawnFloater==='function') spawnFloater(e.x, e.y-18, 'THUD!', 'hit');
+  if(typeof sfxDeliver==='function') sfxDeliver();
+  if(typeof updateHUD==='function') updateHUD();
+  if(typeof showToast==='function') showToast('💢 The Baron tumbled into a pit! ('+e.hp+' to go)', 1700);
+}
+
+// The Baron shoulders the dog aside: a little damage + a shove (cozy — a faint sends you to
+// the normal Game Over -> Play Again).
+function _bbBarge(e, p){
+  if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#E0B050', 12);
+  if(typeof Health!=='undefined') Health.damage(p, e.dmg);
+  const ang=Math.atan2(p.y-e.y, p.x-e.x), K=20*(e.scale||1);
+  p.x=clamp(p.x+Math.cos(ang)*K, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*K, 26, WORLD_H-20);
+  if(typeof sfxHowl==='function') sfxHowl();
+}
+
 // ===== src/entities/alphawolf.js =====
 // ====================== ENTITY: ALPHA WOLF (Rocky Mountains boss) ======================
 // The first real boss fight — a huge pack leader that tests the combat the biome taught. It
@@ -5607,11 +5956,14 @@ Entities.register('alphawolf', {
     e.hp      = (typeof e.hp==='number' && e.hp<=e.maxHp) ? e.hp : e.maxHp;
     e.speed   = e.speed || 1.05;
     e.dmg     = e.dmg   || 3;
+    e.scale   = e.scale || BOSS_SCALE;   // body + every attack/telegraph scale by this
     e.dir     = -1;
     e.state   = 'chase';      // 'chase' | 'windup' | 'lunge' | 'howl'
     e.actT    = 0;            // remaining ms in the current scripted state
-    e.lungeCd = 2400; e.summonCd = 7000;
+    e.lungeCd = 2400; e.summonCd = 7000; e.pounceCd = 5000;
     e.lvx=0; e.lvy=0; e.touchCd=0; e.bob=0; e.summoned=0;
+    e.flurry=0;              // remaining chained lunges in an enraged flurry
+    e.ptx=0; e.pty=0;        // marked pounce landing spot
   },
 
   update(e, t, dt){
@@ -5622,8 +5974,9 @@ Entities.register('alphawolf', {
     const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.35 : 1);
+    const S = e.scale || 1;   // scales lunge reach, bite range and the summon spread
 
-    e.lungeCd=Math.max(0,e.lungeCd-dt); e.summonCd=Math.max(0,e.summonCd-dt);
+    e.lungeCd=Math.max(0,e.lungeCd-dt); e.summonCd=Math.max(0,e.summonCd-dt); e.pounceCd=Math.max(0,e.pounceCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0)   e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0)  e.alertT=Math.max(0,e.alertT-dt);
@@ -5631,15 +5984,37 @@ Entities.register('alphawolf', {
     // ---- scripted states ----
     if(e.state==='windup'){                      // crouch, then explode into a lunge
       e.actT-=dt;
-      if(e.actT<=0){ e.state='lunge'; e.actT=360; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=enraged?9:7.5; e.lvx=Math.cos(a)*L; e.lvy=Math.sin(a)*L; if(typeof sfxHowl==='function') sfxHowl(); }
+      if(e.actT<=0){ e.state='lunge'; e.actT=360; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=(enraged?9:7.5)*S; e.lvx=Math.cos(a)*L; e.lvy=Math.sin(a)*L; if(typeof sfxHowl==='function') sfxHowl(); }
       e.bob=t; return;
     }
     if(e.state==='lunge'){
       e.x=clamp(e.x+e.lvx*dtScale, 20, WORLD_W-20);
       e.y=clamp(e.y+e.lvy*dtScale, 26, WORLD_H-20);
       e.dir=e.lvx>=0?1:-1;
-      if(dist<30 && e.touchCd<=0){ _awBite(e,p); e.touchCd=700; }
-      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.lungeCd=enraged?1600:2600; }
+      if(dist<30*S && e.touchCd<=0){ _awBite(e,p); e.touchCd=700; }
+      e.actT-=dt;
+      if(e.actT<=0){
+        if(e.flurry>0){ e.flurry--; e.state='windup'; e.actT=200; e.alertT=300; }   // feral flurry: chain another lunge
+        else { e.state='chase'; e.lungeCd=enraged?1600:2600; }
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='pouncewind'){                  // deep crouch — coils to leap onto the marked spot
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='pounce'; e.actT= enraged?300:360;
+        const a=Math.atan2(e.pty-e.y, e.ptx-e.x); const L=(enraged?12:10)*S;
+        e.lvx=Math.cos(a)*L; e.lvy=Math.sin(a)*L; e.dir=e.lvx>=0?1:-1;
+        if(typeof sfxDash==='function') sfxDash();
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='pounce'){                       // airborne leap; lands on the danger zone
+      e.x=clamp(e.x+e.lvx*dtScale, 20, WORLD_W-20);
+      e.y=clamp(e.y+e.lvy*dtScale, 26, WORLD_H-20);
+      if(dist<32*S && e.touchCd<=0){ _awBite(e,p); e.touchCd=700; }
+      e.actT-=dt;
+      if(e.actT<=0){ e.state='chase'; e.pounceCd=enraged?4200:6000; if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y+8,'#C9C9E0',12); }
       e.bob=t; return;
     }
     if(e.state==='howl'){
@@ -5649,10 +6024,15 @@ Entities.register('alphawolf', {
       if(e.actT<=0){
         e.state='chase'; e.summonCd = enraged?9000:12000;
         const n = enraged?2:1;
-        for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('wolf',{ x:clamp(e.x+Math.cos(a)*60,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*60,40,WORLD_H-40), speed:1.15 }); }
+        for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('wolf',{ x:clamp(e.x+Math.cos(a)*60*S,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*60*S,40,WORLD_H-40), speed:1.15 }); }
         e.summoned+=n;
+        // BUFF THE PACK: every wolf (freshly summoned + already prowling) gets a lasting speed
+        // bump (capped) and a rally flash — so a howl left uninterrupted makes the whole pack worse.
+        let buffed=0;
+        (typeof entities!=='undefined'?entities:[]).forEach(w=>{ if(w.kind==='wolf'){ w.speed=Math.min((w.speed||1.15)*1.18, 1.9); if(typeof spawnSparkles==='function') spawnSparkles(w.x,w.y-8,'#FF9A5A',6); buffed++; } });
         if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-10,'#C9C9E0',18);
-        if(typeof showToast==='function') showToast('🐺 The Alpha calls the pack!',1700);
+        if(typeof sfxSummon==='function') sfxSummon();
+        if(typeof showToast==='function') showToast(buffed>1?'🐺 The Alpha rallies the pack!':'🐺 The Alpha calls the pack!',1700);
       }
       e.bob=t; return;
     }
@@ -5663,8 +6043,18 @@ Entities.register('alphawolf', {
       if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-16,'#B9B9D8',6);
       e.bob=t; return;
     }
+    // pounce: leap onto a telegraphed landing zone — punishes kiting at mid-to-long range
+    if(e.pounceCd<=0 && dist>150 && dist<470){
+      e.state='pouncewind'; e.actT= enraged?520:680; e.alertT=650;
+      e.ptx=p.x; e.pty=p.y;   // mark where it will crash down
+      const warn=(enraged?520:680)+(enraged?300:360);   // strike as the wolf lands
+      Entities.spawn('groundzone', { x:e.ptx, y:e.pty, r:66*S, warnMs:warn, dmg:e.dmg+1, color:'#D65A4C', scale:S });
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y+6,'#D65A4C',6);
+      e.bob=t; return;
+    }
     if(e.lungeCd<=0 && dist<300){
       e.state='windup'; e.actT= enraged?420:560; e.alertT=500;  // brief crouch tell
+      e.flurry = enraged?2:0;   // enraged: this lunge becomes a 3-hit feral flurry
       e.bob=t; return;
     }
     // otherwise pad toward the dog
@@ -5672,47 +6062,130 @@ Entities.register('alphawolf', {
     e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 20, WORLD_W-20);
     e.y=clamp(e.y+Math.sin(a)*spd*dtScale, 26, WORLD_H-20);
     e.dir=Math.cos(a)>=0?1:-1;
-    if(dist<26 && e.touchCd<=0){ _awBite(e,p); e.touchCd=900; }
+    if(dist<26*S && e.touchCd<=0){ _awBite(e,p); e.touchCd=900; }
     e.bob=t;
   },
 
   draw(e, t){
-    const x=Math.round(e.x), y=Math.round(e.y + (e.state==='windup'?2:Math.sin(t/300)*1));
-    const D=e.dir, crouch=(e.state==='windup');
-    // shadow (big)
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+14,20,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A1A'; ctx.fill(); ctx.globalAlpha=1;
-    // wind-up tell: a red crouch aura
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.3+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; ctx.beginPath(); ctx.ellipse(x,y+6,26,12,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // body (large dark-grey wolf)
-    const bodyY=y-(crouch?2:6);
-    px(x-18,bodyY-6,36,20,'#5A5E68'); px(x-14,bodyY+2,28,10,'#7A7E88');
-    px(x-14,bodyY+12,6,7,'#3A3E46'); px(x+8,bodyY+12,6,7,'#3A3E46');   // legs
-    // tail
-    const tw=Math.sin(t/160)*4;
-    px(x-D*20,bodyY-4+tw*0.4,6,12,'#4A4E56');
-    // head toward facing
-    const hx=x+D*14;
-    px(hx-8,bodyY-14,16,14,'#4E525C');
-    px(hx-8,bodyY-18,5,7,'#3A3E46'); px(hx+3,bodyY-18,5,7,'#3A3E46'); // ears
-    px(hx+D*2-4,bodyY-8,3,3,'#FFC83A'); px(hx+D*2+2,bodyY-8,3,3,'#FFC83A'); // amber eyes
-    px(hx+D*5-2,bodyY-4,4,3,'#2A2E36'); // snout
-    // howl tell: head-back + rings
-    if(e.state==='howl'){
-      ctx.save(); ctx.globalAlpha=0.5*(0.5+0.5*Math.sin(t/120)); ctx.strokeStyle='#C9C9E0'; ctx.lineWidth=2;
-      for(let i=1;i<=2;i++){ ctx.beginPath(); ctx.arc(hx, bodyY-14, 10+i*8+(t/40%10), -Math.PI*0.9, -Math.PI*0.1); ctx.stroke(); }
+    const S=e.scale||1, D=e.dir;
+    const crouch=(e.state==='windup'||e.state==='pouncewind'), howl=(e.state==='howl'), airborne=(e.state==='pounce');
+    const y0=Math.round(e.y);
+    const x=Math.round(e.x), y=y0 + (crouch?2 : airborne?-12 : Math.round(Math.sin(t/300)*1));
+    const frac=e.hp/(e.maxHp||e.hp), enraged=frac<=0.34;
+    // Scale AND flip horizontally by facing, so the whole (asymmetric) wolf mirrors cleanly
+    // and the detailed head can be drawn once, always "facing right" (+x = forward).
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(D<0?-S:S, S); ctx.translate(-e.x, -e.y);
+
+    // ---- palette ----
+    const cShadow='#2B2E37', cDark='#3B3F49', cBase='#4E525E', cMid='#5D616D',
+          cLight='#787D8C', cBelly='#8C90A0', cFang='#F5F5ED', cMouth='#4C1618',
+          cTongue='#BE484C', cNose='#111318', cClaw='#E8E8DE';
+    const eye    = enraged ? '#FF3A2A' : '#FFC63A';
+    const eyeHot = enraged ? '#FFB07A' : '#FFEAA0';
+    const bodyY  = y-(crouch?2:6);
+    const tw     = Math.sin(t/150)*4;   // tail sway
+
+    // ground shadow (stays grounded; shrinks while airborne on a pounce)
+    ctx.globalAlpha=airborne?0.15:0.28; ctx.beginPath(); ctx.ellipse(x,y0+15,airborne?15:23,airborne?5:7,0,0,Math.PI*2); ctx.fillStyle='#0C1414'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell: pulsing red crouch aura
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.22*Math.sin(t/60); ctx.fillStyle='#E0503C'; ctx.beginPath(); ctx.ellipse(x,y+7,30,13,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // enrage aura: a smouldering red haze around the body
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.15+0.10*Math.sin(t/150); ctx.fillStyle='#FF3A2A'; ctx.beginPath(); ctx.ellipse(x,bodyY+1,30,20,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- bushy tail (trails low behind, sways) ----
+    px(x-22, bodyY+2+tw*0.5, 8,8, cDark);
+    px(x-26, bodyY-2+tw*0.8, 7,7, cBase);
+    px(x-29, bodyY-6+tw,     6,6, cMid);
+    px(x-30, bodyY-10+tw,    4,5, cLight);   // pale tip
+
+    // ---- rear haunch (hips, set low) + leg ----
+    px(x-16, bodyY-1, 15,16, cBase);
+    px(x-17, bodyY+4, 8,11,  cDark);
+    px(x-12, bodyY+12, 7,8,  cDark);  px(x-12, bodyY+19, 7,2, cClaw);
+
+    // ---- torso + raised shoulder hump (hunched predator posture) ----
+    px(x-11, bodyY-3, 22,18, cBase);   // torso slab
+    px(x-2,  bodyY-9, 15,13, cBase);   // shoulder hump, higher at the front
+    px(x,    bodyY-10, 11,4, cMid);    // hump highlight
+    px(x-6,  bodyY+6, 20,7, cBelly);   // pale chest/belly
+    px(x-11, bodyY+10, 24,4, cDark);   // underside shadow
+
+    // ---- raised hackles: a crest of fur rising toward the neck (aggression) ----
+    const hk=[[x-8,bodyY-2,8],[x-3,bodyY-5,12],[x+2,bodyY-9,15],[x+7,bodyY-10,16],[x+11,bodyY-9,13]];
+    ctx.fillStyle=cShadow;
+    hk.forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0]-3,s[1]); ctx.lineTo(s[0],s[1]-s[2]); ctx.lineTo(s[0]+3,s[1]); ctx.closePath(); ctx.fill(); });
+    ctx.fillStyle=cMid;
+    hk.forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0]-1,s[1]); ctx.lineTo(s[0]+1,s[1]-s[2]+3); ctx.lineTo(s[0]+3,s[1]); ctx.closePath(); ctx.fill(); });
+
+    // ---- front legs + claws ----
+    px(x+2, bodyY+12, 6,8, cShadow); px(x+2, bodyY+19, 6,2, cClaw);   // far leg (behind)
+    px(x+9, bodyY+12, 7,9, cDark);   px(x+9, bodyY+20, 7,2, cClaw);   // near leg
+
+    // ---- thick neck / shaggy ruff ----
+    px(x+9, bodyY-9, 12,20, cBase);
+    ctx.fillStyle=cDark;
+    ctx.beginPath(); ctx.moveTo(x+8,bodyY-9); ctx.lineTo(x+4,bodyY-13); ctx.lineTo(x+12,bodyY-9); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+9,bodyY+9); ctx.lineTo(x+5,bodyY+13); ctx.lineTo(x+14,bodyY+10); ctx.closePath(); ctx.fill();
+
+    // ---- head (big, drawn facing +x) ----
+    const hx=x+12, hy=bodyY-7;
+    px(hx-8, hy-8, 20,18, cBase);      // big skull + jaw mass
+    px(hx-6, hy-10, 13,5, cMid);       // forehead highlight
+    // tall pointed ears, swept back, dark inner
+    ctx.fillStyle=cDark;
+    ctx.beginPath(); ctx.moveTo(hx-7,hy-6); ctx.lineTo(hx-5,hy-18); ctx.lineTo(hx,hy-6);   ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+4,hy-7); ctx.lineTo(hx+7,hy-19); ctx.lineTo(hx+12,hy-7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=cShadow;
+    ctx.beginPath(); ctx.moveTo(hx-5,hy-7); ctx.lineTo(hx-4,hy-13); ctx.lineTo(hx-1,hy-7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+6,hy-8); ctx.lineTo(hx+7,hy-14); ctx.lineTo(hx+9,hy-8); ctx.closePath(); ctx.fill();
+    // heavy furrowed brow, angled down toward the snout
+    ctx.fillStyle=cShadow;
+    ctx.beginPath(); ctx.moveTo(hx-6,hy-1); ctx.lineTo(hx+11,hy-5); ctx.lineTo(hx+11,hy-1); ctx.lineTo(hx-6,hy+3); ctx.closePath(); ctx.fill();
+    // glowing, narrowed slit eyes under the brow
+    px(hx-4,hy+1,5,3,'#141519'); px(hx+4,hy+1,6,3,'#141519');
+    ctx.fillStyle=eye;
+    ctx.beginPath(); ctx.moveTo(hx-4,hy+3); ctx.lineTo(hx+1,hy);   ctx.lineTo(hx+1,hy+3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+4,hy+3); ctx.lineTo(hx+9,hy);   ctx.lineTo(hx+9,hy+3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=eyeHot; px(hx-1,hy+1,2,1,eyeHot); px(hx+6,hy+1,2,1,eyeHot);
+    // battle scar down over the eye
+    px(hx+3,hy-7,1,8,cLight);
+
+    // ---- snarling OPEN maw + big fangs (drawn forward of the skull) ----
+    const mx=hx+9;
+    px(mx-2,hy,   12,5, cBase);        // upper snout
+    px(mx+6,hy-1, 6,5,  cMid);         // snout bridge lit
+    px(mx+10,hy,  3,4,  cNose);        // black nose
+    px(mx-1,hy-2, 8,1,  cShadow);      // snarl wrinkles
+    px(mx-2,hy+5, 14,6, cMouth);       // bold dark maw
+    px(mx+1,hy+8, 8,3,  cTongue);      // tongue
+    // big upper fangs (triangles pointing DOWN)
+    ctx.fillStyle=cFang;
+    [[mx,5],[mx+5,7],[mx+10,5]].forEach(f=>{ ctx.beginPath(); ctx.moveTo(f[0],hy+5); ctx.lineTo(f[0]+2,hy+5+f[1]); ctx.lineTo(f[0]+4,hy+5); ctx.closePath(); ctx.fill(); });
+    // lower jaw + fangs (triangles pointing UP)
+    px(mx-2,hy+11, 14,3, cDark);
+    [[mx+2,4],[mx+8,4]].forEach(f=>{ ctx.beginPath(); ctx.moveTo(f[0],hy+11); ctx.lineTo(f[0]+2,hy+11-f[1]); ctx.lineTo(f[0]+4,hy+11); ctx.closePath(); ctx.fill(); });
+
+    // ---- howl tell: rings blooming from the maw ----
+    if(howl){
+      ctx.save(); ctx.globalAlpha=0.5*(0.5+0.5*Math.sin(t/120)); ctx.strokeStyle='#CFCFE6'; ctx.lineWidth=2;
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(mx+7, hy+3, 6+i*7+(t/40%10), -Math.PI*0.65, Math.PI*0.25); ctx.stroke(); }
       ctx.restore();
     }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-20,y-22,40,36,'#FF5B5B'); ctx.globalAlpha=1; }
-    Entities.drawAlert(e);
+    // hurt flash
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,bodyY-20,64,42,'#FF5B5B'); ctx.globalAlpha=1; }
+    ctx.restore();
+    Entities.drawAlert(e);   // drawn unscaled/un-flipped so the "!" stays a normal pop
   },
 });
 
 function _awBite(e, p){
   spawnSparkles(p.x, p.y-8, '#E05555', 12);
   if(typeof Health!=='undefined') Health.damage(p, (e.dmg||3));
-  const ang=Math.atan2(p.y-e.y, p.x-e.x);
-  p.x=clamp(p.x+Math.cos(ang)*18, 20, WORLD_W-20);
-  p.y=clamp(p.y+Math.sin(ang)*18, 26, WORLD_H-20);
+  // Enraged phase: the Alpha's fangs leave a bleed — a light damage-over-time (Status system).
+  if(typeof Status!=='undefined' && e.maxHp && (e.hp/e.maxHp)<=0.34) Status.apply(p, 'bleeding', 2600);
+  const ang=Math.atan2(p.y-e.y, p.x-e.x), K=18*(e.scale||1);
+  p.x=clamp(p.x+Math.cos(ang)*K, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*K, 26, WORLD_H-20);
   if(typeof sfxHowl==='function') sfxHowl();
 }
 
@@ -5746,10 +6219,13 @@ Entities.register('grizzly', {
     e.hp    = (typeof e.hp==='number' && e.hp<=e.maxHp) ? e.hp : e.maxHp;
     e.speed = e.speed || 0.68;      // slow and heavy
     e.dmg   = e.dmg   || 4;
-    e.slamR = e.slamR || 100;
+    e.slamR = e.slamR || 100;       // base radius; scaled by e.scale at use + in draw
+    e.scale = e.scale || BOSS_SCALE; // body + every attack/telegraph scale by this
     e.dir=-1; e.state='chase'; e.actT=0;
     e.slamCd=3200; e.chargeCd=5200; e.touchCd=0;
+    e.boulderCd=6000; e.roarCd=9000;   // phase-2 ranged throw / phase-3 stun roar
     e.cvx=0; e.cvy=0; e.slamRingT=0; e.bob=0;
+    e.boulders=[];                     // in-flight thrown boulders (arc → impact zone)
   },
 
   update(e, t, dt){
@@ -5760,19 +6236,42 @@ Entities.register('grizzly', {
     const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.45 : 1);
+    const S = e.scale || 1;   // scales the slam ring, charge reach and paw range
 
     e.slamCd=Math.max(0,e.slamCd-dt); e.chargeCd=Math.max(0,e.chargeCd-dt);
+    e.boulderCd=Math.max(0,e.boulderCd-dt); e.roarCd=Math.max(0,e.roarCd-dt);
     if(e.touchCd>0)  e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.slamRingT>0)e.slamRingT=Math.max(0,e.slamRingT-dt);
     if(e.hurtT>0)    e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0)   e.alertT=Math.max(0,e.alertT-dt);
+    // advance thrown boulders; on landing each erupts into a brief impact zone
+    if(e.boulders && e.boulders.length){
+      for(let i=e.boulders.length-1;i>=0;i--){
+        const b=e.boulders[i]; b.prog+=dt/b.dur;
+        if(b.prog>=1){
+          Entities.spawn('groundzone', { x:b.tx, y:b.ty, r:56*S, warnMs:150, dmg:e.dmg+1, color:'#8A6A3A', scale:S });
+          if(typeof spawnSparkles==='function') spawnSparkles(b.tx, b.ty, '#8A6A3A', 14);
+          e.boulders.splice(i,1);
+        }
+      }
+    }
 
     // ---- scripted states ----
     if(e.state==='slamwind'){                 // reared up
       e.actT-=dt;
       if(e.actT<=0){
         e.state='chase'; e.slamCd = enraged?2200:3600; e.slamRingT=520;
-        if(dist < e.slamR){ _grizHit(e, p, e.dmg+1); }     // caught in the pound
+        if(dist < e.slamR*S){ _grizHit(e, p, e.dmg+1); }   // caught in the pound
+        // FISSURES (phase ≥2): the quake cracks the ground into telegraphed eruptions to weave through
+        if(phase>=2){
+          const nF = enraged?3:2;
+          for(let i=0;i<nF;i++){
+            const a2=rand(0,Math.PI*2), d2=rand(70,180)*S;
+            const fx=clamp(e.x+Math.cos(a2)*d2, 40, WORLD_W-40), fy=clamp(e.y+Math.sin(a2)*d2, 40, WORLD_H-40);
+            Entities.spawn('groundzone', { x:fx, y:fy, r:50*S, warnMs:660, dmg:e.dmg, color:'#B5813A', scale:S });
+          }
+        }
+        if(enraged && Math.random()<0.5) e.chargeCd=0;      // enraged: chain straight into a charge
         if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y+6, '#9A7C50', 16);
         if(typeof sfxHowl==='function') sfxHowl();
       }
@@ -5780,18 +6279,56 @@ Entities.register('grizzly', {
     }
     if(e.state==='chargewind'){                // pawing the ground
       e.actT-=dt;
-      if(e.actT<=0){ e.state='charge'; e.actT= enraged?560:480; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=enraged?8.5:7; e.cvx=Math.cos(a)*L; e.cvy=Math.sin(a)*L; e.dir=e.cvx>=0?1:-1; if(typeof sfxHowl==='function') sfxHowl(); }
+      if(e.actT<=0){ e.state='charge'; e.actT= enraged?560:480; const a=Math.atan2(p.y-e.y,p.x-e.x); const L=(enraged?8.5:7)*S; e.cvx=Math.cos(a)*L; e.cvy=Math.sin(a)*L; e.dir=e.cvx>=0?1:-1; if(typeof sfxHowl==='function') sfxHowl(); }
       e.bob=t; return;
     }
     if(e.state==='charge'){
       e.x=clamp(e.x+e.cvx*dtScale, 20, WORLD_W-20);
       e.y=clamp(e.y+e.cvy*dtScale, 26, WORLD_H-20);
-      if(dist<34 && e.touchCd<=0){ _grizHit(e, p, e.dmg+1); e.touchCd=800; }
-      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.chargeCd = enraged?3200:5200; }
+      if(dist<34*S && e.touchCd<=0){ _grizHit(e, p, e.dmg+1); e.touchCd=800; }
+      e.actT-=dt; if(e.actT<=0){ e.state='chase'; e.chargeCd = enraged?3200:5200; if(enraged && Math.random()<0.5) e.slamCd=0; }
+      e.bob=t; return;
+    }
+    if(e.state==='boulderwind'){                // rears and hoists a boulder overhead
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='chase'; e.boulderCd = enraged?4600:6800;
+        e.boulders = e.boulders || [];
+        e.boulders.push({ x0:e.x, y0:e.y-16*S, tx:p.x, ty:p.y, prog:0, dur:900 });
+        if(typeof sfxThunder==='function') sfxThunder();
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='roarwind'){                   // inhales — the stun tell (get out of range)
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='roar'; e.actT=320;
+        if(typeof sfxRoar==='function') sfxRoar();
+        if(dist < 300*S){
+          if(typeof Status!=='undefined') Status.apply(p, 'stunned', 700);
+          const ang=Math.atan2(p.y-e.y,p.x-e.x), K=10*S;
+          p.x=clamp(p.x+Math.cos(ang)*K, 20, WORLD_W-20);
+          p.y=clamp(p.y+Math.sin(ang)*K, 26, WORLD_H-20);
+        }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-12, '#E6C84A', 22);
+      }
+      e.bob=t; return;
+    }
+    if(e.state==='roar'){                        // brief roar pose, then it presses the attack
+      e.actT-=dt;
+      if(e.actT<=0){ e.state='chase'; e.slamCd=Math.min(e.slamCd, 500); }   // follow the stun with a slam
       e.bob=t; return;
     }
 
     // ---- decide the next move ----
+    if(phase>=3 && e.roarCd<=0 && dist<300){
+      e.state='roarwind'; e.actT=560; e.alertT=650; e.roarCd = enraged?9000:12000;
+      e.bob=t; return;
+    }
+    if(phase>=2 && e.boulderCd<=0 && dist>200 && dist<560){
+      e.state='boulderwind'; e.actT= enraged?560:720; e.alertT=650;
+      e.bob=t; return;
+    }
     if(e.chargeCd<=0 && dist>150 && dist<440){
       e.state='chargewind'; e.actT= enraged?520:680; e.alertT=600;
       e.bob=t; return;
@@ -5805,12 +6342,14 @@ Entities.register('grizzly', {
     e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 20, WORLD_W-20);
     e.y=clamp(e.y+Math.sin(a)*spd*dtScale, 26, WORLD_H-20);
     e.dir=Math.cos(a)>=0?1:-1;
-    if(dist<30 && e.touchCd<=0){ _grizHit(e, p, e.dmg); e.touchCd=1000; }
+    if(dist<30*S && e.touchCd<=0){ _grizHit(e, p, e.dmg); e.touchCd=1000; }
     e.bob=t;
   },
 
   draw(e, t){
-    const rear=(e.state==='slamwind');
+    const S=e.scale||1;
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(S, S); ctx.translate(-e.x, -e.y);
+    const rear=(e.state==='slamwind'||e.state==='boulderwind'||e.state==='roarwind');
     const x=Math.round(e.x), y=Math.round(e.y + (rear? -3 : Math.sin(t/340)*1));
     const D=e.dir;
     // slam shockwave ring
@@ -5823,7 +6362,8 @@ Entities.register('grizzly', {
     ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,22,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
     // charge tell (dust) / slam tell (rear aura)
     if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; px(x-D*4-22,y+8,44,4,'#E0503C'); ctx.restore(); }
-    if(rear){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,30,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(e.state==='slamwind'){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,30,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(e.state==='roarwind'||e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.24+0.18*Math.sin(t/60); ctx.fillStyle='#E6C84A'; ctx.beginPath(); ctx.ellipse(x,y+2,32,17,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
     // body (big brown bear)
     const by=y-(rear?4:8);
     px(x-20,by-8,40,24,'#6E4A2E'); px(x-15,by+2,30,12,'#835A38');
@@ -5835,17 +6375,34 @@ Entities.register('grizzly', {
     px(hx-9,by-15,6,7,'#4A3018'); px(hx+3,by-15,6,7,'#4A3018');   // ears
     px(hx+D*2-4,by-4,3,3,'#2A1A10'); px(hx+D*2+2,by-4,3,3,'#2A1A10'); // eyes
     px(hx+D*6-3,by,5,4,'#3A2414');   // snout
+    // boulder tell: a jagged rock hoisted overhead, ready to hurl
+    if(e.state==='boulderwind'){ const ry=by-24-Math.sin(t/80)*2; px(x-8,ry,16,11,'#8A8078'); px(x-8,ry+2,4,7,'#6E655E'); px(x+5,ry+1,5,7,'#A29A90'); px(x-3,ry-2,7,3,'#9A9088'); }
+    // roar tell: sound rings blasting from the maw toward the dog
+    if(e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.55*(0.5+0.5*Math.sin(t/90)); ctx.strokeStyle='#F0D66A'; ctx.lineWidth=2;
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(hx+D*6, by-2, 5+i*6+(t/40%9), -Math.PI*0.55, Math.PI*0.55); ctx.stroke(); } ctx.restore(); }
     if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-22,by-16,44,40,'#FF6B6B'); ctx.globalAlpha=1; }
-    Entities.drawAlert(e);
+    ctx.restore();
+    // thrown boulders arcing through the air — drawn in world space, outside the body transform
+    if(e.boulders && e.boulders.length){
+      const Sc=e.scale||1;
+      e.boulders.forEach(b=>{
+        const gx=b.x0+(b.tx-b.x0)*b.prog, gy=b.y0+(b.ty-b.y0)*b.prog, py=gy-Math.sin(b.prog*Math.PI)*42*Sc, r=7*Sc;
+        ctx.save(); ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(Math.round(gx), Math.round(gy)+2, r*0.9, r*0.4, 0,0,Math.PI*2); ctx.fillStyle='#0C1410'; ctx.fill(); ctx.restore();
+        ctx.fillStyle='#7A716A'; ctx.beginPath(); ctx.arc(Math.round(gx), Math.round(py), r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='#5E564F'; ctx.fillRect(Math.round(gx)-r, Math.round(py)-1, r*2, 2);
+        ctx.fillStyle='#98908A'; ctx.fillRect(Math.round(gx)-r+1, Math.round(py)-r+1, 3, 3);
+      });
+    }
+    Entities.drawAlert(e);   // drawn unscaled so the "!" stays a normal-size pop
   },
 });
 
 function _grizHit(e, p, dmg){
   spawnSparkles(p.x, p.y-8, '#E0A055', 12);
   if(typeof Health!=='undefined') Health.damage(p, dmg);
-  const ang=Math.atan2(p.y-e.y, p.x-e.x);
-  p.x=clamp(p.x+Math.cos(ang)*22, 20, WORLD_W-20);
-  p.y=clamp(p.y+Math.sin(ang)*22, 26, WORLD_H-20);
+  const ang=Math.atan2(p.y-e.y, p.x-e.x), K=22*(e.scale||1);
+  p.x=clamp(p.x+Math.cos(ang)*K, 20, WORLD_W-20);
+  p.y=clamp(p.y+Math.sin(ang)*K, 26, WORLD_H-20);
   if(typeof sfxHowl==='function') sfxHowl();
 }
 
@@ -6404,6 +6961,7 @@ const FLOATER_KINDS = {
   heal:  { color:'#7FE0A0', outline:'#12441F', size:11, rise:0.5,  life:900 },
   xp:    { color:'#A8F5C0', outline:'#12441F', size:9,  rise:0.42, life:800 },
   level: { color:'#FFE066', outline:'#5A3E12', size:15, rise:0.28, life:1800 },
+  status:{ color:'#EDE0F0', outline:'#3A2E44', size:13, rise:0.4,  life:1100 },   // status-icon pop (poison/bleed/stun)
 };
 
 let floaters = [];
@@ -7473,11 +8031,30 @@ QUEST_TYPES['cheer-all'] = {
   isComplete(){ return friends.length>0 && Game.cheeredCount >= friends.length; },
 };
 
-// 'none' — no win condition. Used by the first-boss test level, which just walks you to an
-// auto-spawned portal (level-manager _armExit) with no reward flow (checkWin never fires).
+// 'none' — no win condition. A walk-to-the-portal placeholder for auto-portal test levels
+// (level-manager _armExit); checkWin never fires. No live level uses it now.
 QUEST_TYPES['none'] = {
   describe(){ return 'Walk to the portal'; },
   isComplete(){ return false; },
+};
+
+// 'trap' — outwit the Badger Baron (entities/badgerbaron.js) by tricking his charges into
+// the leaf-covered pit traps (entities/pittrap.js). The first boss, won without dealing any
+// damage: the third pit-fall finishes him and calls checkWin() itself. `_trapArmed` (set in
+// generate when the Baron spawns) stops a Baron-less level from counting as instantly won.
+let _trapArmed = false;
+QUEST_TYPES['trap'] = {
+  _baron(){
+    const es=(typeof entities!=='undefined' && entities) ? entities : [];
+    return es.find(e=>e.kind==='badgerbaron') || null;
+  },
+  describe(){
+    const b=this._baron();
+    if(!b) return _trapArmed ? 'The Baron is beaten!' : 'Outwit the Baron';
+    const total=b.maxHp||3, sprung=Math.max(0, total-(b.hp||0));
+    return `Pits sprung ${sprung}/${total}`;
+  },
+  isComplete(){ return _trapArmed && !this._baron(); },
 };
 
 // 'kindle' — relight every firepit in the level (entities/firepit.js). The clear objective of
@@ -7615,6 +8192,7 @@ function buildCollectibles(spec){
         // the `fetch-from` target item for its describe/isComplete.
         _defeatArmed = (cfg.quest && cfg.quest.type==='defeat') && (cfg.enemies||[]).length>0;
         _fetchItem   = (cfg.quest && cfg.quest.type==='fetch-from') ? (cfg.quest.item||'mooncap') : null;
+        _trapArmed   = (cfg.quest && cfg.quest.type==='trap') && (cfg.enemies||[]).some(en=>en.kind==='badgerbaron');
         (cfg.npcs||[]).forEach(n=>{
           const p=_resolvePos(n); if(!p) return;
           const e={ x:p.x, y:p.y, name:n.name, greeting:n.greeting };
@@ -7636,6 +8214,11 @@ function buildCollectibles(spec){
         (cfg.firepits||[]).forEach(f=>{
           const p=_resolvePos(f); if(!p) return;
           Entities.spawn('firepit', { x:p.x, y:p.y, lit:!!f.lit });
+        });
+        (cfg.pits||[]).forEach(pt=>{
+          const p=_resolvePos(pt); if(!p) return;
+          if(typeof nudgeOutOfWater==='function') nudgeOutOfWater(p, 30);   // keep the Baron's traps on dry land
+          Entities.spawn('pittrap', { x:p.x, y:p.y, state:'armed' });
         });
         (cfg.rockfalls||[]).forEach((rf,i)=>{
           const p=_resolvePos(rf); if(!p) return;
@@ -7925,9 +8508,15 @@ const LevelManager = {
 const HOWL_NOISE_MS=1000;
 
 function updatePlayer(p,t,dt){
+  // A stun (e.g. the Old Grizzly's enraged roar) freezes the dog for its brief duration:
+  // no input movement, and no ability/howl activation this frame. Status.tick still runs
+  // below, so the stun (and any bleed/poison chip) keeps counting down.
+  const stunned = (typeof Status!=='undefined') && Status.blocksMove(p);
   let dx=0,dy=0;
-  if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
-  if(Input.held('left'))dx--; if(Input.held('right'))dx++;
+  if(!stunned){
+    if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
+    if(Input.held('left'))dx--; if(Input.held('right'))dx++;
+  }
   p.moving=dx!==0||dy!==0;
   // Compose active abilities' speed multipliers (each returns 1 while inactive):
   // Storm Fang, Inner Monster, Scurry's landing burst all contribute here.
@@ -7936,6 +8525,7 @@ function updatePlayer(p,t,dt){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
   if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
+  if(typeof Status!=='undefined') spdMul*=Status.speedMul(p);   // slow status drags you down
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -7948,17 +8538,16 @@ function updatePlayer(p,t,dt){
   }
   // Scurry dash: a scripted lunge independent of input (abilities/scurry.js sets these).
   if(p.dashT>0){
-    p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale;
+    if(!stunned){ p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale; p.moving=true; }
     p.dashT=Math.max(0, p.dashT-dt);
-    p.moving=true;
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
-  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
-  Abilities.update(p,dt);
-  if(Input.held('action')&&!p.howling){
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, bleeding, stun, …)
+  if(!stunned) Abilities.update(p,dt);                 // stunned: no new ability fire this frame
+  if(!stunned && Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
     if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-24,'#C9A6FF',6);
   }

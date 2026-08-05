@@ -112,8 +112,19 @@ The tutorial, and it stays cozy on purpose: no combat, no danger you can't walk 
 - **NPCs.** Marla (shop), Nella the Nurse (fetch quest), Wade & Acorn (greet quests).
 - **Quests.** `give` (bring bones), `greet` (say hi to the wildlife). All optional; clearing
   a level is always "cheer every friend."
-- **Boss — The Badger Baron.** Not a fight. You walk to his den; the confrontation is the
-  moment your abilities **awaken** (level-0 tier). The "boss" is the doorway to the real game.
+- **Boss — The Badger Baron.** *(implemented — first build.)* A fight you win with your
+  **wits, not your teeth**: your abilities don't awaken until *after* this den, so the Baron
+  literally can't be damaged. He's all brawn — he **telegraphs a charge** and barrels in a
+  straight line — and the meadow is dotted with leaf-covered **pit traps**. Line a covered pit
+  up between you and him, bait the charge, and he crashes in, losing a third of his bluster;
+  **three sprung pits** and he yields. He can still shoulder-barge *you*, so losing is the
+  normal cozy Game Over → Play Again. Reuses the boss framework (HP bar, knockback-resist,
+  defeat banner, loot/XP) but is won by a trap-fall, not a hit; being the meadow's final level
+  it drops the biome-finale golden chest, and stepping through the exit portal is the moment
+  your abilities **awaken** (world-map.js), the doorway to the real game. *(Deferred: a bespoke
+  den arena — it reuses the meadow terrain — and a distinct multi-attack move-set.)*
+  *New code:* `entities/badgerbaron.js`, `entities/pittrap.js`, the `trap` clear objective, and
+  the `badgerbaron` loot table.
 - **Signature.** Teaching the verbs — and the deliberately withheld promise of power.
 
 ---

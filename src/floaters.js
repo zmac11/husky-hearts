@@ -17,6 +17,7 @@ const FLOATER_KINDS = {
   heal:  { color:'#7FE0A0', outline:'#12441F', size:11, rise:0.5,  life:900 },
   xp:    { color:'#A8F5C0', outline:'#12441F', size:9,  rise:0.42, life:800 },
   level: { color:'#FFE066', outline:'#5A3E12', size:15, rise:0.28, life:1800 },
+  status:{ color:'#EDE0F0', outline:'#3A2E44', size:13, rise:0.4,  life:1100 },   // status-icon pop (poison/bleed/stun)
 };
 
 let floaters = [];
