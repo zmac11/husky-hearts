@@ -5857,42 +5857,84 @@ Entities.register('badgerbaron', {
   },
 
   draw(e, t){
-    const S=e.scale||1;
-    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(S, S); ctx.translate(-e.x, -e.y);
-    const trapped=(e.state==='trapped');
-    const wind=(e.state==='chargewind');
-    const stomp=(e.state==='stomp');
+    const S=e.scale||1, D=e.dir;
+    const trapped=(e.state==='trapped'), wind=(e.state==='chargewind'), stomp=(e.state==='stomp');
+    const y0=Math.round(e.y);
     const x=Math.round(e.x + ((trapped||stomp)?e.daze:0));
-    const y=Math.round(e.y + (trapped? 9 : (stomp? -2 : Math.sin(t/300)*1)));   // sunk in pit / reared on stomp
-    const D=e.dir;
-    // shadow
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+13,20,6,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
-    // charge wind-up tell: a red dust streak in the facing direction
-    if(wind){ ctx.save(); ctx.globalAlpha=0.32+0.2*Math.sin(t/60); px(x+D*4-24,y+8,48,4,'#E0503C'); ctx.restore(); }
-    // stomp tell: a brown dust puff kicked up around the feet
-    if(stomp){ ctx.save(); ctx.globalAlpha=0.30+0.18*Math.sin(t/55); ctx.fillStyle='#C4903A'; ctx.beginPath(); ctx.ellipse(x,y+9,26,8,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // body (big grey badger)
+    const y=y0 + (trapped? 9 : (stomp? -2 : Math.round(Math.sin(t/300)*1)));   // sunk in pit / reared on stomp
+    // scale AND flip horizontally by facing — draw everything "facing right", the flip mirrors it
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(D<0?-S:S, S); ctx.translate(-e.x, -e.y);
+
+    // ---- palette ----
+    const cShadow='#2E2A26', cDark='#403A34', cBase='#5A544C', cMid='#6E675E',
+          cBelly='#9A9288', faceDark='#26221E', faceWhite='#F0ECE4', claw='#E7E2D6', nose='#161311',
+          toothW='#F4F1E8', mouthR='#571F20', gold='#F2C94C', goldLt='#F8DC74', jewel='#E0503C',
+          capeR='#7A4CB4', capeSh='#4E2E82', capeTrim='#F2D250';   // royal purple + gold
+    const eye='#FF3A2A', eyeHot='#FFB07A';
     const by=y-(trapped?0:4);
-    px(x-18,by-6,36,20,'#5A5650');
-    px(x-13,by+3,26,10,'#8A8680');                              // pale belly
-    px(x-13,by+13,6,7,'#3A3630'); px(x+7,by+13,6,7,'#3A3630');  // legs
-    // head toward facing, with the badger's white stripe
-    const hx=x+D*14;
-    px(hx-9,by-13,18,15,'#4A4640');
-    px(hx-1,by-13,3,15,'#F0ECE4');
-    px(hx-9,by-17,5,5,'#3A3630'); px(hx+4,by-17,5,5,'#3A3630'); // ears
-    px(hx+D*3-5,by-7,3,3,'#FF3030'); px(hx+D*3+2,by-7,3,3,'#FF3030'); // angry red eyes
-    px(hx+D*5-2,by-2,4,3,'#1A1616');                            // snout
-    // the Baron's little gold crown
-    px(x-7,by-19,14,3,'#F2C94C');
-    px(x-7,by-23,3,4,'#F8DC74'); px(x-1,by-24,3,5,'#F8DC74'); px(x+5,by-23,3,4,'#F8DC74');
-    px(x-1,by-21,2,2,'#E0503C');                                // crown jewel
+
+    // ground shadow
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+13,22,6,0,0,Math.PI*2); ctx.fillStyle='#1A2A1A'; ctx.fill(); ctx.globalAlpha=1;
+    // charge wind-up tell: a red dust streak kicked up under the feet
+    if(wind){ ctx.save(); ctx.globalAlpha=0.32+0.2*Math.sin(t/60); px(x-23,y+9,47,4,'#E0503C'); ctx.restore(); }
+    // stomp tell: a brown dust puff around the feet
+    if(stomp){ ctx.save(); ctx.globalAlpha=0.30+0.18*Math.sin(t/55); ctx.fillStyle='#C4903A'; ctx.beginPath(); ctx.ellipse(x,y+9,27,8,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- rear haunch + stubby tail ----
+    px(x-20, by-4, 14,18, cBase);
+    px(x-21, by+3, 8,11, cDark);
+    px(x-23, by+2, 5,5, cDark);              // stubby badger tail
+
+    // ---- torso ----
+    px(x-14, by-6, 30,20, cBase);
+    px(x-11, by-8, 24,5, cMid);              // lit upper back
+    px(x-9,  by+8, 23,6, cBelly);            // pale belly
+    px(x-14, by+12, 30,4, cDark);            // underside shadow
+    // ---- legs + big digging claws ----
+    px(x-11, by+13, 7,8, cDark);  px(x-11, by+20, 7,2, claw);
+    px(x+6,  by+13, 9,9, cDark);                                  // broad front leg
+    px(x+6,  by+21, 9,2, claw); px(x+15, by+19, 4,2, claw); px(x+15, by+22, 4,2, claw);   // forward-raking claws
+
+    // ---- royal mantle: purple velvet cape over the shoulders, draping down the near flank ----
+    px(x-11, by-11, 22,10, capeR);           // collar across the shoulders/back
+    px(x-12, by-2,  12,15, capeR);           // cape hanging down the near flank
+    px(x-11, by-11, 22,2,  capeTrim);        // gold collar trim
+    px(x-12, by+11, 12,2,  capeTrim);        // gold hem at the bottom of the drape
+    px(x-8,  by-1, 2,12, capeSh); px(x-3, by-1, 2,12, capeSh);   // velvet fold shadows
+    px(x+10, by-8, 3,4, gold);               // gold clasp at the throat
+
+    // ---- head (facing +x) with the badger face-mask ----
+    const hx=x+13, hy=by-6;
+    px(hx-8, hy-7, 17,16, cBase);            // head mass
+    // rounded ears, dark inner
+    px(hx-7, hy-10, 5,5, cDark); px(hx-6, hy-9, 3,3, cMid);
+    px(hx+4, hy-10, 5,5, cDark); px(hx+5, hy-9, 3,3, cMid);
+    // pale face + the two black badger bands (white centre stripe shows between)
+    px(hx-6, hy-5, 16,14, faceWhite);
+    px(hx-5, hy-5, 4,13, faceDark);          // left eye-band
+    px(hx+6, hy-5, 4,13, faceDark);          // right eye-band
+    px(hx-5, hy-3, 15,1, cShadow);           // heavy brow
+    // angry red eyes set in the bands
+    px(hx-4, hy-1, 3,2, eye); px(hx-4, hy-1, 1,1, eyeHot);
+    px(hx+7, hy-1, 3,2, eye); px(hx+7, hy-1, 1,1, eyeHot);
+    // snout + black nose
+    px(hx+8, hy+2, 6,5, cMid); px(hx+12, hy+3, 3,3, nose);
+    // bared-teeth snarl
+    px(hx+5, hy+7, 9,3, mouthR);
+    px(hx+6, hy+7, 1,2, toothW); px(hx+9, hy+7, 1,2, toothW); px(hx+12, hy+7, 1,2, toothW);
+
+    // ---- gold crown seated between the ears ----
+    px(hx-7, hy-10, 15,3, gold); px(hx-7, hy-8, 15,1, '#C9A22E');   // band + underside shade
+    px(hx-6, hy-15, 3,6, goldLt); px(hx, hy-16, 3,7, goldLt); px(hx+5, hy-15, 3,6, goldLt);   // points
+    px(hx-6, hy-16, 2,2, gold); px(hx-0, hy-17, 2,2, gold); px(hx+6, hy-16, 2,2, gold);        // point tips
+    px(hx-1, hy-12, 2,2, jewel);                                     // jewel
+
     // dazed stars while trapped
     if(trapped){ ctx.save(); ctx.fillStyle='#FFD93D'; ctx.font='11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      for(let i=0;i<3;i++){ const a=t/300+i*2.1; ctx.globalAlpha=0.9; ctx.fillText('★', x+Math.cos(a)*12, by-20+Math.sin(a)*4); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-20,by-16,40,34,'#FF5B5B'); ctx.globalAlpha=1; }
+      for(let i=0;i<3;i++){ const a=t/300+i*2.1; ctx.globalAlpha=0.9; ctx.fillText('★', x+Math.cos(a)*13, by-22+Math.sin(a)*4); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-22,by-18,46,38,'#FF5B5B'); ctx.globalAlpha=1; }
     ctx.restore();
-    Entities.drawAlert(e);   // drawn unscaled so the "!" stays a normal-size pop
+    Entities.drawAlert(e);   // drawn unscaled/un-flipped so the "!" stays a normal pop
   },
 });
 
@@ -6347,40 +6389,87 @@ Entities.register('grizzly', {
   },
 
   draw(e, t){
-    const S=e.scale||1;
-    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(S, S); ctx.translate(-e.x, -e.y);
+    const S=e.scale||1, D=e.dir;
     const rear=(e.state==='slamwind'||e.state==='boulderwind'||e.state==='roarwind');
-    const x=Math.round(e.x), y=Math.round(e.y + (rear? -3 : Math.sin(t/340)*1));
-    const D=e.dir;
-    // slam shockwave ring
+    const y0=Math.round(e.y);
+    const x=Math.round(e.x), y=y0 + (rear? -3 : Math.round(Math.sin(t/340)*1));
+    const frac=e.hp/(e.maxHp||e.hp), enraged=frac<=0.34;
+    // slam shockwave ring (drawn under everything; symmetric so unaffected by the facing flip)
     if(e.slamRingT>0){
       const prog=1-e.slamRingT/520;
       ctx.save(); ctx.globalAlpha=0.5*(1-prog); ctx.lineWidth=5; ctx.strokeStyle='#C7A56A';
       ctx.beginPath(); ctx.arc(x, y+8, 10+prog*e.slamR, 0, Math.PI*2); ctx.stroke(); ctx.restore();
     }
-    // shadow
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,22,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
-    // charge tell (dust) / slam tell (rear aura)
-    if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; px(x-D*4-22,y+8,44,4,'#E0503C'); ctx.restore(); }
-    if(e.state==='slamwind'){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,30,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    if(e.state==='roarwind'||e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.24+0.18*Math.sin(t/60); ctx.fillStyle='#E6C84A'; ctx.beginPath(); ctx.ellipse(x,y+2,32,17,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // body (big brown bear)
+    // scale AND flip horizontally by facing — draw "facing right", the flip mirrors it
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(D<0?-S:S, S); ctx.translate(-e.x, -e.y);
+
+    // ---- palette ----
+    const cShadow='#3A2616', cDark='#4A3018', cBase='#6E4A2E', cMid='#835A38', cLight='#9A6E44',
+          cGrizzle='#B39A78', cBelly='#7A5636', claw='#E8E0CE', nose='#1A120C', fang='#F2EEE2',
+          mouth='#3A1414', tongue='#B0504C', scar='#B39A78';
+    const eye = enraged?'#FF3A2A':'#F0C040', eyeHot = enraged?'#FFB07A':'#FFE79A';
     const by=y-(rear?4:8);
-    px(x-20,by-8,40,24,'#6E4A2E'); px(x-15,by+2,30,12,'#835A38');
-    px(x-16,by+14,8,8,'#4A3018'); px(x+8,by+14,8,8,'#4A3018');   // legs/paws
-    // hump + head
-    px(x-8,by-14,16,8,'#5E3E26');
-    const hx=x+D*16;
-    px(hx-9,by-10,18,15,'#5A3A22');
-    px(hx-9,by-15,6,7,'#4A3018'); px(hx+3,by-15,6,7,'#4A3018');   // ears
-    px(hx+D*2-4,by-4,3,3,'#2A1A10'); px(hx+D*2+2,by-4,3,3,'#2A1A10'); // eyes
-    px(hx+D*6-3,by,5,4,'#3A2414');   // snout
+
+    // ground shadow
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,24,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
+    // charge tell (dust) / slam & roar tells (rear auras)
+    if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); px(x-22,y+9,45,4,'#E0503C'); ctx.restore(); }
+    if(e.state==='slamwind'){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,31,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(e.state==='roarwind'||e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.24+0.18*Math.sin(t/60); ctx.fillStyle='#E6C84A'; ctx.beginPath(); ctx.ellipse(x,y+2,33,17,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- rump + stubby tail ----
+    px(x-20, by-6, 15,22, cBase);
+    px(x-21, by+2, 8,14, cDark);
+    px(x-22, by+6, 5,5, cDark);
+
+    // ---- torso ----
+    px(x-16, by-6, 32,23, cBase);
+    px(x-12, by+8, 26,8, cBelly);          // belly
+    px(x-16, by+14, 32,4, cDark);          // underside shadow
+    // shaggy back tufts
+    ctx.fillStyle=cDark;
+    [[x-11,4],[x-5,5],[x+1,4]].forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0]-3,by-6); ctx.lineTo(s[0],by-6-s[1]); ctx.lineTo(s[0]+3,by-6); ctx.closePath(); ctx.fill(); });
+
+    // ---- grizzly shoulder hump (grey-tipped, "old") ----
+    px(x+1, by-16, 16,14, cBase);
+    px(x+3, by-17, 11,4, cMid);
+    px(x+3, by-17, 11,2, cGrizzle);
+
+    // ---- legs + huge raking claws ----
+    px(x-14, by+14, 9,9, cDark);  px(x-14, by+22, 9,2, claw);
+    px(x+7,  by+14, 10,10, cDark);                                 // front leg
+    px(x+7,  by+23, 10,2, claw); px(x+16, by+21, 3,2, claw); px(x+16, by+24, 3,2, claw);   // forward claws
+
+    // ---- thick neck ----
+    px(x+11, by-8, 11,18, cBase);
+
+    // ---- head (facing +x) ----
+    const hx=x+14, hy=by-6;
+    px(hx-8, hy-9, 20,18, cBase);          // big skull/jaw
+    px(hx-6, hy-11, 13,4, cMid);           // forehead
+    // rounded ears, dark inner
+    px(hx-6, hy-13, 6,6, cDark); px(hx-5, hy-12, 3,3, cMid);
+    px(hx+6, hy-13, 6,6, cDark); px(hx+7, hy-12, 3,3, cMid);
+    // heavy brow + small fierce eyes
+    px(hx-5, hy-2, 15,2, cShadow);
+    px(hx-3, hy, 3,2, eye); px(hx-3, hy, 1,1, eyeHot);
+    px(hx+5, hy, 3,2, eye); px(hx+5, hy, 1,1, eyeHot);
+    px(hx+4, hy-6, 1,7, scar);             // old scar
+    // grizzled muzzle + black nose
+    px(hx+7, hy-1, 11,7, cMid); px(hx+7, hy-1, 11,2, cGrizzle); px(hx+15, hy, 3,4, nose);
+    // open roaring maw + fangs
+    px(hx+7, hy+6, 12,5, mouth);
+    px(hx+9, hy+8, 6,3, tongue);
+    px(hx+7, hy+6, 2,4, fang); px(hx+12, hy+6, 2,4, fang); px(hx+16, hy+6, 2,3, fang);
+    px(hx+7, hy+11, 12,2, cDark);
+    px(hx+9, hy+9, 2,2, fang); px(hx+14, hy+9, 2,2, fang);
+
     // boulder tell: a jagged rock hoisted overhead, ready to hurl
-    if(e.state==='boulderwind'){ const ry=by-24-Math.sin(t/80)*2; px(x-8,ry,16,11,'#8A8078'); px(x-8,ry+2,4,7,'#6E655E'); px(x+5,ry+1,5,7,'#A29A90'); px(x-3,ry-2,7,3,'#9A9088'); }
-    // roar tell: sound rings blasting from the maw toward the dog
+    if(e.state==='boulderwind'){ const ry=by-26-Math.sin(t/80)*2; px(x-8,ry,16,11,'#8A8078'); px(x-8,ry+2,4,7,'#6E655E'); px(x+5,ry+1,5,7,'#A29A90'); px(x-3,ry-2,7,3,'#9A9088'); }
+    // roar tell: sound rings blasting from the maw (forward = +x; the flip aims them right)
     if(e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.55*(0.5+0.5*Math.sin(t/90)); ctx.strokeStyle='#F0D66A'; ctx.lineWidth=2;
-      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(hx+D*6, by-2, 5+i*6+(t/40%9), -Math.PI*0.55, Math.PI*0.55); ctx.stroke(); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-22,by-16,44,40,'#FF6B6B'); ctx.globalAlpha=1; }
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(hx+18, hy+2, 5+i*6+(t/40%9), -Math.PI*0.55, Math.PI*0.55); ctx.stroke(); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-24,by-18,48,42,'#FF6B6B'); ctx.globalAlpha=1; }
     ctx.restore();
     // thrown boulders arcing through the air — drawn in world space, outside the body transform
     if(e.boulders && e.boulders.length){

@@ -155,40 +155,87 @@ Entities.register('grizzly', {
   },
 
   draw(e, t){
-    const S=e.scale||1;
-    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(S, S); ctx.translate(-e.x, -e.y);
+    const S=e.scale||1, D=e.dir;
     const rear=(e.state==='slamwind'||e.state==='boulderwind'||e.state==='roarwind');
-    const x=Math.round(e.x), y=Math.round(e.y + (rear? -3 : Math.sin(t/340)*1));
-    const D=e.dir;
-    // slam shockwave ring
+    const y0=Math.round(e.y);
+    const x=Math.round(e.x), y=y0 + (rear? -3 : Math.round(Math.sin(t/340)*1));
+    const frac=e.hp/(e.maxHp||e.hp), enraged=frac<=0.34;
+    // slam shockwave ring (drawn under everything; symmetric so unaffected by the facing flip)
     if(e.slamRingT>0){
       const prog=1-e.slamRingT/520;
       ctx.save(); ctx.globalAlpha=0.5*(1-prog); ctx.lineWidth=5; ctx.strokeStyle='#C7A56A';
       ctx.beginPath(); ctx.arc(x, y+8, 10+prog*e.slamR, 0, Math.PI*2); ctx.stroke(); ctx.restore();
     }
-    // shadow
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,22,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
-    // charge tell (dust) / slam tell (rear aura)
-    if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); ctx.fillStyle='#E0503C'; px(x-D*4-22,y+8,44,4,'#E0503C'); ctx.restore(); }
-    if(e.state==='slamwind'){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,30,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    if(e.state==='roarwind'||e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.24+0.18*Math.sin(t/60); ctx.fillStyle='#E6C84A'; ctx.beginPath(); ctx.ellipse(x,y+2,32,17,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // body (big brown bear)
+    // scale AND flip horizontally by facing — draw "facing right", the flip mirrors it
+    ctx.save(); ctx.translate(e.x, e.y); ctx.scale(D<0?-S:S, S); ctx.translate(-e.x, -e.y);
+
+    // ---- palette ----
+    const cShadow='#3A2616', cDark='#4A3018', cBase='#6E4A2E', cMid='#835A38', cLight='#9A6E44',
+          cGrizzle='#B39A78', cBelly='#7A5636', claw='#E8E0CE', nose='#1A120C', fang='#F2EEE2',
+          mouth='#3A1414', tongue='#B0504C', scar='#B39A78';
+    const eye = enraged?'#FF3A2A':'#F0C040', eyeHot = enraged?'#FFB07A':'#FFE79A';
     const by=y-(rear?4:8);
-    px(x-20,by-8,40,24,'#6E4A2E'); px(x-15,by+2,30,12,'#835A38');
-    px(x-16,by+14,8,8,'#4A3018'); px(x+8,by+14,8,8,'#4A3018');   // legs/paws
-    // hump + head
-    px(x-8,by-14,16,8,'#5E3E26');
-    const hx=x+D*16;
-    px(hx-9,by-10,18,15,'#5A3A22');
-    px(hx-9,by-15,6,7,'#4A3018'); px(hx+3,by-15,6,7,'#4A3018');   // ears
-    px(hx+D*2-4,by-4,3,3,'#2A1A10'); px(hx+D*2+2,by-4,3,3,'#2A1A10'); // eyes
-    px(hx+D*6-3,by,5,4,'#3A2414');   // snout
+
+    // ground shadow
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+16,24,6,0,0,Math.PI*2); ctx.fillStyle='#0E1A10'; ctx.fill(); ctx.globalAlpha=1;
+    // charge tell (dust) / slam & roar tells (rear auras)
+    if(e.state==='chargewind'){ ctx.save(); ctx.globalAlpha=0.35+0.2*Math.sin(t/60); px(x-22,y+9,45,4,'#E0503C'); ctx.restore(); }
+    if(e.state==='slamwind'){ ctx.save(); ctx.globalAlpha=0.28+0.18*Math.sin(t/70); ctx.fillStyle='#E0A03C'; ctx.beginPath(); ctx.ellipse(x,y+2,31,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(e.state==='roarwind'||e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.24+0.18*Math.sin(t/60); ctx.fillStyle='#E6C84A'; ctx.beginPath(); ctx.ellipse(x,y+2,33,17,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- rump + stubby tail ----
+    px(x-20, by-6, 15,22, cBase);
+    px(x-21, by+2, 8,14, cDark);
+    px(x-22, by+6, 5,5, cDark);
+
+    // ---- torso ----
+    px(x-16, by-6, 32,23, cBase);
+    px(x-12, by+8, 26,8, cBelly);          // belly
+    px(x-16, by+14, 32,4, cDark);          // underside shadow
+    // shaggy back tufts
+    ctx.fillStyle=cDark;
+    [[x-11,4],[x-5,5],[x+1,4]].forEach(s=>{ ctx.beginPath(); ctx.moveTo(s[0]-3,by-6); ctx.lineTo(s[0],by-6-s[1]); ctx.lineTo(s[0]+3,by-6); ctx.closePath(); ctx.fill(); });
+
+    // ---- grizzly shoulder hump (grey-tipped, "old") ----
+    px(x+1, by-16, 16,14, cBase);
+    px(x+3, by-17, 11,4, cMid);
+    px(x+3, by-17, 11,2, cGrizzle);
+
+    // ---- legs + huge raking claws ----
+    px(x-14, by+14, 9,9, cDark);  px(x-14, by+22, 9,2, claw);
+    px(x+7,  by+14, 10,10, cDark);                                 // front leg
+    px(x+7,  by+23, 10,2, claw); px(x+16, by+21, 3,2, claw); px(x+16, by+24, 3,2, claw);   // forward claws
+
+    // ---- thick neck ----
+    px(x+11, by-8, 11,18, cBase);
+
+    // ---- head (facing +x) ----
+    const hx=x+14, hy=by-6;
+    px(hx-8, hy-9, 20,18, cBase);          // big skull/jaw
+    px(hx-6, hy-11, 13,4, cMid);           // forehead
+    // rounded ears, dark inner
+    px(hx-6, hy-13, 6,6, cDark); px(hx-5, hy-12, 3,3, cMid);
+    px(hx+6, hy-13, 6,6, cDark); px(hx+7, hy-12, 3,3, cMid);
+    // heavy brow + small fierce eyes
+    px(hx-5, hy-2, 15,2, cShadow);
+    px(hx-3, hy, 3,2, eye); px(hx-3, hy, 1,1, eyeHot);
+    px(hx+5, hy, 3,2, eye); px(hx+5, hy, 1,1, eyeHot);
+    px(hx+4, hy-6, 1,7, scar);             // old scar
+    // grizzled muzzle + black nose
+    px(hx+7, hy-1, 11,7, cMid); px(hx+7, hy-1, 11,2, cGrizzle); px(hx+15, hy, 3,4, nose);
+    // open roaring maw + fangs
+    px(hx+7, hy+6, 12,5, mouth);
+    px(hx+9, hy+8, 6,3, tongue);
+    px(hx+7, hy+6, 2,4, fang); px(hx+12, hy+6, 2,4, fang); px(hx+16, hy+6, 2,3, fang);
+    px(hx+7, hy+11, 12,2, cDark);
+    px(hx+9, hy+9, 2,2, fang); px(hx+14, hy+9, 2,2, fang);
+
     // boulder tell: a jagged rock hoisted overhead, ready to hurl
-    if(e.state==='boulderwind'){ const ry=by-24-Math.sin(t/80)*2; px(x-8,ry,16,11,'#8A8078'); px(x-8,ry+2,4,7,'#6E655E'); px(x+5,ry+1,5,7,'#A29A90'); px(x-3,ry-2,7,3,'#9A9088'); }
-    // roar tell: sound rings blasting from the maw toward the dog
+    if(e.state==='boulderwind'){ const ry=by-26-Math.sin(t/80)*2; px(x-8,ry,16,11,'#8A8078'); px(x-8,ry+2,4,7,'#6E655E'); px(x+5,ry+1,5,7,'#A29A90'); px(x-3,ry-2,7,3,'#9A9088'); }
+    // roar tell: sound rings blasting from the maw (forward = +x; the flip aims them right)
     if(e.state==='roar'){ ctx.save(); ctx.globalAlpha=0.55*(0.5+0.5*Math.sin(t/90)); ctx.strokeStyle='#F0D66A'; ctx.lineWidth=2;
-      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(hx+D*6, by-2, 5+i*6+(t/40%9), -Math.PI*0.55, Math.PI*0.55); ctx.stroke(); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-22,by-16,44,40,'#FF6B6B'); ctx.globalAlpha=1; }
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(hx+18, hy+2, 5+i*6+(t/40%9), -Math.PI*0.55, Math.PI*0.55); ctx.stroke(); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-24,by-18,48,42,'#FF6B6B'); ctx.globalAlpha=1; }
     ctx.restore();
     // thrown boulders arcing through the air — drawn in world space, outside the body transform
     if(e.boulders && e.boulders.length){
