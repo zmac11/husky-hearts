@@ -5,6 +5,7 @@ function loop(now){
   // colliders; also feeds the frame-rate-independent movement scale (see core/state.js).
   const dt=Math.min(now-lastTime,50);lastTime=now;
   dtScale=dt/FRAME_MS;
+  if(typeof DevMode!=='undefined' && DevMode.timeScale) dtScale*=DevMode.timeScale;   // dev slow-mo/fast
   // Base transform: map logical VIEW_W×VIEW_H onto the device-resolution backing store
   // so all downstream draws (which save/translate/scale relative to this) render crisply.
   ctx.setTransform(renderScale,0,0,renderScale,0,0);
@@ -14,7 +15,9 @@ function loop(now){
   // A first-time tip modal (tips.js) freezes gameplay so the player can read it, even if
   // it popped mid-combat — but the world keeps DRAWING behind it (frozen on the last frame).
   const tipUp=(typeof Tips!=='undefined' && Tips.active);
-  const playing=Game.state===SCENES.PLAYING && !tipUp;
+  let playing=Game.state===SCENES.PLAYING && !tipUp;
+  // Dev pause: freeze the update block; a queued Step advances exactly one frame.
+  if(typeof DevMode!=='undefined' && DevMode.paused){ playing = playing && DevMode._step; DevMode._step=false; }
   // Keep drawing the frozen world behind any overlay that sits over live gameplay
   // (pause / inventory / dialog / game over / the brief win freeze / a tip).
   const s=Game.state;
@@ -56,6 +59,7 @@ function loop(now){
     // screen space over the world, under the minimap HUD.
     if(typeof Darkness!=='undefined') Darkness.render(ctx, cam);
     drawMinimap();
+    if(typeof DevMode!=='undefined' && DevMode.debug) DevMode.drawDebug(now);   // hitboxes + FPS/HUD
   }
   requestAnimationFrame(loop);
 }

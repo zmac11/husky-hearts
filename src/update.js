@@ -23,6 +23,10 @@ function updatePlayer(p,t,dt){
   }
   if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
   if(typeof Status!=='undefined') spdMul*=Status.speedMul(p);   // slow status drags you down
+  if(typeof DevMode!=='undefined'){                             // dev cheats (inert unless toggled)
+    if(DevMode.god) p.invulnT=Math.max(p.invulnT||0, 1000);     // godmode: keep i-frames topped up
+    if(DevMode.speedMul && DevMode.speedMul!==1) spdMul*=DevMode.speedMul;
+  }
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -38,7 +42,7 @@ function updatePlayer(p,t,dt){
     if(!stunned){ p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale; p.moving=true; }
     p.dashT=Math.max(0, p.dashT-dt);
   }
-  resolveCollisions(p);
+  if(!(typeof DevMode!=='undefined' && DevMode.noclip)) resolveCollisions(p);   // noclip skips colliders
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
