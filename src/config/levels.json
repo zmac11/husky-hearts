@@ -168,10 +168,9 @@
     "id": "meadow-boss",
     "name": "The Badger Baron",
     "seed": 30011,
-    "size": { "w": 1280, "h": 960 },
-    "spawn": { "x": 200, "y": 200 },
+    "size": { "w": 1440, "h": 1120 },
+    "spawn": { "x": 220, "y": 960 },
     "next": "rocky",
-    "autoPortal": true,
     "theme": {
       "grass": "#93C06A", "grassDark": "#82B258", "grassLight": "#A8D27E",
       "dirt": "rgba(150,110,70,0.20)",
@@ -179,18 +178,25 @@
       "minimapGrass": "#4A8E36", "minimapWater": "#4AACDC"
     },
     "terrain": "meadow",
-    "collectibles": { "count": 6, "types": ["bone", "heart"], "fish": 0 },
+    "collectibles": { "count": 8, "types": ["bone", "heart"], "fish": 0 },
     "friends": [],
     "npcs": [
       {
-        "name": "A Weathered Signpost", "fx": 0.5, "fy": 0.42,
-        "greeting": "“The Badger Baron's den lies ahead… (nothing here yet — step into the portal to move on.)”"
+        "name": "Digby the Mole", "fx": 0.11, "fy": 0.86,
+        "greeting": "The Baron? All muscle, no sense, that one. You can't bite him — but he can't stop once he charges. Stand behind one of my covered pits and let him barrel right in. Three good tumbles and he'll quit!"
       }
     ],
-    "enemies": [],
+    "enemies": [
+      { "kind": "badgerbaron", "fx": 0.5, "fy": 0.55, "maxHp": 3 }
+    ],
     "critters": [],
+    "pits": [
+      { "fx": 0.30, "fy": 0.52 },
+      { "fx": 0.70, "fy": 0.60 },
+      { "fx": 0.50, "fy": 0.83 }
+    ],
     "chests": [],
-    "quest": { "type": "none", "label": "Reach the Badger Baron's den" }
+    "quest": { "type": "trap", "label": "Outwit the Badger Baron" }
   },
 
   {

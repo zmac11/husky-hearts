@@ -5,9 +5,15 @@
 const HOWL_NOISE_MS=1000;
 
 function updatePlayer(p,t,dt){
+  // A stun (e.g. the Old Grizzly's enraged roar) freezes the dog for its brief duration:
+  // no input movement, and no ability/howl activation this frame. Status.tick still runs
+  // below, so the stun (and any bleed/poison chip) keeps counting down.
+  const stunned = (typeof Status!=='undefined') && Status.blocksMove(p);
   let dx=0,dy=0;
-  if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
-  if(Input.held('left'))dx--; if(Input.held('right'))dx++;
+  if(!stunned){
+    if(Input.held('up'))dy--;  if(Input.held('down'))dy++;
+    if(Input.held('left'))dx--; if(Input.held('right'))dx++;
+  }
   p.moving=dx!==0||dy!==0;
   // Compose active abilities' speed multipliers (each returns 1 while inactive):
   // Storm Fang, Inner Monster, Scurry's landing burst all contribute here.
@@ -16,6 +22,7 @@ function updatePlayer(p,t,dt){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
   if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
+  if(typeof Status!=='undefined') spdMul*=Status.speedMul(p);   // slow status drags you down
   if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
     const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
@@ -28,17 +35,16 @@ function updatePlayer(p,t,dt){
   }
   // Scurry dash: a scripted lunge independent of input (abilities/scurry.js sets these).
   if(p.dashT>0){
-    p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale;
+    if(!stunned){ p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale; p.moving=true; }
     p.dashT=Math.max(0, p.dashT-dt);
-    p.moving=true;
   }
   resolveCollisions(p);
   p.swimming=isInPond(p.x,p.y,p.swimming);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
-  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, …)
-  Abilities.update(p,dt);
-  if(Input.held('action')&&!p.howling){
+  if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, bleeding, stun, …)
+  if(!stunned) Abilities.update(p,dt);                 // stunned: no new ability fire this frame
+  if(!stunned && Input.held('action')&&!p.howling){
     p.howling=true;p.howlTimer=400;p.noiseT=HOWL_NOISE_MS;sfxHowl();
     if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y-24,'#C9A6FF',6);
   }
