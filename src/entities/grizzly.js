@@ -31,7 +31,7 @@ Entities.register('grizzly', {
     e.scale = e.scale || BOSS_SCALE; // body + every attack/telegraph scale by this
     e.dir=-1; e.state='chase'; e.actT=0;
     e.slamCd=3200; e.chargeCd=5200; e.touchCd=0;
-    e.boulderCd=6000; e.roarCd=9000;   // phase-2 ranged throw / phase-3 stun roar
+    e.boulderCd=2500; e.roarCd=5000;   // phase-2 ranged throw / phase-3 stun roar — come soon
     e.cvx=0; e.cvy=0; e.slamRingT=0; e.bob=0;
     e.boulders=[];                     // in-flight thrown boulders (arc → impact zone)
   },
@@ -41,7 +41,7 @@ Entities.register('grizzly', {
     if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
     const frac=e.hp/e.maxHp;
-    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const phase = frac<=0.40 ? 3 : (frac<=0.80 ? 2 : 1);   // P2 (boulder) opens at 80% so it's seen; P3 (roar/enrage) at 40%
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.45 : 1);
     const S = e.scale || 1;   // scales the slam ring, charge reach and paw range
@@ -100,7 +100,7 @@ Entities.register('grizzly', {
     if(e.state==='boulderwind'){                // rears and hoists a boulder overhead
       e.actT-=dt;
       if(e.actT<=0){
-        e.state='chase'; e.boulderCd = enraged?4600:6800;
+        e.state='chase'; e.boulderCd = enraged?3600:5200;
         e.boulders = e.boulders || [];
         e.boulders.push({ x0:e.x, y0:e.y-16*S, tx:p.x, ty:p.y, prog:0, dur:900 });
         if(typeof sfxThunder==='function') sfxThunder();
@@ -130,10 +130,10 @@ Entities.register('grizzly', {
 
     // ---- decide the next move ----
     if(phase>=3 && e.roarCd<=0 && dist<300){
-      e.state='roarwind'; e.actT=560; e.alertT=650; e.roarCd = enraged?9000:12000;
+      e.state='roarwind'; e.actT=560; e.alertT=650; e.roarCd = enraged?7000:9000;
       e.bob=t; return;
     }
-    if(phase>=2 && e.boulderCd<=0 && dist>200 && dist<560){
+    if(phase>=2 && e.boulderCd<=0 && dist>120 && dist<600){
       e.state='boulderwind'; e.actT= enraged?560:720; e.alertT=650;
       e.bob=t; return;
     }

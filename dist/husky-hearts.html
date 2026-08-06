@@ -6981,7 +6981,7 @@ Entities.register('alphawolf', {
     e.dir     = -1;
     e.state   = 'chase';      // 'chase' | 'windup' | 'lunge' | 'howl'
     e.actT    = 0;            // remaining ms in the current scripted state
-    e.lungeCd = 2400; e.summonCd = 7000; e.pounceCd = 5000;
+    e.lungeCd = 2400; e.summonCd = 3000; e.pounceCd = 3000;   // first howl/pounce come soon
     e.lvx=0; e.lvy=0; e.touchCd=0; e.bob=0; e.summoned=0;
     e.flurry=0;              // remaining chained lunges in an enraged flurry
     e.ptx=0; e.pty=0;        // marked pounce landing spot
@@ -6992,7 +6992,7 @@ Entities.register('alphawolf', {
     if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
     const frac=e.hp/e.maxHp;
-    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const phase = frac<=0.40 ? 3 : (frac<=0.80 ? 2 : 1);   // P2 (howl) opens at 80% so it's seen; P3 (enrage) at 40%
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.35 : 1);
     const S = e.scale || 1;   // scales lunge reach, bite range and the summon spread
@@ -7043,7 +7043,7 @@ Entities.register('alphawolf', {
       if(e.hurtT>0){ e.state='chase'; e.summonCd=3000; e.actT=0; if(typeof showToast==='function') showToast('💫 You interrupted the howl!',1600); e.bob=t; return; }
       e.actT-=dt;
       if(e.actT<=0){
-        e.state='chase'; e.summonCd = enraged?9000:12000;
+        e.state='chase'; e.summonCd = enraged?6000:8000;
         const n = enraged?2:1;
         for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('wolf',{ x:clamp(e.x+Math.cos(a)*60*S,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*60*S,40,WORLD_H-40), speed:1.15 }); }
         e.summoned+=n;
@@ -7065,7 +7065,7 @@ Entities.register('alphawolf', {
       e.bob=t; return;
     }
     // pounce: leap onto a telegraphed landing zone — punishes kiting at mid-to-long range
-    if(e.pounceCd<=0 && dist>150 && dist<470){
+    if(e.pounceCd<=0 && dist>110 && dist<470){
       e.state='pouncewind'; e.actT= enraged?520:680; e.alertT=650;
       e.ptx=p.x; e.pty=p.y;   // mark where it will crash down
       const warn=(enraged?520:680)+(enraged?300:360);   // strike as the wolf lands
@@ -7244,7 +7244,7 @@ Entities.register('grizzly', {
     e.scale = e.scale || BOSS_SCALE; // body + every attack/telegraph scale by this
     e.dir=-1; e.state='chase'; e.actT=0;
     e.slamCd=3200; e.chargeCd=5200; e.touchCd=0;
-    e.boulderCd=6000; e.roarCd=9000;   // phase-2 ranged throw / phase-3 stun roar
+    e.boulderCd=2500; e.roarCd=5000;   // phase-2 ranged throw / phase-3 stun roar — come soon
     e.cvx=0; e.cvy=0; e.slamRingT=0; e.bob=0;
     e.boulders=[];                     // in-flight thrown boulders (arc → impact zone)
   },
@@ -7254,7 +7254,7 @@ Entities.register('grizzly', {
     if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
     const frac=e.hp/e.maxHp;
-    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const phase = frac<=0.40 ? 3 : (frac<=0.80 ? 2 : 1);   // P2 (boulder) opens at 80% so it's seen; P3 (roar/enrage) at 40%
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.45 : 1);
     const S = e.scale || 1;   // scales the slam ring, charge reach and paw range
@@ -7313,7 +7313,7 @@ Entities.register('grizzly', {
     if(e.state==='boulderwind'){                // rears and hoists a boulder overhead
       e.actT-=dt;
       if(e.actT<=0){
-        e.state='chase'; e.boulderCd = enraged?4600:6800;
+        e.state='chase'; e.boulderCd = enraged?3600:5200;
         e.boulders = e.boulders || [];
         e.boulders.push({ x0:e.x, y0:e.y-16*S, tx:p.x, ty:p.y, prog:0, dur:900 });
         if(typeof sfxThunder==='function') sfxThunder();
@@ -7343,10 +7343,10 @@ Entities.register('grizzly', {
 
     // ---- decide the next move ----
     if(phase>=3 && e.roarCd<=0 && dist<300){
-      e.state='roarwind'; e.actT=560; e.alertT=650; e.roarCd = enraged?9000:12000;
+      e.state='roarwind'; e.actT=560; e.alertT=650; e.roarCd = enraged?7000:9000;
       e.bob=t; return;
     }
-    if(phase>=2 && e.boulderCd<=0 && dist>200 && dist<560){
+    if(phase>=2 && e.boulderCd<=0 && dist>120 && dist<600){
       e.state='boulderwind'; e.actT= enraged?560:720; e.alertT=650;
       e.bob=t; return;
     }

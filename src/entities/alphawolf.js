@@ -32,7 +32,7 @@ Entities.register('alphawolf', {
     e.dir     = -1;
     e.state   = 'chase';      // 'chase' | 'windup' | 'lunge' | 'howl'
     e.actT    = 0;            // remaining ms in the current scripted state
-    e.lungeCd = 2400; e.summonCd = 7000; e.pounceCd = 5000;
+    e.lungeCd = 2400; e.summonCd = 3000; e.pounceCd = 3000;   // first howl/pounce come soon
     e.lvx=0; e.lvy=0; e.touchCd=0; e.bob=0; e.summoned=0;
     e.flurry=0;              // remaining chained lunges in an enraged flurry
     e.ptx=0; e.pty=0;        // marked pounce landing spot
@@ -43,7 +43,7 @@ Entities.register('alphawolf', {
     if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
     const frac=e.hp/e.maxHp;
-    const phase = frac<=0.34 ? 3 : (frac<=0.67 ? 2 : 1);
+    const phase = frac<=0.40 ? 3 : (frac<=0.80 ? 2 : 1);   // P2 (howl) opens at 80% so it's seen; P3 (enrage) at 40%
     const enraged = phase===3;
     const spd = e.speed * (enraged ? 1.35 : 1);
     const S = e.scale || 1;   // scales lunge reach, bite range and the summon spread
@@ -94,7 +94,7 @@ Entities.register('alphawolf', {
       if(e.hurtT>0){ e.state='chase'; e.summonCd=3000; e.actT=0; if(typeof showToast==='function') showToast('💫 You interrupted the howl!',1600); e.bob=t; return; }
       e.actT-=dt;
       if(e.actT<=0){
-        e.state='chase'; e.summonCd = enraged?9000:12000;
+        e.state='chase'; e.summonCd = enraged?6000:8000;
         const n = enraged?2:1;
         for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('wolf',{ x:clamp(e.x+Math.cos(a)*60*S,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*60*S,40,WORLD_H-40), speed:1.15 }); }
         e.summoned+=n;
@@ -116,7 +116,7 @@ Entities.register('alphawolf', {
       e.bob=t; return;
     }
     // pounce: leap onto a telegraphed landing zone — punishes kiting at mid-to-long range
-    if(e.pounceCd<=0 && dist>150 && dist<470){
+    if(e.pounceCd<=0 && dist>110 && dist<470){
       e.state='pouncewind'; e.actT= enraged?520:680; e.alertT=650;
       e.ptx=p.x; e.pty=p.y;   // mark where it will crash down
       const warn=(enraged?520:680)+(enraged?300:360);   // strike as the wolf lands
