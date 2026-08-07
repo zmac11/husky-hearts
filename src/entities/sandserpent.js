@@ -20,12 +20,14 @@ Entities.register('sandserpent', {
     e.name='The Sand Serpent'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||64; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||1.6; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.touchCd=0; e.bob=0;
+    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.lineCd=5000; e.touchCd=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_ssNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🌪️ The Sand Serpent thrashes — it erupts in LINES now!', 2400); }
+    if(e.lineCd>0) e.lineCd=Math.max(0,e.lineCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -41,6 +43,15 @@ Entities.register('sandserpent', {
       e.moundCd-=dt;
       if(e.moundCd<=0){ e.moundCd= enraged?700:1100;
         Entities.spawn('groundzone', { x:clamp(p.x+rand(-30,30),40,WORLD_W-40), y:clamp(p.y+rand(-24,24),48,WORLD_H-40), r:46*S, warnMs:enraged?420:600, dmg:e.dmg, color:'#D8A85A', scale:S });
+      }
+      // PHASE 2: a LINE-eruption sweep — a row of mounds bursts along the dog's approach axis;
+      // sidestep perpendicular. Distinct from the scattered point mounds above.
+      if(phase2 && e.lineCd<=0){ e.lineCd= enraged?4200:6200;
+        const la=Math.atan2(p.y-e.y, p.x-e.x), step=62*S;
+        for(let i=-2;i<=3;i++){ const gx=clamp(p.x+Math.cos(la)*i*step,40,WORLD_W-40), gy=clamp(p.y+Math.sin(la)*i*step,48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:34*S, warnMs:(enraged?380:540)+(i+2)*90, dmg:e.dmg, color:'#E0B060', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y,'#E8C87A',14);
+        if(typeof showToast==='function') showToast('🌪️ Line eruption — sidestep it!', 1500);
       }
       e.actT-=dt;
       // surface when the timer runs out, or immediately if it has closed on a decoy/plate lure
