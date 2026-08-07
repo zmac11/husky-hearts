@@ -9872,14 +9872,16 @@ Entities.register('scarecrowking', {
     e.maxHp=e.maxHp||60; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.9; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
     e.dir=-1; e.state='track'; e.actT=0;
-    e.summonCd=3600; e.fireCd=4200; e.touchCd=0; e.summoned=0; e.bob=0;
+    e.summonCd=3600; e.fireCd=4200; e.crowCd=6500; e.touchCd=0; e.summoned=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_skNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x,p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66;
     const S=e.scale||1;
-    e.summonCd=Math.max(0,e.summonCd-dt); e.fireCd=Math.max(0,e.fireCd-dt);
+    // Phase 2 (≤66%): the King starts calling a murder of crows to harry you.
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🐦 The Scarecrow King caws — crows gather in the dark!', 2400); }
+    e.summonCd=Math.max(0,e.summonCd-dt); e.fireCd=Math.max(0,e.fireCd-dt); e.crowCd=Math.max(0,e.crowCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -9916,7 +9918,25 @@ Entities.register('scarecrowking', {
       e.bob=t; return;
     }
 
+    if(e.state==='crowwind'){
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.crowCd= enraged?6000:8500;
+        const n=enraged?3:2;
+        for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('crow',{ x:clamp(e.x+Math.cos(a)*46*S,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*46*S,40,WORLD_H-40) }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-16,'#33333F',18);
+        if(typeof sfxSummon==='function') sfxSummon();
+        showToast('🐦 A murder of crows descends!',1700);
+      }
+      e.bob=t; return;
+    }
+
     // ---- decide next move ----
+    // Phase 2+: call crows (capped) — a second, aerial add on top of the straw minions.
+    const crowN=(typeof entities!=='undefined'?entities:[]).filter(x=>x.kind==='crow').length;
+    if(phase2 && e.crowCd<=0 && dist<560 && crowN<(enraged?6:4)){
+      e.state='crowwind'; e.actT= enraged?520:680; e.alertT=650; e.bob=t; return;
+    }
     if(e.summonCd<=0 && dist<520 && e.summoned<(enraged?8:5)){
       e.state='summonwind'; e.actT= enraged?700:900; e.alertT=700; e.bob=t; return;
     }
@@ -9932,8 +9952,9 @@ Entities.register('scarecrowking', {
   draw(e, t){
     const S=e.scale||1, D=e.dir;
     const x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='summonwind'||e.state==='firewind');
+    const crouch=(e.state==='summonwind'||e.state==='firewind'||e.state==='crowwind');
     const fire=(e.state==='firewind');
+    const crow=(e.state==='crowwind');
     const y=y0+(crouch?2:Math.round(Math.sin(t/300)*1));
     const enraged=(e.hp/e.maxHp)<=0.34;
 
@@ -9948,8 +9969,11 @@ Entities.register('scarecrowking', {
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
     // ground shadow
     ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+19,28,8,0,0,Math.PI*2); ctx.fillStyle='#161208'; ctx.fill(); ctx.globalAlpha=1;
-    // wind-up tell (fire = orange flare, summon = golden)
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=fire?'#F0742E':'#E0C060'; ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // wind-up tell (fire = orange flare, crows = dark, summon = golden)
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=fire?'#F0742E':(crow?'#4A4452':'#E0C060'); ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // crow-call: dark feathers swirling up
+      if(crow){ ctx.save(); ctx.fillStyle='#20202A'; for(let i=0;i<4;i++){ const a=t/120+i*1.6; const fx=x+Math.cos(a)*18, fy=y-16+Math.sin(a)*6; ctx.globalAlpha=0.7; px(Math.round(fx),Math.round(fy),3,2,'#20202A'); } ctx.restore(); }
+    }
     // enrage: a smouldering ember haze
     if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.08*Math.sin(t/150); ctx.fillStyle='#FF5A1E'; ctx.beginPath(); ctx.ellipse(x,y-4,30,30,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
 
