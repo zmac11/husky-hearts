@@ -70,25 +70,84 @@ Entities.register('iceyeti', {
     const crouch=(e.state==='poundwind'||e.state==='encasewind');
     const y=y0+(crouch?3:Math.round(Math.sin(t/320)*1));
     const enraged=(e.hp/e.maxHp)<=0.34;
+    // ---- palette ----
+    const fShadow='#BCCEDC', fDark='#D2E2EC', fBase='#E8F2F8', fLite='#F6FBFF', fHi='#FFFFFF',
+          iDark='#7FB8D8', iBase='#AFE0F5', iLite='#DFF2FF',
+          skin='#C6DAE6', brow='#9FC0D2', mouth='#25404E', fang='#F0F8FF', nose='#8AAABC';
+    const eye=enraged?'#3AD0FF':'#2A7EA0', eyeHot=enraged?'#CFF4FF':'#8FD0F0';
+
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
-    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+22,30,8,0,0,Math.PI*2); ctx.fillStyle='#1A2430'; ctx.fill(); ctx.globalAlpha=1;
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.28+0.2*Math.sin(t/60); ctx.fillStyle=e.state==='encasewind'?'#8FD0F0':'#BFE4F5'; ctx.beginPath(); ctx.ellipse(x,y+10,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // shaggy white body
-    px(x-18,y-10,36,28,'#E8F2F8'); px(x-14,y-2,28,16,'#F6FBFF');
-    px(x-16,y+16,10,8,'#D2E2EC'); px(x+6,y+16,10,8,'#D2E2EC');   // legs
-    px(x-24,y-6,10,18,'#E0EEF6'); px(x+14,y-6,10,18,'#E0EEF6');  // arms
-    // icy claws
-    px(x-26,y+10,8,3,'#AFE0F5'); px(x+18,y+10,8,3,'#AFE0F5');
-    // head + horns of ice
-    px(x-11,y-24,22,18,'#EEF7FC');
-    ctx.fillStyle='#BFE4F5'; ctx.beginPath(); ctx.moveTo(x-10,y-22); ctx.lineTo(x-16,y-34); ctx.lineTo(x-4,y-24); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x+10,y-22); ctx.lineTo(x+16,y-34); ctx.lineTo(x+4,y-24); ctx.closePath(); ctx.fill();
-    // face
-    const eye=enraged?'#3AD0FF':'#2A6E8C'; px(x-6,y-18,4,4,eye); px(x+3,y-18,4,4,eye);
-    px(x-7,y-11,15,3,'#2A4A5A');   // grumpy mouth
+    // ground shadow
+    ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x,y0+23,34,9,0,0,Math.PI*2); ctx.fillStyle='#14202C'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='encasewind'?'#8FD0F0':'#BFE4F5'; ctx.beginPath(); ctx.ellipse(x,y+11,38,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // enrage: a frigid aura
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.06*Math.sin(t/150); ctx.fillStyle='#5FC0F0'; ctx.beginPath(); ctx.ellipse(x,y-2,34,34,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // helper: a ring of shaggy fur tufts around an ellipse
+    const tuft=(cx,cy,rw,rh,col,n)=>{ ctx.fillStyle=col; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; const ox=cx+Math.cos(a)*rw, oy=cy+Math.sin(a)*rh; const oa=a+0.25;
+      ctx.beginPath(); ctx.moveTo(cx+Math.cos(a-0.18)*rw, cy+Math.sin(a-0.18)*rh); ctx.lineTo(cx+Math.cos(oa)*(rw+6), cy+Math.sin(oa)*(rh+6)); ctx.lineTo(cx+Math.cos(a+0.18)*rw, cy+Math.sin(a+0.18)*rh); ctx.closePath(); ctx.fill(); } };
+
+    // ---- legs + big clawed feet ----
+    px(x-17,y+13,13,11,fDark); px(x+4,y+13,13,11,fDark);
+    px(x-18,y+21,15,4,fBase); px(x+3,y+21,15,4,fBase);            // furry feet tops
+    ctx.fillStyle=iBase; for(const fx of [-15,-10,7,12]){ ctx.beginPath(); ctx.moveTo(x+fx,y+24); ctx.lineTo(x+fx+2,y+20); ctx.lineTo(x+fx+4,y+24); ctx.closePath(); ctx.fill(); }   // toe claws
+
+    // ---- far arm (behind body) ----
+    px(x+15,y-9,12,24,fDark); tuft(x+21,y+2,8,12,fDark,7);
+    px(x+22,y+14,9,7,fBase);                                       // fist
+    ctx.fillStyle=iBase; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(x+22+i*3,y+15); ctx.lineTo(x+23+i*3,y+9); ctx.lineTo(x+25+i*3,y+15); ctx.closePath(); ctx.fill(); }   // icy knuckles
+
+    // ---- barrel body: shaggy fur ring, then filled mass ----
+    tuft(x,y+2,20,16,fShadow,16);
+    tuft(x,y+1,19,15,fDark,16);
+    ctx.fillStyle=fBase; ctx.beginPath(); ctx.ellipse(x,y+2,20,17,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=fLite; ctx.beginPath(); ctx.ellipse(x-4,y-4,14,11,0,0,Math.PI*2); ctx.fill();   // lit chest/shoulder
+    // pale belly fur + a couple of hanging icicles
+    ctx.fillStyle=fHi; ctx.beginPath(); ctx.ellipse(x-1,y+6,10,9,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=iLite; ctx.beginPath(); ctx.moveTo(x-8,y+14); ctx.lineTo(x-6,y+22); ctx.lineTo(x-4,y+14); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+3,y+15); ctx.lineTo(x+5,y+21); ctx.lineTo(x+7,y+15); ctx.closePath(); ctx.fill();
+    // hunched shoulder crest (raised fur hump)
+    tuft(x-6,y-11,13,7,fDark,10); ctx.fillStyle=fBase; ctx.beginPath(); ctx.ellipse(x-4,y-11,12,7,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle=fLite; px(x-10,y-13,10,3,fLite);
+
+    // ---- near arm reaching forward ----
+    px(x-27,y-9,13,25,fBase); tuft(x-21,y+2,9,13,fBase,8);
+    px(x-30,y+13,11,9,fLite);                                      // big fist
+    ctx.fillStyle=iBase; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(x-30+i*3,y+14); ctx.lineTo(x-29+i*3,y+7); ctx.lineTo(x-27+i*3,y+14); ctx.closePath(); ctx.fill(); }   // icy knuckle-spikes
+    px(x-16,y-8,6,10,fLite);                                       // lit shoulder joint
+
+    // ---- head set into the shoulders ----
+    px(x-12,y-25,24,19,skin); tuft(x,y-24,13,10,fBase,12);         // furry mane behind the face
+    px(x-12,y-25,24,19,skin);                                      // face plate over the mane
+    px(x-11,y-24,22,4,fLite);                                       // lit crown fur line
+    // heavy brow
+    px(x-11,y-18,22,3,brow); px(x-10,y-19,20,1,'#B6D2E0');
+    // deep-set glowing eyes
+    px(x-8,y-17,6,4,'#12303C'); px(x+2,y-17,6,4,'#12303C');
+    px(x-7,y-16,3,3,eye); px(x+3,y-16,3,3,eye);
+    px(x-7,y-16,1,1,eyeHot); px(x+3,y-16,1,1,eyeHot);
+    // broad flat nose
+    px(x-3,y-13,6,4,nose); px(x-2,y-12,1,1,'#5E7E90'); px(x+1,y-12,1,1,'#5E7E90');
+    // snarling mouth with fangs
+    px(x-9,y-9,18,4,mouth);
+    ctx.fillStyle=fang;
+    ctx.beginPath(); ctx.moveTo(x-7,y-9); ctx.lineTo(x-5,y-4); ctx.lineTo(x-3,y-9); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+3,y-9); ctx.lineTo(x+5,y-4); ctx.lineTo(x+7,y-9); ctx.closePath(); ctx.fill();
+    px(x-8,y-9,16,1,fang);                                          // upper tooth line
+    // cheek fur tufts
+    ctx.fillStyle=fLite; px(x-14,y-14,4,6,fLite); px(x+10,y-14,4,6,fLite);
+
+    // ---- jagged ICE CROWN jutting from the head + a shoulder shard ----
+    ctx.fillStyle=iBase;
+    ctx.beginPath(); ctx.moveTo(x-9,y-24); ctx.lineTo(x-14,y-38); ctx.lineTo(x-3,y-25); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x-1,y-26); ctx.lineTo(x,y-42); ctx.lineTo(x+5,y-25); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+7,y-24); ctx.lineTo(x+14,y-37); ctx.lineTo(x+2,y-25); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=iLite; px(x-11,y-33,2,6,iLite); px(x-1,y-37,2,8,iLite); px(x+8,y-31,2,5,iLite);   // highlights on the shards
+    ctx.fillStyle=iBase; ctx.beginPath(); ctx.moveTo(x-16,y-12); ctx.lineTo(x-22,y-22); ctx.lineTo(x-11,y-14); ctx.closePath(); ctx.fill();   // shoulder shard
+
     // frost breath while winding up an encase
-    if(e.state==='encasewind'){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DFF2FF'; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(x+D*(16+i*7), y-8, 3+i, 0, Math.PI*2); ctx.fill(); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,y-34,56,58,'#FFB0B0'); ctx.globalAlpha=1; }
+    if(e.state==='encasewind'){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DFF2FF'; for(let i=0;i<4;i++){ ctx.beginPath(); ctx.arc(x-D*(16+i*7), y-11, 3+i, 0, Math.PI*2); ctx.fill(); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-34,y-42,68,68,'#FFB0B0'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
