@@ -36,19 +36,22 @@ Entities.register('hermitcrab', {
     e.maxHp=e.maxHp||52; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.8; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
     e.dir=-1; e.state='track'; e.actT=0;
-    e.chargeCd=2600; e.sweepCd=3200; e.staggerT=0; e.touchCd=0;
-    e.cvx=0; e.cvy=0; e.bob=0;
+    e.chargeCd=2600; e.sweepCd=3200; e.sprayCd=5000; e.staggerT=0; e.touchCd=0;
+    e.cvx=0; e.cvy=0; e.bob=0; e._p2=false;
   },
 
   update(e, t, dt){
     const p=_hcNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, panic=frac<=0.34;
+    const frac=e.hp/e.maxHp, panic=frac<=0.34, phase2=frac<=0.66;
     const covered=(typeof Tide!=='undefined') ? Tide.covered() : false;
     const S=e.scale||1;
 
+    // Phase 2 (≤66%): froths up a ranged bubble-spray volley — the crab is no longer only melee.
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🫧 The Hermit Crab froths over — bubble volleys incoming!', 2400); }
     // Panic churns the tide (safe windows flip faster).
     if(typeof Tide!=='undefined') Tide._speed = panic ? 2.4 : 1;
+    e.sprayCd=Math.max(0,e.sprayCd-dt);
 
     // Armor: sealed at high tide UNLESS cracked open by a recent crash (stagger window).
     e.staggerT=Math.max(0, e.staggerT-dt);
@@ -98,8 +101,28 @@ Entities.register('hermitcrab', {
       }
       e.bob=t; return;
     }
+    if(e.state==='spraywind'){
+      // rear back frothing, then lob a fan of bubble bursts around the dog
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.sprayCd= panic?3200:5000;
+        const a0=Math.atan2(p.y-e.y,p.x-e.x), n=panic?5:3;
+        const reach=Math.max(70, Math.min(dist,520));
+        for(let i=0;i<n;i++){ const off=i-(n-1)/2; const a=a0+off*0.28;
+          const gx=clamp(e.x+Math.cos(a)*(reach+off*8),40,WORLD_W-40), gy=clamp(e.y+Math.sin(a)*(reach+off*8),48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:32*S, warnMs:panic?400:540, dmg:e.dmg, color:'#5FC4DA', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x+e.dir*18,e.y-8,'#8FE0F0',14);
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+      e.bob=t; return;
+    }
 
     // ---- decide the next move (track) ----
+    // Phase 2+: a ranged bubble volley interleaves (works in either tide mode, so high tide
+    // is no longer a total lull).
+    if(phase2 && e.sprayCd<=0 && dist>70 && dist<560){
+      e.state='spraywind'; e.actT= panic?300:440; e.alertT=600; e.bob=t; return;
+    }
     // At high tide (armored) it CHARGES — the only way in is baiting a crash. At low tide
     // (exposed) it SWEEPS while you punish. Panic keeps both up.
     if((covered || panic) && e.chargeCd<=0 && dist>90 && dist<560){
@@ -121,7 +144,7 @@ Entities.register('hermitcrab', {
   draw(e, t){
     const S=e.scale||1, D=e.dir;
     const x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='chargewind'||e.state==='sweepwind');
+    const crouch=(e.state==='chargewind'||e.state==='sweepwind'||e.state==='spraywind');
     const y=y0+(crouch?2:Math.round(Math.sin(t/300)*1));
     const exposed=!e.armored;
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
@@ -136,7 +159,10 @@ Entities.register('hermitcrab', {
     // ground shadow
     ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+17,32,9,0,0,Math.PI*2); ctx.fillStyle='#08110F'; ctx.fill(); ctx.globalAlpha=1;
     // wind-up tell
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':'#E0A040'; ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':(e.state==='spraywind'?'#5FC4DA':'#E0A040'); ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // frothing bubbles rising while charging the spray
+      if(e.state==='spraywind'){ ctx.save(); ctx.globalAlpha=0.7; ctx.fillStyle='#DFF6FA'; for(let i=0;i<4;i++){ const bx=x+e.dir*(12+i*4), by=y-4-((t/40+i*8)%20); ctx.beginPath(); ctx.arc(bx,by,1.5+i*0.5,0,Math.PI*2); ctx.fill(); } ctx.restore(); }
+    }
 
     // ============ the borrowed spiral conch shell (its "home") ============
     // big body-whorl (rounded), tinted a touch darker while sealed shut
