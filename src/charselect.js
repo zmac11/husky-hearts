@@ -230,6 +230,7 @@ function resetGame(cfg, levelId){
   // everything remembered about previously-visited levels.
   if(levelId && typeof Progress!=='undefined' && Levels.first() && levelId===Levels.first().id){
     Progress.reset();
+    if(typeof Bestiary!=='undefined') Bestiary.reset();
     if(typeof LevelState!=='undefined') LevelState.clear();
   }
   if(levelId) LevelManager.load(levelId);   // regenerate a specific level

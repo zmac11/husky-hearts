@@ -507,7 +507,7 @@
     "seed": 41903,
     "size": { "w": 1500, "h": 1150 },
     "spawn": { "x": 750, "y": 1030 },
-    "next": null,
+    "next": "cove-1",
     "theme": {
       "grass": "#3E4A66", "grassDark": "#37425C", "grassLight": "#485578",
       "dirt": "rgba(60,60,100,0.24)",
@@ -529,5 +529,842 @@
     "critters": [],
     "chests": [],
     "quest": { "type": "defeat", "label": "Defeat the Old Grizzly" }
+  },
+
+  {
+    "id": "cove-1",
+    "name": "Tide Pools",
+    "seed": 50131,
+    "size": { "w": 2000, "h": 1400 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "cove-2",
+    "tide": true,
+    "theme": {
+      "grass": "#F0D9A8", "grassDark": "#E6CB94", "grassLight": "#F8E7C0",
+      "dirt": "rgba(206,176,120,0.16)",
+      "fenceA": "#B79461", "fenceB": "#CBA772", "rail": "#E0C48A",
+      "minimapGrass": "#E4C88A", "minimapWater": "#4FC4DA"
+    },
+    "terrain": "tidepools",
+    "collectibles": { "count": 22, "types": ["bone", "heart", "ball", "flower"], "fish": 0 },
+    "friends": [
+      { "name": "Marooned Kitten", "fx": 0.14, "fy": 0.22, "need": 2, "kind": "cat",      "msg": "Mrow... the water keeps chasing me up the sand!" },
+      { "name": "Basking Seal",    "fx": 0.86, "fy": 0.20, "need": 3, "kind": "tortoise", "msg": "*yawn* ...oh, hello. Care to keep me company?" },
+      { "name": "Hermit Crablet",  "fx": 0.12, "fy": 0.80, "need": 2, "kind": "hedgehog", "msg": "I'm just a little crab! Got a snack?" },
+      { "name": "Pelican Pete",    "fx": 0.88, "fy": 0.80, "need": 3, "kind": "bird",     "msg": "Squawk! The cove's been quiet today." },
+      { "name": "Shy Sandpiper",   "fx": 0.50, "fy": 0.14, "need": 2, "kind": "bird",     "msg": "Peep! I only come out on the open sand." }
+    ],
+    "npcs": [
+      {
+        "name": "Marla's Beach Stall", "fx": 0.30, "fy": 0.16,
+        "greeting": "Oh, you made it to the coast! I set up days ago. Sun hats and biscuits, fresh as the surf!",
+        "wares": [ { "id": "biscuit", "cost": 3 }, { "id": "sunhat", "cost": 6 }, { "id": "trailmix", "cost": 4 } ]
+      },
+      {
+        "name": "Shelly the Beachcomber", "fx": 0.70, "fy": 0.86,
+        "greeting": "Find me shells 🐚 and I'll trade you treasures the tide gave up. Dig the sands when the water's out!",
+        "wares": [ { "id": "sunhat", "cost": 5, "cur": "shell" }, { "id": "feast", "cost": 6, "cur": "shell" }, { "id": "pearlcharm", "cost": 16, "cur": "shell" } ]
+      },
+      {
+        "name": "Lifeguard Gull", "fx": 0.5, "fy": 0.86,
+        "greeting": "Read the tide, pup! 🌊 in, the channel's deep water — 🏖️ out, it drains to sand and the shells show. Watch my little gauge up top."
+      }
+    ],
+    "enemies": [
+      { "kind": "crab", "fx": 0.42, "fy": 0.30, "speed": 0.7 },
+      { "kind": "crab", "fx": 0.60, "fy": 0.72, "speed": 0.75, "chaseR": 180 }
+    ],
+    "critters": [],
+    "shells": [
+      { "fx": 0.50, "fy": 0.52 }, { "fx": 0.46, "fy": 0.55 }, { "fx": 0.55, "fy": 0.50 },
+      { "fx": 0.20, "fy": 0.28 }, { "fx": 0.80, "fy": 0.30 }, { "fx": 0.24, "fy": 0.80 },
+      { "fx": 0.78, "fy": 0.78, "qty": 2 }, { "fx": 0.5, "fy": 0.62 }
+    ],
+    "chests": ["wooden", "iron", "iron", "silver"],
+    "quest": { "type": "cheer-all", "label": "Cheer the shore friends" }
+  },
+
+  {
+    "id": "cove-2",
+    "name": "Palm Boardwalk",
+    "seed": 50317,
+    "size": { "w": 2200, "h": 1200 },
+    "spawn": { "x": 200, "y": 600 },
+    "next": "cove-3",
+    "tide": true,
+    "theme": {
+      "grass": "#F3DEB0", "grassDark": "#E8D09C", "grassLight": "#FAEAC6",
+      "dirt": "rgba(206,176,120,0.16)",
+      "fenceA": "#B79461", "fenceB": "#CBA772", "rail": "#E0C48A",
+      "minimapGrass": "#E8CE92", "minimapWater": "#4FC4DA"
+    },
+    "terrain": "boardwalk",
+    "collectibles": { "count": 20, "types": ["bone", "heart", "ball", "flower"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Pip the Postpigeon", "fx": 0.30, "fy": 0.42,
+        "greeting": "Coo! The stalls are swamped with orders. Grab one from the order stall and run it over before it melts — I marked the drop with a ▼!"
+      },
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.72, "fy": 0.40,
+        "greeting": "Boardwalk chic! And for the diving ahead — a pair of flippers, hmm?",
+        "wares": [ { "id": "flippers", "cost": 10 }, { "id": "sunhat", "cost": 6 }, { "id": "raincoat", "cost": 9 }, { "id": "feast", "cost": 8 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "crab", "fx": 0.5, "fy": 0.78, "speed": 0.7 }
+    ],
+    "critters": [],
+    "stalls": [
+      { "fx": 0.42, "fy": 0.50, "role": "source", "name": "Order Stall" },
+      { "fx": 0.20, "fy": 0.26, "name": "Shell Grill" },
+      { "fx": 0.80, "fy": 0.24, "name": "Fish Fry" },
+      { "fx": 0.78, "fy": 0.76, "name": "Fruit Cart" },
+      { "fx": 0.22, "fy": 0.78, "name": "Cool Treats" }
+    ],
+    "shells": [
+      { "fx": 0.18, "fy": 0.50 }, { "fx": 0.82, "fy": 0.50 }, { "fx": 0.5, "fy": 0.14 }, { "fx": 0.5, "fy": 0.9 }
+    ],
+    "chests": ["iron", "silver"],
+    "quest": { "type": "deliver", "item": "icecream", "need": 3, "spoilMs": 15000, "label": "Run the boardwalk orders" }
+  },
+
+  {
+    "id": "cove-3",
+    "name": "Coral Sands",
+    "seed": 50529,
+    "size": { "w": 2200, "h": 1500 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "cove-boss",
+    "tide": true,
+    "theme": {
+      "grass": "#EFD7A2", "grassDark": "#E4C88E", "grassLight": "#F6E4BA",
+      "dirt": "rgba(200,170,120,0.16)",
+      "fenceA": "#B79461", "fenceB": "#CBA772", "rail": "#E0C48A",
+      "minimapGrass": "#E2C486", "minimapWater": "#2FA8C4"
+    },
+    "terrain": "coralsands",
+    "collectibles": { "count": 18, "types": ["bone", "heart", "ball", "flower"], "fish": 0 },
+    "friends": [
+      { "name": "Clownfish Coily", "fx": 0.10, "fy": 0.16, "need": 2, "kind": "bird",   "msg": "Blub! Say hi before you dive?" },
+      { "name": "Otter Oona",      "fx": 0.90, "fy": 0.86, "need": 2, "kind": "fox",    "msg": "I float on my back all day — join me?" }
+    ],
+    "npcs": [
+      {
+        "name": "Shelly's Reef Stall", "fx": 0.5, "fy": 0.12,
+        "greeting": "Bring me shells 🐚 and I'll fit you a pearl-diver's charm. The pearls glimmer down in the deep basins — dive for them!",
+        "wares": [ { "id": "pearlcharm", "cost": 14, "cur": "shell" }, { "id": "flippers", "cost": 8, "cur": "shell" }, { "id": "feast", "cost": 6, "cur": "shell" } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "jellyfish", "fx": 0.30, "fy": 0.40 },
+      { "kind": "jellyfish", "fx": 0.72, "fy": 0.60 },
+      { "kind": "jellyfish", "fx": 0.5, "fy": 0.5 },
+      { "kind": "crab", "fx": 0.5, "fy": 0.86, "speed": 0.75 }
+    ],
+    "critters": [],
+    "pearls": [
+      { "fx": 0.30, "fy": 0.40 }, { "fx": 0.72, "fy": 0.60 }, { "fx": 0.5, "fy": 0.5 }, { "fx": 0.24, "fy": 0.46 }
+    ],
+    "shells": [
+      { "fx": 0.16, "fy": 0.74 }, { "fx": 0.84, "fy": 0.28 }, { "fx": 0.5, "fy": 0.2 }
+    ],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "fetch-from", "item": "pearl", "count": 3, "label": "Bring up 3 pearls" }
+  },
+
+  {
+    "id": "cove-boss",
+    "name": "The Giant Hermit Crab",
+    "seed": 50741,
+    "size": { "w": 1600, "h": 1200 },
+    "spawn": { "x": 800, "y": 1080 },
+    "next": "orchard-1",
+    "tide": true,
+    "theme": {
+      "grass": "#ECD39C", "grassDark": "#E0C488", "grassLight": "#F4E2B6",
+      "dirt": "rgba(200,170,120,0.18)",
+      "fenceA": "#A9895A", "fenceB": "#BE9C68", "rail": "#D8BC82",
+      "minimapGrass": "#DEC082", "minimapWater": "#2FA8C4"
+    },
+    "terrain": "coralsands",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Lifeguard Gull", "fx": 0.5, "fy": 0.94,
+        "greeting": "That old crab's a tough shell — armored at high tide 🌊, so bait its charge into the rocks to crack it open! At low tide 🏖️ it's exposed. Mind the claw-sweep. Go on, pup!"
+      }
+    ],
+    "enemies": [
+      { "kind": "hermitcrab", "fx": 0.5, "fy": 0.34, "maxHp": 52 }
+    ],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Crack the Hermit Crab's shell" }
+  },
+
+  {
+    "id": "orchard-1",
+    "name": "Pumpkin Patch",
+    "seed": 60119,
+    "size": { "w": 2000, "h": 1400 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "orchard-2",
+    "theme": {
+      "grass": "#C9A85A", "grassDark": "#BB9A4C", "grassLight": "#D8B968",
+      "dirt": "rgba(150,100,50,0.20)",
+      "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#C08A3E",
+      "minimapGrass": "#B89A4E", "minimapWater": "#4AACDC"
+    },
+    "terrain": "meadow",
+    "augment": "pumpkinpatch",
+    "collectibles": { "count": 16, "types": ["bone", "heart", "flower"], "fish": 4 },
+    "friends": [
+      { "name": "Squirrel Nutkin", "fx": 0.18, "fy": 0.24, "need": 2, "kind": "squirrel", "msg": "So many acorns, so little company!" },
+      { "name": "Hedgerow Hattie", "fx": 0.82, "fy": 0.26, "need": 3, "kind": "hedgehog", "msg": "The nights are getting long and lonely." },
+      { "name": "Wagon Pony",      "fx": 0.5,  "fy": 0.84, "need": 3, "kind": "goat",     "msg": "Neigh! A treat for a tired old workhorse?" }
+    ],
+    "npcs": [
+      {
+        "name": "Marla's Autumn Stall", "fx": 0.30, "fy": 0.16,
+        "greeting": "Oh, you made it to the orchard! I set up days ago. Cider and biscuits, warm as the season!",
+        "wares": [ { "id": "biscuit", "cost": 3 }, { "id": "strawhat", "cost": 6 }, { "id": "trailmix", "cost": 4 } ]
+      },
+      {
+        "name": "Cookpot Keeper", "look": "tailor", "fx": 0.68, "fy": 0.5,
+        "greeting": "Gather 🎃 pumpkins, 🍎 apples and 🌿 herbs from the patch, then bring them to my pot and I'll show you how to cook a buff dish. Warm food, warm heart!"
+      },
+      {
+        "name": "The Keeper", "look": "ranger", "fx": 0.5, "fy": 0.32, "opensBestiary": true,
+        "greeting": "Hoo. I am the Keeper of tales, pup. Every friend you cheer and beast you meet, I write in the bestiary — press B to read it anytime. The orchard remembers kindness — welcome home."
+      }
+    ],
+    "enemies": [
+      { "kind": "crow", "fx": 0.4, "fy": 0.4 },
+      { "kind": "crow", "fx": 0.66, "fy": 0.66 }
+    ],
+    "critters": [
+      { "species": "squirrel", "fx": 0.4, "fy": 0.3 },
+      { "species": "squirrel", "fx": 0.72, "fy": 0.72 }
+    ],
+    "harvest": [
+      { "fx": 0.24, "fy": 0.46, "item": "pumpkin" }, { "fx": 0.34, "fy": 0.60, "item": "pumpkin" },
+      { "fx": 0.60, "fy": 0.28, "item": "apple" }, { "fx": 0.72, "fy": 0.40, "item": "apple" },
+      { "fx": 0.46, "fy": 0.72, "item": "herb" }, { "fx": 0.56, "fy": 0.64, "item": "herb" },
+      { "fx": 0.20, "fy": 0.70, "item": "pumpkin" }, { "fx": 0.80, "fy": 0.66, "item": "apple" }
+    ],
+    "cookpots": [ { "fx": 0.66, "fy": 0.56 } ],
+    "chests": ["wooden", "iron", "silver"],
+    "quest": { "type": "cook", "count": 1, "label": "Gather and cook a harvest dish" }
+  },
+
+  {
+    "id": "orchard-2",
+    "name": "Haybale Maze",
+    "seed": 60337,
+    "size": { "w": 1700, "h": 2000 },
+    "spawn": { "x": 200, "y": 1880 },
+    "next": "orchard-3",
+    "dark": true,
+    "theme": {
+      "grass": "#8A6E3E", "grassDark": "#7C6236", "grassLight": "#9A7E48",
+      "dirt": "rgba(60,44,26,0.30)",
+      "fenceA": "#5A3E22", "fenceB": "#6E4E2E", "rail": "#8A6238",
+      "minimapGrass": "#6E5632", "minimapWater": "#3A6E8C"
+    },
+    "terrain": "haybalemaze",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "flower"], "fish": 0 },
+    "friends": [
+      { "name": "Lost Farmhand's Pup", "fx": 0.5, "fy": 0.10, "need": 2, "kind": "fox", "msg": "*whimper* I can't find the way out of the maze..." }
+    ],
+    "npcs": [
+      {
+        "name": "Trapped Farmhand", "look": "ranger", "fx": 0.14, "fy": 0.86,
+        "greeting": "Thank goodness, a friendly face! The scarecrows wake after dark. Pull the three gate levers to open the way to town — I'll lend you my lantern's courage."
+      }
+    ],
+    "enemies": [
+      { "kind": "scarecrow", "fx": 0.5, "fy": 0.5 },
+      { "kind": "scarecrow", "fx": 0.32, "fy": 0.34 },
+      { "kind": "scarecrow", "fx": 0.7, "fy": 0.66 },
+      { "kind": "patrol", "fx": 0.5, "fy": 0.3, "range": 300 }
+    ],
+    "lanterns": [ { "fx": 0.5, "fy": 0.86 }, { "fx": 0.2, "fy": 0.5 }, { "fx": 0.8, "fy": 0.5 } ],
+    "levers": [ { "fx": 0.16, "fy": 0.30 }, { "fx": 0.84, "fy": 0.32 }, { "fx": 0.5, "fy": 0.62 } ],
+    "chests": ["iron", "silver", "golden"],
+    "quest": { "type": "levers", "label": "Open the maze gate" }
+  },
+
+  {
+    "id": "orchard-3",
+    "name": "Cider Mill",
+    "seed": 60553,
+    "size": { "w": 1900, "h": 1400 },
+    "spawn": { "x": 200, "y": 700 },
+    "next": "orchard-boss",
+    "theme": {
+      "grass": "#C6A254", "grassDark": "#B89448", "grassLight": "#D4B264",
+      "dirt": "rgba(150,100,50,0.20)",
+      "fenceA": "#7E5632", "fenceB": "#946439", "rail": "#C08A3E",
+      "minimapGrass": "#B49648", "minimapWater": "#4AACDC"
+    },
+    "terrain": "cidermill",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "flower"], "fish": 0 },
+    "friends": [
+      { "name": "Mill Cat",     "fx": 0.22, "fy": 0.30, "need": 2, "kind": "cat",  "msg": "Mrrp. Mind the moths, they're everywhere tonight." }
+    ],
+    "npcs": [
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.78, "fy": 0.60,
+        "greeting": "Back for an upgrade? Help the town and I'll fit you finer gear. The harvest cloak's reserved for folk the town trusts.",
+        "wares": [ { "id": "cloak", "cost": 12, "repReq": 3 }, { "id": "strawhat", "cost": 6 }, { "id": "feast", "cost": 8 }, { "id": "raincoat", "cost": 9 } ]
+      },
+      {
+        "name": "Miller Mabel", "fx": 0.44, "fy": 0.32,
+        "greeting": "The cider shift is on and we're short-handed! Work the presses to keep the mill running — every barrel helps the town.",
+        "quest": {
+          "id": "orch-rep", "type": "greet", "greet": { "count": 1 },
+          "offer": "While you're at it, would you say hello to our Mill Cat? A little cheer goes a long way here.",
+          "ready": "You met the cat? Bless you — the town warms to you.",
+          "progress": "Just say hello to the Mill Cat when you can, dear.",
+          "done": "The town's glad to have you, pup. 💛",
+          "reward": { "rep": 3 }
+        }
+      }
+    ],
+    "enemies": [
+      { "kind": "crow", "fx": 0.6, "fy": 0.2 },
+      { "kind": "crow", "fx": 0.3, "fy": 0.8 }
+    ],
+    "critters": [
+      { "species": "squirrel", "fx": 0.6, "fy": 0.7 }
+    ],
+    "presses": [ { "fx": 0.5, "fy": 0.48 }, { "fx": 0.62, "fy": 0.44 }, { "fx": 0.38, "fy": 0.5 } ],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "timed", "count": 6, "label": "Keep the cider mill running" }
+  },
+
+  {
+    "id": "orchard-boss",
+    "name": "The Scarecrow King",
+    "seed": 60741,
+    "size": { "w": 1600, "h": 1200 },
+    "spawn": { "x": 800, "y": 1080 },
+    "next": "dunes-1",
+    "dark": true,
+    "theme": {
+      "grass": "#6E5A34", "grassDark": "#62502E", "grassLight": "#7C663A",
+      "dirt": "rgba(50,36,20,0.30)",
+      "fenceA": "#4E3620", "fenceB": "#5E432A", "rail": "#7A5632",
+      "minimapGrass": "#5A4A2C", "minimapWater": "#3A6E8C"
+    },
+    "terrain": "cidermill",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Keeper", "look": "ranger", "fx": 0.5, "fy": 0.94, "opensBestiary": true,
+        "greeting": "The Scarecrow King rises on harvest night, pup. He summons straw minions, sweeps the field with fire, and gobbles your buff-foods — so cook a spare! Break his call when he rears up. Go on."
+      }
+    ],
+    "enemies": [
+      { "kind": "scarecrowking", "fx": 0.5, "fy": 0.32, "maxHp": 60 }
+    ],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Topple the Scarecrow King" }
+  },
+
+  {
+    "id": "dunes-1",
+    "name": "Dune Sea",
+    "seed": 70131,
+    "size": { "w": 2400, "h": 1600 },
+    "spawn": { "x": 200, "y": 220 },
+    "next": "dunes-2",
+    "heat": true,
+    "sandstorm": true,
+    "theme": {
+      "grass": "#E8C87A", "grassDark": "#DCBC6C", "grassLight": "#F2D68C",
+      "dirt": "rgba(180,140,80,0.16)",
+      "fenceA": "#A9865A", "fenceB": "#C29C68", "rail": "#DCC088",
+      "minimapGrass": "#DCC078", "minimapWater": "#3FB6D6"
+    },
+    "terrain": "dunesea",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [
+      { "name": "Fennec Finn",   "fx": 0.16, "fy": 0.30, "need": 2, "kind": "fox",     "msg": "*pant pant* So hot out here... a treat, friend?" },
+      { "name": "Weary Camel",   "fx": 0.84, "fy": 0.28, "need": 3, "kind": "goat",    "msg": "I've walked the dunes for days. Company, please?" },
+      { "name": "Dune Lizard",   "fx": 0.5,  "fy": 0.84, "need": 2, "kind": "tortoise","msg": "I bask on the warm sand — say hello?" }
+    ],
+    "npcs": [
+      {
+        "name": "Marla's Caravan", "fx": 0.30, "fy": 0.18,
+        "greeting": "Oh, you crossed the dunes! I set up days ago. Keep a 🧴 canteen handy and mind the sandstorms!",
+        "wares": [ { "id": "canteen", "cost": 3 }, { "id": "widebrim", "cost": 8 }, { "id": "biscuit", "cost": 3 }, { "id": "feast", "cost": 8 } ]
+      },
+      {
+        "name": "Relic Vendor", "look": "tailor", "fx": 0.70, "fy": 0.72,
+        "greeting": "Curios from the old ruins, pup — active relics you trigger with the F key. Come to the oasis and I'll fit you your first!",
+        "wares": [ { "id": "canteen", "cost": 3 }, { "id": "miragedecoy", "cost": 12 }, { "id": "sunlantern", "cost": 14 } ]
+      },
+      {
+        "name": "Stranded Traveler", "look": "ranger", "fx": 0.5, "fy": 0.5,
+        "greeting": "Bless you for stopping — the oasis kept me alive. Rest in the shade of the rocks and palms; the heat gauge refills there and at the water."
+      }
+    ],
+    "enemies": [
+      { "kind": "scarab", "fx": 0.4, "fy": 0.4 },
+      { "kind": "scarab", "fx": 0.62, "fy": 0.6 },
+      { "kind": "scarab", "fx": 0.3, "fy": 0.7 }
+    ],
+    "critters": [],
+    "harvest": [
+      { "fx": 0.24, "fy": 0.5, "item": "canteen" }, { "fx": 0.76, "fy": 0.44, "item": "canteen" }, { "fx": 0.5, "fy": 0.7, "item": "water" }
+    ],
+    "quicksands": [ { "fx": 0.4, "fy": 0.28, "r": 60 }, { "fx": 0.66, "fy": 0.78, "r": 66 } ],
+    "chests": ["wooden", "iron", "silver"],
+    "quest": { "type": "cheer-all", "label": "Cheer the sun-weary friends" }
+  },
+
+  {
+    "id": "dunes-2",
+    "name": "Hidden Oasis",
+    "seed": 70337,
+    "size": { "w": 1700, "h": 1300 },
+    "spawn": { "x": 200, "y": 200 },
+    "next": "dunes-3",
+    "heat": true,
+    "theme": {
+      "grass": "#E4C67C", "grassDark": "#D8BA6E", "grassLight": "#EED68E",
+      "dirt": "rgba(180,140,80,0.16)",
+      "fenceA": "#A9865A", "fenceB": "#C29C68", "rail": "#DCC088",
+      "minimapGrass": "#D8BE76", "minimapWater": "#2FA8C4"
+    },
+    "terrain": "oasis",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "flower"], "fish": 6 },
+    "friends": [
+      { "name": "Parrot Pim",     "fx": 0.18, "fy": 0.24, "need": 2, "kind": "bird", "msg": "Squawk! Welcome to the oasis, traveler!" },
+      { "name": "Tortoise Sage",  "fx": 0.82, "fy": 0.72, "need": 3, "kind": "tortoise", "msg": "Rest a while, young pup. The desert is patient." },
+      { "name": "Oasis Frog",     "fx": 0.5,  "fy": 0.28, "need": 2, "kind": "hedgehog", "msg": "Ribbit! Cool water, isn't it lovely?" }
+    ],
+    "npcs": [
+      {
+        "name": "Relic Vendor", "look": "tailor", "fx": 0.30, "fy": 0.30,
+        "greeting": "Here you are! Take this Sand-Stepper charm — equip it in your bag, then tap F to dash. Come back for a decoy or a sun lantern.",
+        "quest": {
+          "id": "dunes-relic", "type": "greet", "greet": { "count": 1 },
+          "offer": "Say hello to the Tortoise Sage across the water and I'll gift you your first relic — a dash-charm to slip the desert's dangers.",
+          "ready": "You met the Sage! Here — a Sand-Stepper Charm. Equip it and press F!",
+          "progress": "The old Sage is just across the oasis — go say hello.",
+          "done": "May it carry you through the ruins, pup. 💨",
+          "reward": { "item": "sandstepper", "count": 1 }
+        },
+        "wares": [ { "id": "miragedecoy", "cost": 12 }, { "id": "sunlantern", "cost": 14 }, { "id": "canteen", "cost": 3 } ]
+      },
+      {
+        "name": "The Archaeologist", "look": "ranger", "fx": 0.70, "fy": 0.30,
+        "greeting": "The ruins to the east hide an ancient mechanism — pressure plates and glyph doors. Bring your relics; you'll need them to solve it."
+      },
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.8,
+        "greeting": "Desert-proof gear, fresh in! A wide-brim hat slows the heat.",
+        "wares": [ { "id": "widebrim", "cost": 8 }, { "id": "cloak", "cost": 12 }, { "id": "feast", "cost": 8 } ]
+      }
+    ],
+    "enemies": [],
+    "critters": [
+      { "species": "duck", "onWater": { "kind": "pond", "index": 0 } }
+    ],
+    "chests": ["iron", "silver", "golden"],
+    "quest": { "type": "cheer-all", "label": "Meet the oasis caravan" }
+  },
+
+  {
+    "id": "dunes-3",
+    "name": "Ancient Ruins",
+    "seed": 70553,
+    "size": { "w": 1900, "h": 1500 },
+    "spawn": { "x": 200, "y": 750 },
+    "next": "dunes-boss",
+    "theme": {
+      "grass": "#C7A876", "grassDark": "#BB9C6A", "grassLight": "#D6B884",
+      "dirt": "rgba(120,90,50,0.24)",
+      "fenceA": "#8A6E42", "fenceB": "#9C7E4E", "rail": "#BFA06E",
+      "minimapGrass": "#B79A66", "minimapWater": "#3FB6D6"
+    },
+    "terrain": "ruins",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Archaeologist", "look": "ranger", "fx": 0.14, "fy": 0.5,
+        "greeting": "The mechanism sleeps within. Step on every glyph plate to light it — and route the sun-beam onto the crystal by turning the mirror (↻). The doors open when all glyphs glow. Mind the trapped tiles and sentinels!"
+      }
+    ],
+    "enemies": [
+      { "kind": "sentinel", "fx": 0.5, "fy": 0.22 },
+      { "kind": "sentinel", "fx": 0.5, "fy": 0.78 }
+    ],
+    "critters": [],
+    "plates": [
+      { "fx": 0.22, "fy": 0.22 }, { "fx": 0.78, "fy": 0.22 },
+      { "fx": 0.22, "fy": 0.78 }, { "fx": 0.78, "fy": 0.78 }
+    ],
+    "emitters": [ { "fx": 0.36, "fy": 0.6, "dir": "right" } ],
+    "mirrors": [ { "fx": 0.62, "fy": 0.6, "orient": "\\" } ],
+    "sensors": [ { "fx": 0.62, "fy": 0.42 } ],
+    "doors": [
+      { "fx": 0.5, "fy": 0.34, "horizontal": true, "span": 60 },
+      { "fx": 0.5, "fy": 0.68, "horizontal": true, "span": 60 }
+    ],
+    "traps": [
+      { "fx": 0.4, "fy": 0.5, "period": 2400 }, { "fx": 0.6, "fy": 0.5, "period": 2800 }, { "fx": 0.5, "fy": 0.4, "period": 3000 }
+    ],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "solve", "label": "Unseal the ancient ruins" }
+  },
+
+  {
+    "id": "dunes-boss",
+    "name": "The Sand Serpent",
+    "seed": 70741,
+    "size": { "w": 1800, "h": 1400 },
+    "spawn": { "x": 900, "y": 1260 },
+    "next": "tundra-1",
+    "heat": true,
+    "theme": {
+      "grass": "#E0C074", "grassDark": "#D4B466", "grassLight": "#ECCE86",
+      "dirt": "rgba(160,120,70,0.20)",
+      "fenceA": "#9C7E4E", "fenceB": "#B08E58", "rail": "#D2B47A",
+      "minimapGrass": "#D4BA70", "minimapWater": "#3FB6D6"
+    },
+    "terrain": "dunesea",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Archaeologist", "look": "ranger", "fx": 0.5, "fy": 0.94,
+        "greeting": "The Sand Serpent! It dives — armored underground — and surfaces to strike. Drop a 🏺 mirage decoy or lure it over a plate to bait it up, then hit it hard. Go, pup!"
+      }
+    ],
+    "enemies": [
+      { "kind": "sandserpent", "fx": 0.5, "fy": 0.34, "maxHp": 64 }
+    ],
+    "critters": [],
+    "plates": [ { "fx": 0.24, "fy": 0.5 }, { "fx": 0.76, "fy": 0.5 } ],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Bring down the Sand Serpent" }
+  },
+
+  {
+    "id": "tundra-1",
+    "name": "Icy Flats",
+    "seed": 80131,
+    "size": { "w": 2200, "h": 1500 },
+    "spawn": { "x": 200, "y": 240 },
+    "next": "tundra-2",
+    "cold": true,
+    "theme": {
+      "grass": "#DCE9F0", "grassDark": "#CCDCE6", "grassLight": "#ECF4F9",
+      "dirt": "rgba(120,140,160,0.16)",
+      "fenceA": "#5E6E7C", "fenceB": "#6E808F", "rail": "#9AAEBE",
+      "minimapGrass": "#C4D6E2", "minimapWater": "#8FC0DC"
+    },
+    "terrain": "icyflats",
+    "collectibles": { "count": 14, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [
+      { "name": "Snow Hare",     "fx": 0.28, "fy": 0.62, "need": 2, "kind": "bunny", "msg": "B-brrr! A treat would warm me right up." },
+      { "name": "Arctic Fox",    "fx": 0.74, "fy": 0.34, "need": 3, "kind": "fox",   "msg": "The flats are so cold and quiet lately." }
+    ],
+    "npcs": [
+      {
+        "name": "Fenwick the Tailor", "look": "tailor", "fx": 0.5, "fy": 0.2,
+        "greeting": "The endgame cold, pup! A warm coat cuts the chill — and keep firewood 🪵 on hand to stoke your warmth in a pinch.",
+        "wares": [ { "id": "warmcoat", "cost": 14 }, { "id": "furhood", "cost": 10 }, { "id": "firewood", "cost": 3 }, { "id": "feast", "cost": 8 } ]
+      },
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.86,
+        "greeting": "Good to see you again, pup! The waystation fires have gone cold. Relight all three to warm a path across the flats — and mind the frost wolves and the slick ice."
+      }
+    ],
+    "enemies": [
+      { "kind": "frostwolf", "fx": 0.42, "fy": 0.44 },
+      { "kind": "frostwolf", "fx": 0.66, "fy": 0.7, "chaseR": 260 }
+    ],
+    "critters": [],
+    "firepits": [ { "fx": 0.5, "fy": 0.34 }, { "fx": 0.26, "fy": 0.56 }, { "fx": 0.76, "fy": 0.6 } ],
+    "harvest": [ { "fx": 0.2, "fy": 0.3, "item": "firewood" }, { "fx": 0.8, "fy": 0.5, "item": "firewood" } ],
+    "chests": ["iron", "iron", "silver"],
+    "quest": { "type": "kindle", "label": "Warm the frozen flats" }
+  },
+
+  {
+    "id": "tundra-2",
+    "name": "Aurora Fields",
+    "seed": 80337,
+    "size": { "w": 2200, "h": 1500 },
+    "spawn": { "x": 200, "y": 220 },
+    "next": "tundra-3",
+    "cold": true,
+    "blizzard": true,
+    "theme": {
+      "grass": "#B8C8DA", "grassDark": "#A8B9CE", "grassLight": "#CAD8E8",
+      "dirt": "rgba(90,110,140,0.20)",
+      "fenceA": "#4E5E70", "fenceB": "#5E7082", "rail": "#8AA0B4",
+      "minimapGrass": "#A4B6CA", "minimapWater": "#7FB0CC"
+    },
+    "terrain": "aurorafields",
+    "collectibles": { "count": 12, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "The Hermit", "look": "ranger", "fx": 0.5, "fy": 0.46,
+        "greeting": "Few come this far, pup. Drive off the frost-wolf pack and bring me their ❄️ frost crystals — I'll forge you gear fit for the summit.",
+        "wares": [ { "id": "warmcoat", "cost": 14 }, { "id": "feast", "cost": 8 }, { "id": "firewood", "cost": 3 }, { "id": "hearthstone", "cost": 18 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "frostwolf", "fx": 0.3, "fy": 0.3 },
+      { "kind": "frostwolf", "fx": 0.7, "fy": 0.34 },
+      { "kind": "frostwolf", "fx": 0.28, "fy": 0.74 },
+      { "kind": "frostwolf", "fx": 0.72, "fy": 0.72 },
+      { "kind": "icesprite", "fx": 0.5, "fy": 0.24 },
+      { "kind": "icesprite", "fx": 0.5, "fy": 0.8 }
+    ],
+    "critters": [],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "gather", "item": "rarematerial", "count": 4, "label": "Gather 4 frost crystals" }
+  },
+
+  {
+    "id": "tundra-3",
+    "name": "Glacier Cave",
+    "seed": 80553,
+    "size": { "w": 1800, "h": 2000 },
+    "spawn": { "x": 250, "y": 1880 },
+    "next": "tundra-boss",
+    "cold": true,
+    "dark": true,
+    "theme": {
+      "grass": "#8FB0C4", "grassDark": "#7EA0B6", "grassLight": "#A2C2D4",
+      "dirt": "rgba(60,90,110,0.24)",
+      "fenceA": "#3E5A6E", "fenceB": "#4E6C80", "rail": "#7A9CB0",
+      "minimapGrass": "#7E9EB4", "minimapWater": "#5FA0C4"
+    },
+    "terrain": "glaciercave",
+    "collectibles": { "count": 12, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.16, "fy": 0.9,
+        "greeting": "Last stop before the summit, pup. Fight through the cave to the top gate — mind the thin ice (keep moving!) and the falling shards. Here, a feast for the road.",
+        "wares": [ { "id": "feast", "cost": 8 }, { "id": "firewood", "cost": 3 }, { "id": "warmcoat", "cost": 14 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "frostwolf", "fx": 0.5, "fy": 0.66 },
+      { "kind": "icesprite", "fx": 0.34, "fy": 0.4 },
+      { "kind": "frostwolf", "fx": 0.66, "fy": 0.28, "chaseR": 260 },
+      { "kind": "icesprite", "fx": 0.6, "fy": 0.16 }
+    ],
+    "critters": [],
+    "lanterns": [ { "fx": 0.5, "fy": 0.9 }, { "fx": 0.3, "fy": 0.55 }, { "fx": 0.68, "fy": 0.45 }, { "fx": 0.5, "fy": 0.2 } ],
+    "thinice": [ { "fx": 0.5, "fy": 0.7 }, { "fx": 0.4, "fy": 0.5 }, { "fx": 0.6, "fy": 0.36 } ],
+    "rockfalls": [
+      { "fx": 0.36, "top": 0.1, "bottom": 0.95, "period": 2800 },
+      { "fx": 0.64, "top": 0.1, "bottom": 0.95, "period": 3200, "startDelay": 900 }
+    ],
+    "chests": ["silver", "golden"],
+    "quest": { "type": "defeat", "label": "Fight to the glacier summit" }
+  },
+
+  {
+    "id": "tundra-boss",
+    "name": "The Ice Yeti",
+    "seed": 80741,
+    "size": { "w": 1800, "h": 1400 },
+    "spawn": { "x": 900, "y": 1260 },
+    "next": "sky-1",
+    "cold": true,
+    "blizzard": true,
+    "theme": {
+      "grass": "#C4D6E4", "grassDark": "#B4C8D8", "grassLight": "#D6E4F0",
+      "dirt": "rgba(90,110,140,0.20)",
+      "fenceA": "#4E5E70", "fenceB": "#5E7082", "rail": "#8AA0B4",
+      "minimapGrass": "#B0C4D6", "minimapWater": "#7FB0CC"
+    },
+    "terrain": "icyflats",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.5, "fy": 0.94,
+        "greeting": "The Ice Yeti itself, pup! It ground-pounds shockwave rings — dodge between them — and freezes you if you're close. When the blizzard whips up, keep to the fires and unleash your Ultimate. Go get 'em!"
+      }
+    ],
+    "enemies": [
+      { "kind": "iceyeti", "fx": 0.5, "fy": 0.32, "maxHp": 70 }
+    ],
+    "critters": [],
+    "firepits": [ { "fx": 0.16, "fy": 0.5, "lit": true }, { "fx": 0.84, "fy": 0.5, "lit": true } ],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Fell the Ice Yeti" }
+  },
+
+  {
+    "id": "sky-1",
+    "name": "Sky Steps",
+    "seed": 90131,
+    "size": { "w": 1600, "h": 1800 },
+    "spawn": { "x": 800, "y": 1620 },
+    "next": "sky-2",
+    "sky": true,
+    "theme": {
+      "grass": "#C9BEF0", "grassDark": "#BEB2EC", "grassLight": "#D6CDF6",
+      "dirt": "rgba(180,170,220,0.10)",
+      "fenceA": "#9B8ED0", "fenceB": "#AC9EDC", "rail": "#C6BAF0",
+      "minimapGrass": "#C4BAEC", "minimapWater": "#B6CFF0"
+    },
+    "terrain": "skysteps",
+    "collectibles": { "count": 8, "types": ["bone", "heart"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Marla's Sky Stall", "fx": 0.5, "fy": 0.88,
+        "greeting": "All the way up here! I set up days ago, naturally. A glide charm for the climb? Ride the updrafts ▲ to cross the gaps — fall and the wind just carries you back!",
+        "wares": [ { "id": "glidecharm", "cost": 12 }, { "id": "feast", "cost": 8 }, { "id": "biscuit", "cost": 3 } ]
+      }
+    ],
+    "enemies": [
+      { "kind": "skysprite", "fx": 0.6, "fy": 0.46 },
+      { "kind": "skysprite", "fx": 0.42, "fy": 0.26 }
+    ],
+    "critters": [],
+    "updrafts": [
+      { "fx": 0.42, "fy": 0.74, "dir": "up" }, { "fx": 0.56, "fy": 0.54, "dir": "up" },
+      { "fx": 0.44, "fy": 0.34, "dir": "up" }, { "fx": 0.5, "fy": 0.19, "dir": "up" }
+    ],
+    "goal": { "fx": 0.5, "fy": 0.1 },
+    "chests": ["iron", "silver"],
+    "quest": { "type": "reach", "label": "Glide to the summit" }
+  },
+
+  {
+    "id": "sky-2",
+    "name": "Floating Isles",
+    "seed": 90337,
+    "size": { "w": 2200, "h": 1600 },
+    "spawn": { "x": 1100, "y": 800 },
+    "next": "sky-3",
+    "sky": true,
+    "theme": {
+      "grass": "#CBC2F2", "grassDark": "#C0B6EE", "grassLight": "#D8D0F8",
+      "dirt": "rgba(180,170,220,0.10)",
+      "fenceA": "#9B8ED0", "fenceB": "#AC9EDC", "rail": "#C6BAF0",
+      "minimapGrass": "#C6BCEE", "minimapWater": "#B6CFF0"
+    },
+    "terrain": "floatingisles",
+    "collectibles": { "count": 10, "types": ["bone", "heart", "ball"], "fish": 0 },
+    "friends": [
+      { "name": "Cloud Lamb",   "fx": 0.16, "fy": 0.28, "need": 2, "kind": "bunny",    "msg": "Baa! We made it to the sky together!" },
+      { "name": "Sky Sparrow",  "fx": 0.84, "fy": 0.28, "need": 2, "kind": "bird",     "msg": "Tweet! What a view from up here!" },
+      { "name": "Sun Hedgehog", "fx": 0.16, "fy": 0.74, "need": 3, "kind": "hedgehog", "msg": "The whole journey led here, didn't it?" }
+    ],
+    "npcs": [
+      {
+        "name": "Marla the Merchant", "fx": 0.5, "fy": 0.4,
+        "greeting": "The whole gang made it up here, pup! One last stock-up before the peak.",
+        "wares": [ { "id": "feast", "cost": 8 }, { "id": "glidecharm", "cost": 12 }, { "id": "warmcoat", "cost": 14 } ]
+      },
+      {
+        "name": "The Sky Smith", "look": "tailor", "fx": 0.5, "fy": 0.6,
+        "greeting": "Forged from cloud-iron and starlight — legendary gear for the final climb. You've earned it.",
+        "wares": [ { "id": "skywings", "cost": 20 }, { "id": "stormcrown", "cost": 22 }, { "id": "glidecharm", "cost": 12 } ]
+      },
+      {
+        "name": "Rusk the Ranger", "look": "ranger", "fx": 0.84, "fy": 0.74,
+        "greeting": "Never thought a meadow pup would come this far. Proud of you, kid. The Storm Eagle waits beyond the peak — go show it the heart in you."
+      }
+    ],
+    "enemies": [
+      { "kind": "skysprite", "fx": 0.3, "fy": 0.5 }
+    ],
+    "critters": [],
+    "windzones": [ { "fx": 0.5, "fy": 0.16, "dir": "right", "r": 90 } ],
+    "chests": ["silver", "golden", "legendary"],
+    "quest": { "type": "cheer-all", "label": "Farewell the friends" }
+  },
+
+  {
+    "id": "sky-3",
+    "name": "Storm Peak",
+    "seed": 90553,
+    "size": { "w": 1500, "h": 2400 },
+    "spawn": { "x": 750, "y": 2230 },
+    "next": "sky-boss",
+    "sky": true,
+    "theme": {
+      "grass": "#9B93C4", "grassDark": "#8E86BC", "grassLight": "#A9A2CE",
+      "dirt": "rgba(90,84,120,0.16)",
+      "fenceA": "#6E6698", "fenceB": "#7C74A6", "rail": "#9A90C4",
+      "minimapGrass": "#948CBE", "minimapWater": "#8090C0"
+    },
+    "terrain": "stormpeak",
+    "collectibles": { "count": 6, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [
+      {
+        "name": "Rusk's Voice", "look": "ranger", "fx": 0.5, "fy": 0.9,
+        "greeting": "This is it, pup. Straight up through the storm to the peak gate. Watch the lightning ⚡ — it telegraphs before it strikes. We're all with you."
+      }
+    ],
+    "enemies": [
+      { "kind": "skysprite", "fx": 0.4, "fy": 0.62 },
+      { "kind": "skysprite", "fx": 0.6, "fy": 0.42 },
+      { "kind": "skysprite", "fx": 0.5, "fy": 0.2 }
+    ],
+    "critters": [],
+    "updrafts": [
+      { "fx": 0.5, "fy": 0.77, "dir": "up" }, { "fx": 0.5, "fy": 0.57, "dir": "up" },
+      { "fx": 0.5, "fy": 0.37, "dir": "up" }, { "fx": 0.5, "fy": 0.15, "dir": "up" }
+    ],
+    "windzones": [ { "fx": 0.5, "fy": 0.5, "dir": "left", "r": 90, "force": 0.9 } ],
+    "traps": [],
+    "stormbolts": [
+      { "fx": 0.4, "fy": 0.66, "period": 2600 }, { "fx": 0.6, "fy": 0.46, "period": 3000 }, { "fx": 0.5, "fy": 0.28, "period": 2400 }
+    ],
+    "goal": { "fx": 0.5, "fy": 0.08 },
+    "chests": ["golden"],
+    "quest": { "type": "reach", "label": "Reach Storm Peak" }
+  },
+
+  {
+    "id": "sky-boss",
+    "name": "The Storm Eagle",
+    "seed": 90741,
+    "size": { "w": 1900, "h": 1400 },
+    "spawn": { "x": 950, "y": 820 },
+    "next": null,
+    "sky": true,
+    "credits": true,
+    "theme": {
+      "grass": "#A69CD0", "grassDark": "#9A90C8", "grassLight": "#B4AADA",
+      "dirt": "rgba(90,84,120,0.16)",
+      "fenceA": "#6E6698", "fenceB": "#7C74A6", "rail": "#9A90C4",
+      "minimapGrass": "#A098CC", "minimapWater": "#8090C0"
+    },
+    "terrain": "floatingisles",
+    "collectibles": { "count": 8, "types": ["heart", "bone"], "fish": 0 },
+    "friends": [],
+    "npcs": [],
+    "enemies": [
+      { "kind": "stormeagle", "fx": 0.5, "fy": 0.3, "maxHp": 90 }
+    ],
+    "critters": [],
+    "chests": [],
+    "quest": { "type": "defeat", "label": "Defeat the Storm Eagle" }
   }
 ]

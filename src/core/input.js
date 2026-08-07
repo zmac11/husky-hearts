@@ -20,8 +20,10 @@ const Input = {
     { id:'ability1',  label:'Ability 1' },
     { id:'ability2',  label:'Ability 2' },
     { id:'ability3',  label:'Ultimate' },
+    { id:'relic',     label:'Use Relic' },
     { id:'inventory', label:'Inventory' },
     { id:'journal',   label:'Quest Journal' },
+    { id:'bestiary',  label:'Bestiary' },
     { id:'skills',    label:'Skill Tree' },
   ],
 
@@ -34,8 +36,10 @@ const Input = {
     ability1:  ['KeyQ', null],
     ability2:  ['KeyE', null],
     ability3:  ['KeyR', null],   // ultimate slot
+    relic:     ['KeyF', null],   // active relic slot (Golden Dunes)
     inventory: ['KeyI', null],
     journal:   ['KeyJ', null],
+    bestiary:  ['KeyB', null],
     skills:    ['KeyK', null],
   },
 
@@ -136,7 +140,9 @@ window.addEventListener('keydown', e=>{
   if(e.code === 'Escape'){ e.preventDefault(); Input.onEscape(); }
   if(Input.bindings.inventory.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleInventory) UI.toggleInventory(); }
   if(Input.bindings.journal.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleJournal) UI.toggleJournal(); }
+  if(Input.bindings.bestiary && Input.bindings.bestiary.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleBestiary) UI.toggleBestiary(); }
   if(Input.bindings.skills.indexOf(e.code)!==-1){ if(typeof UI!=='undefined' && UI.toggleSkills) UI.toggleSkills(); }
+  if(Input.bindings.relic && Input.bindings.relic.indexOf(e.code)!==-1){ if(typeof Relics!=='undefined' && Relics.use && typeof p1!=='undefined') Relics.use(p1); }
   // Dev mode: backtick, or the "<" key (IntlBackslash = the key next to left Shift on
   // ISO/European keyboards, which types "<" — e.key covers any other layout too).
   if(e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '<'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }

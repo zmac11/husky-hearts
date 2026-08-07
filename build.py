@@ -29,6 +29,7 @@ CONFIG_FILES = [
     ('config/items.json',  'ITEMS_DATA'),   # item / wearable definitions (data/items.js)
     ('config/loot.json',   'LOOT_DATA'),    # chest tables, enemy drops, XP payouts (data/loot.js)
     ('config/levels.json', 'LEVELS_DATA'),  # per-level content (levels/from-config.js)
+    ('config/recipes.json','RECIPES_DATA'), # cooking recipes → buff foods (cooking.js)
 ]
 
 # Load order matters: shared globals (let/const) must be declared before use.
@@ -47,8 +48,12 @@ LOAD_ORDER = [
     'data/campaign.js',   # environments/levels world-map data + Progress tracker
     'inventory.js',       # per-player inventory add/remove/has
     'quests.js',          # NPC quest system (give-item + future types)
+    'bestiary.js',        # the Keeper's journal of creatures met (Amber Orchard)
     'health.js',          # per-player hp/maxHp + damage/heal (hearts)
     'warmth.js',          # cold-level warmth-survival meter + `chilled` (Frozen Pass)
+    'survival.js',        # heat-level survival meter (Golden Dunes)
+    'weather.js',         # sandstorm weather cycle + overlay (Golden Dunes)
+    'tide.js',            # tide cycle clock + HUD gauge (Seashell Cove)
     'darkness.js',        # dark-level light/shadow overlay + stealth (Whispering Woods)
     'status.js',          # timed status conditions (poisoned) (Fungus Hollow)
     'wearables.js',       # equippable cosmetics: equip/unequip + on-dog render
@@ -64,11 +69,19 @@ LOAD_ORDER = [
     'levels/mossytrail.js', # 'mossytrail' dark-forest terrain (Whispering Woods 1)
     'levels/fungushollow.js', # 'fungushollow' branching cave terrain (Whispering Woods 2)
     'levels/fireflygrove.js', # 'fireflygrove' moonlit-shrine terrain (Whispering Woods 3)
+    'levels/cove.js',       # Seashell Cove terrains (tidepools/boardwalk/coralsands) + beach visuals
+    'levels/orchard.js',    # Amber Orchard terrains (pumpkinpatch/haybalemaze/cidermill) + autumn visuals
+    'levels/dunes.js',      # Golden Dunes terrains (dunesea/oasis/ruins) + desert visuals
+    'levels/tundra.js',     # Frostfang Tundra terrains (icyflats/aurorafields/glaciercave) + icy visuals
+    'levels/sky.js',        # Cloud Kingdom terrains (skysteps/floatingisles/stormpeak) + sky visuals
     'draw-helpers.js',    # px, shade, roundRect
     'world-draw.js',      # tree/rock/pond/etc + drawWorld
     'collectibles.js',    # drawCollectible
     'friends.js',         # drawFriend
     'entities/registry.js', # Entities registry + level entity list
+    'cooking.js',           # Amber Orchard cooking (recipes → buff foods) + cookpot entity
+    'relics.js',            # Golden Dunes active-item relic slot + decoy entity
+    'sky.js',               # Cloud Kingdom gliding (soft-reset) + updraft/windzone/reachgoal
     'entities/enemy.js',    # enemy kind (wander/chase)
     'entities/wolf.js',     # wolf kind (faster/tougher — rocky mountains)
     'entities/grave.js',    # grave marker left where a dog faints
@@ -89,6 +102,28 @@ LOAD_ORDER = [
     'entities/badgerbaron.js',# Sunny Meadows boss (charge -> trick into pits; no-damage win)
     'entities/alphawolf.js',  # Rocky Mountains boss (phased: lunge + interruptible howl)
     'entities/grizzly.js',    # Whispering Woods boss (phased: ground-slam + charge)
+    'entities/crab.js',       # snapping crab shore chaser (Seashell Cove)
+    'entities/jellyfish.js',  # drifting sting hazard — `soaked` (Coral Sands)
+    'entities/delivery.js',   # `deliver` soft-timer loop + stall entity (Palm Boardwalk)
+    'entities/hermitcrab.js', # Seashell Cove boss (tide-gated armor; crash to crack)
+    'entities/crow.js',       # ingredient-thief pest (Amber Orchard)
+    'entities/scarecrow.js',  # night-only straw chaser (Haybale Maze)
+    'entities/lever.js',      # gate lever — `levers` objective (Haybale Maze)
+    'entities/ciderpress.js', # `timed` production press (Cider Mill)
+    'entities/scarecrowking.js', # Amber Orchard boss (summon + fire lanes + buff-steal)
+    'entities/scarab.js',     # fast weak swarm beetle (Golden Dunes)
+    'entities/sentinel.js',   # rooted ranged ruin guardian (Ancient Ruins)
+    'entities/quicksand.js',  # sinking-sand slow hazard (Golden Dunes)
+    'entities/puzzle.js',     # pressureplate/glyphdoor/trappedtile (`solve` kit)
+    'entities/lightbeam.js',  # beam emitter + rotatable mirrors + sensor (Ancient Ruins)
+    'entities/sandserpent.js',# Golden Dunes boss (burrow/erupt; bait to surface)
+    'entities/frostwolf.js',  # elite wolf w/ chilling bite (Frostfang Tundra)
+    'entities/icesprite.js',  # ranged frost wisp (Frostfang Tundra)
+    'entities/thinice.js',    # crack-on-linger ice floor (Glacier Cave)
+    'entities/iceyeti.js',    # Frostfang Tundra boss (ground-pound rings + encase)
+    'entities/skysprite.js',  # ranged wind-wisp (Cloud Kingdom)
+    'entities/stormbolt.js',  # telegraphed lightning strike (Storm Peak)
+    'entities/stormeagle.js', # Cloud Kingdom FINAL boss (aerial dives + lightning + credits)
     'entities/portal.js',   # biome-themed exit portal (spawned by checkWin)
     'entities/spiritwolf.js', # Dinno's spectral storm-wolf companion (spiritWolf ability)
     'dog-sprite.js',      # drawDog + breed renderers
@@ -114,6 +149,7 @@ LOAD_ORDER = [
     'save.js',            # save/load to localStorage (before ui.js: UI.init checks Save.has)
     'ui.js',              # UI panels (pause/inventory/dialog) + HUD (updateHUD)
     'save-ui.js',         # save-slot picker overlay (needs UI._show)
+    'credits.js',         # finale credits overlay (rollCredits — Cloud Kingdom)
     'world-map.js',       # between-levels campaign map (needs UI/Levels/LevelManager/Progress)
     'main.js',            # main loop + start
     'fullscreen.js',      # fullscreen button

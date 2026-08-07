@@ -92,6 +92,7 @@ const Quests = {
   rewardText(q){
     const r=q&&q.reward; if(!r) return '';
     if(r.treats) return `+${r.treats} 🦴 treats`;
+    if(r.rep) return `+${r.rep} ⭐ reputation`;
     if(r.item){ const n=r.count||1, d=Items.get(r.item); return `+${n} ${d?d.icon+' '+d.name:r.item}`; }
     return '';
   },
@@ -139,6 +140,7 @@ const Quests = {
       const treats=Math.round(r.treats * (1 + bonus));
       p.treats=(p.treats||0)+treats; rewardStr=`+${treats} treats`;
     }
+    else if(r && r.rep){ p.reputation=(p.reputation||0)+r.rep; rewardStr=`+${r.rep} ⭐ reputation`; }
     else if(r && r.item){ const n=r.count||1; Inventory.add(p, r.item, n); const d=Items.get(r.item); rewardStr=`+${n} ${d?d.icon+' '+d.name:r.item}`; }
     if(typeof Progression!=='undefined') Progression.award(p, Progression.QUEST_XP, 'quest');
     if(typeof spawnSparkles==='function') spawnSparkles(p.x, p.y-8, '#FFD93D', 18);

@@ -52,6 +52,23 @@
   }
   .warmth-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#FF9E4A,#FFC864); transition:width .2s, background .3s; }
   #warmthPanel.cold i{ background:linear-gradient(90deg,#6FB8E6,#A6D8F0); }   /* freezing */
+  /* tide gauge (Seashell Cove) — aqua when in, sandy gold when drained out */
+  .tide-bar{
+    display:inline-block; width:56px; height:8px; border-radius:5px; margin-left:4px;
+    background:#EBD9B4; border:1px solid var(--brown-soft); overflow:hidden; vertical-align:middle;
+  }
+  .tide-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#3FB6D6,#7FD8EC); transition:width .3s, background .4s; }
+  #tidePanel.low i{ background:linear-gradient(90deg,#E4B663,#F0D191); }   /* drained to sand */
+  /* survival gauge (Golden Dunes heat) — cool teal, turns hot red as it empties */
+  .survival-bar{ display:inline-block; width:56px; height:8px; border-radius:5px; margin-left:4px;
+    background:#F0E0BE; border:1px solid var(--brown-soft); overflow:hidden; vertical-align:middle; }
+  .survival-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#4FB6A0,#7FD8C4); transition:width .2s, background .3s; }
+  #survivalPanel.hot i{ background:linear-gradient(90deg,#E0602E,#F0924A); }   /* heatstroke */
+  /* relic cooldown chip */
+  .relic-bar{ display:inline-block; width:40px; height:8px; border-radius:5px; margin-left:4px;
+    background:#DED2C0; border:1px solid var(--brown-soft); overflow:hidden; vertical-align:middle; }
+  .relic-bar i{ display:block; height:100%; width:100%; background:linear-gradient(90deg,#C9A6FF,#E0CFff); transition:width .1s; }
+  #relicPanel.ready i{ background:linear-gradient(90deg,#7FD8C4,#B6F0E0); }   /* charged */
   /* status-effect chips (poisoned, …) */
   #statusPanel{ gap:6px; }
   .status-chip{ display:inline-flex; align-items:center; gap:2px; font-size:13px; }
@@ -663,6 +680,34 @@
   .q-badge.ok{ background:#d8f2cf; border-color:#5aa34a; color:#2f6a26; }
   .q-badge.new{ background:var(--gold); border-color:var(--brown); }
   .q-empty{ font-size:12px; color:var(--brown-soft); line-height:1.5; padding:6px 2px; }
+
+  /* ===== bestiary (B): non-blocking overlay, docked right like a field journal ===== */
+  #bestiaryScreen{
+    position:absolute; top:8px; right:8px; bottom:8px; z-index:25;
+    width:min(330px,78%);
+    display:flex; flex-direction:column; align-items:stretch; gap:8px;
+    padding:12px; text-align:left; overflow-y:auto;
+    background:rgba(255,248,239,0.95);
+    border:3px solid var(--brown); border-radius:14px;
+    box-shadow:0 6px 18px rgba(74,63,53,0.35);
+  }
+  #bestiaryHeader{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  #bestiaryScreen h2{ margin:0; color:var(--brown); font-size:clamp(14px,3.5vw,16px); }
+  #bestiaryScreen .overlay-hint{ color:var(--brown-soft); opacity:0.9; }
+  #bestiaryBody{ display:flex; flex-direction:column; gap:6px; align-items:stretch; }
+  .bs-meta{ font-size:11px; font-weight:bold; color:var(--brown-soft); margin-bottom:2px; }
+  .bs-row{
+    display:flex; align-items:flex-start; gap:8px;
+    background:var(--cream); border:2px solid var(--brown); border-radius:11px;
+    padding:6px 8px; box-shadow:0 2px 0 var(--shadow);
+  }
+  .bs-row.locked{ opacity:0.5; border-style:dashed; }
+  .bs-icon{ font-size:20px; flex-shrink:0; line-height:1.2; }
+  .bs-info{ display:flex; flex-direction:column; flex:1; min-width:0; }
+  .bs-name{ font-size:12px; font-weight:bold; color:var(--brown); }
+  .bs-blurb{ font-size:11px; color:var(--brown); opacity:0.92; margin-top:1px; line-height:1.35; }
+  .bs-boss{ font-size:9px; font-weight:bold; color:#fff; background:#b5533a; border-radius:6px; padding:0 5px; margin-left:3px; }
+  .bs-kills{ flex-shrink:0; font-size:10px; font-weight:bold; color:#2f6a26; background:#d8f2cf; border:1px solid #5aa34a; border-radius:8px; padding:1px 6px; align-self:center; }
 
   /* ===== skill tree (K): non-blocking overlay, docked left like the journal ===== */
   /* z-index sits above the world map (26) — the tree opens over it between levels */

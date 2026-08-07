@@ -8,6 +8,7 @@ const UI = {
   panel: null,        // null | 'pause' | 'dialog'  (blocking panels that freeze the world)
   invOpen: false,     // inventory is a *non-blocking* overlay: world keeps simulating
   journalOpen: false, // quest journal is a *non-blocking* overlay too (like inventory)
+  bestiaryOpen: false,// the Keeper's bestiary — another non-blocking overlay (B)
   skillsOpen: false,  // skill tree — same non-blocking overlay pattern
   masteryOpen: false, // ability mastery tree (only from the world map, between levels)
   _dialog: null,      // { npc, player }
@@ -20,6 +21,12 @@ const UI = {
   updateHUD(){
     const set=(id,v)=>{ const el=this.$(id); if(el) el.textContent=v; };
     set('p1count', p1 ? p1.treats : 0);
+    // Shells — a secondary currency; the chip hides itself until you've found some.
+    set('p1shells', p1 ? (p1.shells||0) : 0);
+    const shellWrap=this.$('p1shellWrap'); if(shellWrap) shellWrap.style.display=(p1 && (p1.shells||0)>0)?'inline':'none';
+    // Reputation — grows as you help townsfolk (Amber Orchard); chip hides until earned.
+    set('p1rep', p1 ? (p1.reputation||0) : 0);
+    const repWrap=this.$('p1repWrap'); if(repWrap) repWrap.style.display=(p1 && (p1.reputation||0)>0)?'inline':'none';
     // Dog level + XP bar
     set('dogLevel', p1 ? (p1.dogLevel||1) : 1);
     const xf=this.$('xpFill');
@@ -35,6 +42,9 @@ const UI = {
     // Heart bar + hotbar.
     const h1=this.$('p1hearts'); if(h1 && p1) h1.innerHTML=this._heartMarkup(p1);
     this.updateWarmth();
+    this.updateTide();
+    this.updateSurvival();
+    this.updateRelic();
     this.updateStatus();
     this.updateBossBar();
     this.renderHotbar();
@@ -44,6 +54,7 @@ const UI = {
     if(this.invOpen) this.renderInventory();
     // Keep the open journal live as you collect/hand in items.
     if(this.journalOpen) this.renderJournal();
+    if(this.bestiaryOpen) this.renderBestiary();
     if(this.skillsOpen) this.renderSkills();
   },
 
@@ -58,6 +69,45 @@ const UI = {
     const f=Warmth.frac(p1);
     const fill=this.$('warmthFill'); if(fill) fill.style.width=(f*100)+'%';
     panel.classList.toggle('cold', f<=0.34);   // recolour when it's getting dangerous
+  },
+
+  // ---------- tide gauge (Seashell Cove only) ----------
+  // Shown only in a `tide` level; the fill rises/falls with the sea and the icon flips
+  // between waves (high, dive) and beach (low, dig). Updated from updateHUD and every frame
+  // from Tide.tick.
+  updateTide(){
+    const panel=this.$('tidePanel'); if(!panel) return;
+    const on=(typeof Tide!=='undefined') && Tide.active();
+    panel.style.display = on ? 'flex' : 'none';
+    if(!on) return;
+    const fill=this.$('tideFill'); if(fill) fill.style.width=(Tide.frac()*100)+'%';
+    const ic=this.$('tideIcon'); if(ic) ic.textContent=Tide.icon();
+    panel.title='The tide · '+Tide.label();
+    panel.classList.toggle('low', Tide.isLow());
+  },
+
+  // ---------- survival gauge (Golden Dunes heat) ----------
+  updateSurvival(){
+    const panel=this.$('survivalPanel'); if(!panel) return;
+    const on=(typeof Survival!=='undefined') && Survival.active();
+    panel.style.display = on ? 'flex' : 'none';
+    if(!on) return;
+    const f=Survival.frac(p1);
+    const fill=this.$('survivalFill'); if(fill) fill.style.width=(f*100)+'%';
+    panel.classList.toggle('hot', f<=0.34);
+  },
+
+  // ---------- relic chip (active-item slot) ----------
+  updateRelic(){
+    const panel=this.$('relicPanel'); if(!panel) return;
+    const id=(typeof Relics!=='undefined') && Relics.equipped(p1);
+    panel.style.display = id ? 'flex' : 'none';
+    if(!id) return;
+    const d=Relics.DEFS[id];
+    const ic=this.$('relicIcon'); if(ic) ic.textContent=d?d.icon:'🏺';
+    const fill=this.$('relicFill'); if(fill) fill.style.width=(Relics.frac(p1)*100)+'%';
+    panel.classList.toggle('ready', Relics.ready(p1));
+    panel.title=(d?d.name:'Relic')+' — press '+((typeof Input!=='undefined'&&Input.bindings.relic)?Input.keyName(Input.bindings.relic[0]):'F')+' to use';
   },
 
   // ---------- status effects (poisoned, …) ----------
@@ -139,7 +189,7 @@ const UI = {
   },
   openJournal(){
     this.closeInventory();            // never stack the non-blocking overlays
-    this.closeSkills();
+    this.closeSkills(); this.closeBestiary();
     this.journalOpen=true;
     this.renderJournal();
     this._show('questScreen', true);
@@ -149,6 +199,37 @@ const UI = {
     this._show('questScreen', false);
   },
 
+  // ---------- bestiary (B): the Keeper's journal of creatures met ----------
+  toggleBestiary(){
+    if(this.bestiaryOpen){ this.closeBestiary(); return; }
+    if(Game.state===SCENES.PLAYING) this.openBestiary();
+  },
+  openBestiary(){
+    this.closeInventory(); this.closeJournal(); this.closeSkills();
+    this.bestiaryOpen=true;
+    this.renderBestiary();
+    this._show('bestiaryScreen', true);
+  },
+  closeBestiary(){
+    this.bestiaryOpen=false;
+    this._show('bestiaryScreen', false);
+  },
+  renderBestiary(){
+    const body=this.$('bestiaryBody'); if(!body || typeof Bestiary==='undefined') return;
+    const entries=Bestiary.entries();
+    const rows=entries.map(e=>{
+      if(!e.found){
+        return `<div class="bs-row locked"><span class="bs-icon">❔</span><div class="bs-info"><span class="bs-name">???</span><span class="bs-blurb">A creature you haven't met yet.</span></div></div>`;
+      }
+      const tag=e.def.boss?'<span class="bs-boss">BOSS</span>':'';
+      const kills=e.defeats>0?`<span class="bs-kills">×${e.defeats} bested</span>`:'';
+      return `<div class="bs-row"><span class="bs-icon">${e.def.icon}</span><div class="bs-info">`
+        +`<span class="bs-name">${e.def.biome} ${e.def.name} ${tag}</span>`
+        +`<span class="bs-blurb">${e.def.blurb}</span></div>${kills}</div>`;
+    }).join('');
+    body.innerHTML=`<div class="bs-meta">Discovered <b>${Bestiary.foundCount()}</b> / ${Bestiary.count()} creatures</div>${rows}`;
+  },
+
   // ---------- skill tree (K): per-dog character + ability upgrades ----------
   toggleSkills(){
     if(this.skillsOpen){ this.closeSkills(); return; }
@@ -156,7 +237,7 @@ const UI = {
   },
   openSkills(){
     this.closeInventory();            // one non-blocking overlay at a time
-    this.closeJournal();
+    this.closeJournal(); this.closeBestiary();
     if(this.masteryOpen) this.closeMastery();   // the two trees never stack
     this.skillsOpen=true;
     if(typeof Tips!=='undefined') Tips.show('skills');
@@ -371,6 +452,7 @@ const UI = {
     if(this.masteryOpen){ this.closeMastery(); return; }
     if(this.skillsOpen){ this.closeSkills(); return; }
     if(this.journalOpen){ this.closeJournal(); return; }
+    if(this.bestiaryOpen){ this.closeBestiary(); return; }
     if(this.invOpen){ this.closeInventory(); return; }
     if(Game.state===SCENES.PLAYING) this.openPause();
   },
@@ -379,6 +461,7 @@ const UI = {
     if(Game.state!==SCENES.PLAYING) return;
     this.closeInventory();            // never stack pause on top of a non-blocking overlay
     this.closeJournal();
+    this.closeBestiary();
     this.closeSkills();
     this.panel='pause'; Game.state=SCENES.PAUSED;
     this.showSeed('pauseSeed');
@@ -454,7 +537,7 @@ const UI = {
 
   openInventory(){
     this.closeJournal();              // one non-blocking overlay at a time
-    this.closeSkills();
+    this.closeSkills(); this.closeBestiary();
     this.invOpen=true;
     this._invPlayer=0;
     if(typeof Tips!=='undefined') Tips.show('inventory');
@@ -522,7 +605,7 @@ const UI = {
       <div class="inv-doll-grid">
         ${slotCell('face')}${slotCell('head')}<span class="doll-blank"></span>
         ${slotCell('neck')}<canvas id="dollCanvas" width="92" height="100"></canvas>${slotCell('body')}
-        <span class="doll-blank"></span>${slotCell('back')}<span class="doll-blank"></span>
+        ${slotCell('feet')}${slotCell('back')}${slotCell('relic')}
       </div>
       <div class="inv-meta">
         <span class="inv-name">🐾 P${p.id} · ${b.name}</span>
@@ -645,6 +728,26 @@ const UI = {
         showToast(`🧪 ${def.name} — the ${def.cure} fades away.`,1500);
         this.updateHUD(); return;
       }
+      // Firewood (Frostfang Tundra): burn it for an instant warmth top-up.
+      if(def.warmth){
+        if(typeof Warmth!=='undefined' && Warmth.active()){
+          Warmth.stoke(p, def.warmth); Inventory.removeAt(p, n-1, 1);
+          if(def.heal) Health.heal(p, def.heal);
+          if(typeof sfxCollect==='function') sfxCollect();
+          showToast(`🪵 Burned ${def.name} — a wave of warmth!`,1400); this.updateHUD(); return;
+        }
+        showToast('🪵 No need for a fire right now.',1200); return;
+      }
+      // Canteen (Golden Dunes): a big drink of water — refills the heat/survival meter.
+      if(def.survival){
+        if(typeof Survival!=='undefined' && Survival.active()){
+          Survival.drink(p, def.survival); Inventory.removeAt(p, n-1, 1);
+          if(def.heal) Health.heal(p, def.heal);
+          if(typeof sfxCollect==='function') sfxCollect();
+          showToast(`🧴 Drank the ${def.name} — cool relief!`,1400); this.updateHUD(); return;
+        }
+        showToast('🧴 No need to drink right now.',1200); return;
+      }
       if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
       const healed=Health.heal(p, def.heal||2);
       Inventory.removeAt(p, n-1, 1);
@@ -659,8 +762,8 @@ const UI = {
         if(typeof sfxCollect==='function') sfxCollect();
         showToast(`🎾 You play with the ${def.name}!`,1200);
       }
-    } else if(def && def.type==='wearable'){
-      if(Wearables.equipFromSlot(p, n-1, def.slot)) showToast(`🎩 Equipped ${def.name}!`,1200);
+    } else if(def && (def.type==='wearable'||def.type==='relic')){
+      if(Wearables.equipFromSlot(p, n-1, def.slot)) showToast(`${def.icon} Equipped ${def.name}!`,1200);
     } else {
       showToast(`You can't use the ${def?def.name:'item'}.`,1200);
     }
@@ -678,7 +781,7 @@ const UI = {
     if(act==='item'){
       const idx=+btn.dataset.idx, cell=Inventory.at(p, idx), def=cell&&Items.get(cell.id);
       if(!def) return;
-      if(def.type==='wearable'){ if(Wearables.equipFromSlot(p, idx, def.slot)) this.updateHUD(); }
+      if(def.type==='wearable'||def.type==='relic'){ if(Wearables.equipFromSlot(p, idx, def.slot)) this.updateHUD(); }
       else if(def.type==='consumable'){
         if(p.dead){ showToast('That dog has fainted.',1400); return; }
         if(p.hp>=p.maxHp){ showToast(`${p.breed} is already at full health!`,1400); return; }
@@ -774,6 +877,7 @@ const UI = {
   openDialog(npc, player){
     this.closeInventory();            // dialog is blocking; don't stack it over an overlay
     this.closeJournal();
+    this.closeBestiary();
     this.closeSkills();
     this.panel='dialog'; Game.state=SCENES.DIALOG;
     this._dialog={ npc, player };
@@ -825,23 +929,48 @@ const UI = {
     const wares=(d.npc.wares && d.npc.wares.length) ? d.npc.wares : (d.npc.quest ? [] : [{id:'biscuit',cost:3},{id:'ribbon',cost:5}]);
     wares.forEach(w=>{
       const def=Items.get(w.id); if(!def) return;
-      // Smart dogs haggle: the smarts bar (data/breeds.js) discounts the NPC's price.
-      const price=Math.max(1, Math.round(w.cost * ((d.player.stats && d.player.stats.priceMul) || 1)));
-      const afford=d.player.treats>=price;
+      // A ware can be priced in the biome's secondary currency (shells) via `cur:'shell'`;
+      // shells aren't discounted by smarts (a beachcomber drives a fair trade).
+      const shellPay = w.cur==='shell';
+      const coin = shellPay ? '🐚' : '🦴';
+      const price = shellPay ? Math.max(1, w.cost)
+                             : Math.max(1, Math.round(w.cost * ((d.player.stats && d.player.stats.priceMul) || 1)));
+      const purse = ()=> shellPay ? (d.player.shells||0) : d.player.treats;
+      // Reputation-gated stock (Amber Orchard): a ware can require `repReq` ⭐ to unlock. Until
+      // then it shows as a locked line so the player sees what earning trust will buy them.
+      const repReq = w.repReq || 0;
+      const repLocked = repReq > (d.player.reputation||0);
       const btn=document.createElement('button');
-      btn.className='dialog-choice'+(afford?'':' disabled');
-      btn.textContent=`${def.icon} Buy ${def.name} — ${price} 🦴`;
+      if(repLocked){
+        btn.className='dialog-choice disabled';
+        btn.textContent=`🔒 ${def.icon} ${def.name} — needs ${repReq} ⭐ reputation`;
+        btn.addEventListener('click',()=>{ this.renderDialog(`Help the town a little more, pup — ${repReq} ⭐ reputation and the ${def.name} is yours.`); });
+        choices.appendChild(btn);
+        return;
+      }
+      btn.className='dialog-choice'+(purse()>=price?'':' disabled');
+      btn.textContent=`${def.icon} Buy ${def.name} — ${price} ${coin}`;
       btn.dataset.item=w.id;   // hover for effects/stats
       btn.addEventListener('click',()=>{
-        if(d.player.treats<price){ this.renderDialog("You don't have enough treats for that."); return; }
+        if(purse()<price){ this.renderDialog(shellPay ? "You don't have enough shells for that." : "You don't have enough treats for that."); return; }
         if(Inventory.roomFor(d.player, w.id) < 1){ this.renderDialog("Your bag is full! Make some room first."); return; }
-        d.player.treats-=price; Inventory.add(d.player, w.id, 1); this.updateHUD();
+        if(shellPay) d.player.shells-=price; else d.player.treats-=price;
+        Inventory.add(d.player, w.id, 1); this.updateHUD();
         if(typeof sfxCollect==='function') sfxCollect();
         const tail = def.type==='wearable' ? ' Open your inventory (I) to wear it!' : ' Anything else?';
         this.renderDialog(`Enjoy your ${def.name}!${tail}`);
       });
       choices.appendChild(btn);
     });
+
+    // The Keeper opens the bestiary from the dialog (also on the B key anytime).
+    if(d.npc.opensBestiary){
+      const jb=document.createElement('button');
+      jb.className='dialog-choice';
+      jb.textContent='📖 Open the Bestiary';
+      jb.addEventListener('click',()=>{ this.closePanel(); this.openBestiary(); });
+      choices.appendChild(jb);
+    }
 
     const bye=document.createElement('button');
     bye.className='dialog-choice';

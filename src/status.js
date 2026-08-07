@@ -14,7 +14,14 @@ const Status = {
     bleeding: { icon:'🩸', chipMs:600,  chip:1, color:'#D64545' },   // faster chip — Alpha Wolf bites
     stunned:  { icon:'💫', chipMs:0,     chip:0, color:'#E6C84A', noMove:true },   // can't move — Grizzly roar
     slow:     { icon:'🐌', chipMs:0,     chip:0, color:'#8FB4E0', speedMul:0.5 },  // sluggish (reserved)
+    soaked:   { icon:'💧', chipMs:0,     chip:0, color:'#5FC4DA', speedMul:0.6 },  // jellyfish sting — waterlogged & slow
+    frostbitten:{ icon:'🥶', chipMs:0,   chip:0, color:'#9FD0F0', speedMul:0.7 },  // frost-wolf / ice-sprite chill — sluggish
+    // ---- positive buffs (Amber Orchard cooking — buff foods) ----
+    hasty:    { icon:'⚡', chipMs:0,     chip:0, color:'#F0B24A', speedMul:1.3, buff:true },   // quicker paws
+    wellfed:  { icon:'🍲', chipMs:0,     chip:0, color:'#E0A85A', regenMs:1400, regen:1, buff:true }, // slow regen
+    toasty:   { icon:'☀️', chipMs:0,     chip:0, color:'#FFB24A', buff:true },   // warm food — staves off the cold (warmth.js reads it)
   },
+  isBuff(name){ const d=this.DEFS[name]; return !!(d && d.buff); },
 
   _map(p){ return p.status || (p.status = {}); },
   has(p, name){ return !!(p && p.status && p.status[name] > 0); },
@@ -47,11 +54,20 @@ const Status = {
         if(name==='poisoned') showToast('🤢 Poisoned! Find an antidote or wait it out.', 1900);
         else if(name==='bleeding') showToast('🩸 Bleeding! It stings for a bit.', 1500);
         else if(name==='stunned') showToast('💫 Stunned! Shake it off!', 1300);
+        else if(name==='soaked') showToast('💧 Soaked by a jellyfish — you\'re sluggish for a bit.', 1600);
+        else if(name==='frostbitten') showToast('🥶 Frostbitten — chilled to the bone and slow.', 1600);
+        else if(d.buff) showToast(`${d.icon} Buffed! (${name})`, 1500);
       }
       if(typeof spawnFloater==='function') spawnFloater(p.x, p.y-30, d.icon, 'status');
     }
   },
   cure(p, name){ if(p && p.status) p.status[name]=0; },
+  // Remove one active buff (Scarecrow King's "eat your buff-food"). Returns the name eaten.
+  stripBuff(p){
+    if(!p || !p.status) return null;
+    for(const name in p.status){ if(p.status[name]>0 && this.isBuff(name)){ p.status[name]=0; if(typeof UI!=='undefined'&&UI.updateStatus) UI.updateStatus(); return name; } }
+    return null;
+  },
   clearAll(p){ if(p) p.status = {}; },
 
   // Called each frame from updatePlayer.
@@ -66,6 +82,11 @@ const Status = {
         const key='_'+name+'T';
         p[key]=(p[key]||0)+dt;
         if(p[key]>=d.chipMs){ p[key]=0; if(typeof Health!=='undefined') Health.damage(p, d.chip); }
+      }
+      if(d.regen>0){
+        const key='_'+name+'R';
+        p[key]=(p[key]||0)+dt;
+        if(p[key]>=d.regenMs){ p[key]=0; if(typeof Health!=='undefined') Health.heal(p, d.regen); }
       }
       if(p.status[name]<=0) changed=true;
     }

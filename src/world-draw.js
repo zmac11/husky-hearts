@@ -852,8 +852,44 @@ function drawWorld(t){
       case 'crystal':     drawCrystal(obj.x,obj.y,obj.seed,t); break;
       case 'snowpatch':   drawSnowPatch(obj.x,obj.y,obj.seed); break;
       case 'campfire':    drawCampfire(obj.x,obj.y,t); break;
+      // --- seashell-cove kinds (levels/cove.js) ---
+      case 'tidepool':    drawTidePool(obj.x,obj.y,obj.w,obj.h,obj.seed,t); break;
+      case 'deepwater':   drawDeepWater(obj.x,obj.y,obj.w,obj.h,obj.seed,t); break;
+      case 'boardwalk':   drawBoardwalk(obj); break;
+      case 'palm':        drawPalm(obj.x,obj.y,obj.seed,t); break;
+      case 'driftwood':   drawDriftwood(obj.x,obj.y,obj.seed); break;
+      case 'coral':       drawCoral(obj.x,obj.y,obj.seed); break;
+      case 'seashell':    drawSeashell(obj.x,obj.y,obj.seed); break;
+      // --- amber-orchard kinds (levels/orchard.js) ---
+      case 'pumpkin':     drawPumpkin(obj.x,obj.y,obj.big,obj.seed); break;
+      case 'haybale':     drawHaybale(obj.x,obj.y); break;
+      case 'cornstalk':   drawCornstalk(obj.x,obj.y,obj.seed,t); break;
+      case 'leafpile':    drawLeafPile(obj.x,obj.y,obj.seed); break;
+      case 'mill':        drawMill(obj.x,obj.y,obj.seed,t); break;
+      case 'barn':        drawBarn(obj.x,obj.y,obj.hue,obj.seed); break;
+      case 'bunting':     drawBunting(obj.x1,obj.y1,obj.x2,obj.y2,obj.seed); break;
+      // --- golden-dunes kinds (levels/dunes.js) ---
+      case 'dune':        drawDune(obj.x,obj.y,obj.seed); break;
+      case 'shaderock':   drawShadeRock(obj.x,obj.y,obj.seed); break;
+      case 'cactus':      drawCactus(obj.x,obj.y,obj.seed); break;
+      case 'ruinwall':    drawRuinWall(obj.x,obj.y,obj.horizontal,obj.seed); break;
+      case 'glyphstone':  drawGlyphStone(obj.x,obj.y,obj.seed); break;
+      case 'well':        drawWell(obj.x,obj.y); break;
+      case 'tent':        drawTent(obj.x,obj.y,obj.hue,obj.seed); break;
+      // --- frostfang-tundra kinds (levels/tundra.js) ---
+      case 'icepatch':    drawIcePatch(obj.x,obj.y,obj.w,obj.h,obj.seed,t); break;
+      case 'aurora':      drawAurora(obj.x,obj.y,obj.w,obj.seed,t); break;
+      case 'cabin':       drawCabin(obj.x,obj.y,obj.seed,t); break;
+      // --- cloud-kingdom kinds (levels/sky.js) ---
+      case 'cloudplatform': drawCloudPlatform(obj.x,obj.y,obj.w,obj.h,obj.seed,t); break;
+      case 'wispcloud':   drawWispCloud(obj.x,obj.y,obj.seed,t); break;
+      case 'sunbeam':     drawSunbeam(obj.x,obj.y,obj.w,obj.seed); break;
+      case 'skyisle':     drawSkyIsle(obj.x,obj.y,obj.seed,t); break;
+      case 'stormcloud':  drawStormCloud(obj.x,obj.y,obj.seed,t); break;
       // 'riverbridge' intentionally not drawn here — layered in main.js so swimmers can pass underneath
     }
   });
+  // Carried delivery parcel bobs over the dog (Palm Boardwalk).
+  if(typeof Delivery!=='undefined' && Delivery.draw) Delivery.draw(t);
 }
 

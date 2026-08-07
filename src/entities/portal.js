@@ -22,6 +22,9 @@ Entities.register('portal', {
     if(Math.hypot(p.x-e.x, p.y-e.y)<26){
       e.used=true;
       if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-10, e.colB, 24);
+      // The campaign finale: stepping through the last portal rolls the credits instead of
+      // opening the journey map.
+      if(LevelManager.current && LevelManager.current.credits && typeof rollCredits==='function'){ rollCredits(); return; }
       // Freeze the world and reveal the journey map (the flow checkWin used to run).
       Game.state=SCENES.WORLDMAP;
       const id=e.levelId;

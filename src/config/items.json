@@ -26,5 +26,36 @@
   "goldbone": { "name": "Golden Bone", "icon": "🏅", "type": "treat",      "value": 5 },
 
   "crown": { "name": "Royal Crown", "icon": "👑", "type": "wearable", "value": 15, "slot": "head", "render": "crown",
-             "mods": { "maxHp": 4, "speed": 0.06 }, "abilityMods": { "stormfang": { "cdMs": -5000 }, "monster": { "dmg": 1 } } }
+             "mods": { "maxHp": 4, "speed": 0.06 }, "abilityMods": { "stormfang": { "cdMs": -5000 }, "monster": { "dmg": 1 } } },
+
+  "shell":     { "name": "Sea Shell",  "icon": "🐚", "type": "shell", "value": 1 },
+  "pearl":     { "name": "Pearl",      "icon": "🫧", "type": "quest", "value": 4 },
+  "icecream":  { "name": "Ice Cream",  "icon": "🍦", "type": "quest", "value": 2 },
+  "sunhat":    { "name": "Sun Hat",    "icon": "👒", "type": "wearable", "value": 6, "slot": "head", "render": "sunhat",  "mods": { "maxHp": 2 } },
+  "flippers":  { "name": "Flippers",   "icon": "🐾", "type": "wearable", "value": 8, "slot": "feet", "render": "flippers","mods": { "swim": 0.25 } },
+  "pearlcharm":{ "name": "Pearl Charm","icon": "📿", "type": "wearable", "value": 12, "slot": "neck", "render": "pearlcharm", "mods": { "maxHp": 4, "swim": 0.15 } },
+
+  "pumpkin": { "name": "Pumpkin", "icon": "🎃", "type": "ingredient", "value": 2 },
+  "apple":   { "name": "Apple",   "icon": "🍎", "type": "ingredient", "value": 2 },
+  "herb":    { "name": "Herb",    "icon": "🌿", "type": "ingredient", "value": 2 },
+  "cloak":   { "name": "Harvest Cloak", "icon": "🧥", "type": "wearable", "value": 12, "slot": "body", "render": "raincoat", "mods": { "maxHp": 6 } },
+  "strawhat":{ "name": "Straw Hat", "icon": "👒", "type": "wearable", "value": 6, "slot": "head", "render": "sunhat", "mods": { "maxHp": 2, "speed": 0.03 } },
+
+  "canteen":  { "name": "Canteen",    "icon": "🧴", "type": "consumable", "value": 4, "survival": 60, "heal": 2 },
+  "water":    { "name": "Water Skin", "icon": "💧", "type": "consumable", "value": 3, "survival": 45 },
+  "widebrim": { "name": "Wide-Brim Hat", "icon": "👒", "type": "wearable", "value": 8, "slot": "head", "render": "sunhat", "mods": { "maxHp": 2 } },
+  "sandstepper": { "name": "Sand-Stepper Charm", "icon": "💨", "type": "relic", "value": 12, "slot": "relic", "render": "relic" },
+  "miragedecoy": { "name": "Mirage Decoy", "icon": "🏺", "type": "relic", "value": 14, "slot": "relic", "render": "relic" },
+  "sunlantern":  { "name": "Sun Lantern", "icon": "🏮", "type": "relic", "value": 16, "slot": "relic", "render": "relic" },
+  "relic-coin":  { "name": "Relic Coin", "icon": "🪙", "type": "treat", "value": 3 },
+
+  "firewood":     { "name": "Firewood",     "icon": "🪵", "type": "consumable", "value": 3, "warmth": 55, "heal": 1 },
+  "rarematerial": { "name": "Frost Crystal", "icon": "❄️", "type": "material", "value": 6 },
+  "warmcoat":     { "name": "Warm Coat",    "icon": "🧥", "type": "wearable", "value": 14, "slot": "body", "render": "raincoat", "mods": { "maxHp": 6, "cold": 0.4 } },
+  "furhood":      { "name": "Fur Hood",     "icon": "🧢", "type": "wearable", "value": 10, "slot": "head", "render": "beanie", "mods": { "maxHp": 4 } },
+  "hearthstone":  { "name": "Hearth Stone", "icon": "🔥", "type": "relic", "value": 16, "slot": "relic", "render": "relic" },
+
+  "skywings":   { "name": "Sky Wings",    "icon": "🕊️", "type": "wearable", "value": 20, "slot": "back", "render": "cape", "mods": { "maxHp": 6, "speed": 0.10 } },
+  "stormcrown": { "name": "Storm Crown",  "icon": "👑", "type": "wearable", "value": 22, "slot": "head", "render": "crown", "mods": { "maxHp": 6, "speed": 0.04 }, "abilityMods": { "stormfang": { "cdMs": -6000 }, "monster": { "dmg": 2 } } },
+  "glidecharm": { "name": "Glide Charm",  "icon": "🪶", "type": "wearable", "value": 16, "slot": "feet", "render": "flippers", "mods": { "speed": 0.08 } }
 }

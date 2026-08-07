@@ -33,16 +33,17 @@ function drawCollectible(item,t){
   roundRect(-13,-13,26,26,6,true,false);
 
   // ---- bright outer glow ring ----
-  const glowColors = {bone:'#FFF0A0', heart:'#FF4466', ball:'#FFD93D', flower:'#D0A0FF', fish:'#4AC8FF'};
+  const glowColors = {bone:'#FFF0A0', heart:'#FF4466', ball:'#FFD93D', flower:'#D0A0FF', fish:'#4AC8FF',
+                      shell:'#FFE1B0', pearl:'#BEEAF2'};
   ctx.strokeStyle = glowColors[item.type] || '#FFD93D';
   ctx.lineWidth = 2.5;
   ctx.globalAlpha = 0.55 + Math.sin(t/260+item.bob)*0.25;
   roundRect(-13,-13,26,26,6,false,true);
   ctx.globalAlpha = 1;
 
-  // ---- dropped items (wearables/consumables/etc): no bespoke pixel art, so draw the
-  //      item's emoji icon + a stack count. Re-collectable like any other pickup. ----
-  if(item.dropped && item.icon && !['bone','heart','ball','flower','fish'].includes(item.type)){
+  // ---- items with no bespoke pixel art (dropped gear, cove shells/pearls): draw the item's
+  //      emoji icon + a stack count. Re-collectable like any other pickup. ----
+  if(item.icon && !['bone','heart','ball','flower','fish'].includes(item.type)){
     ctx.font='16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(item.icon, 0, 1);
     if(item.qty>1){

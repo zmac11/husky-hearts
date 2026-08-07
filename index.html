@@ -20,9 +20,12 @@
       <span class="lvl-badge">Lv <span id="dogLevel">1</span></span>
       <span class="xp-bar"><i id="xpFill"></i></span>
     </div>
-    <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> 🦴<span class="heartbar" id="p1hearts"></span></div>
+    <div class="panel"><span class="dot" style="background:var(--p1)"></span><span id="p1count">0</span> 🦴<span id="p1shellWrap" style="display:none;"> · <span id="p1shells">0</span> 🐚</span><span id="p1repWrap" style="display:none;"> · <span id="p1rep">0</span> ⭐</span><span class="heartbar" id="p1hearts"></span></div>
     <div class="panel hearts">Cheered: <span id="cheerCount">0</span>/<span id="cheerTotal">5</span></div>
     <div class="panel" id="warmthPanel" title="Warmth — stay near a fire!" style="display:none;">🔥<span class="warmth-bar"><i id="warmthFill"></i></span></div>
+    <div class="panel" id="tidePanel" title="The tide — sands open at low tide, dive at high" style="display:none;"><span id="tideIcon">🌊</span><span class="tide-bar"><i id="tideFill"></i></span></div>
+    <div class="panel" id="survivalPanel" title="Heat — stay in shade or at the oasis!" style="display:none;">☀️<span class="survival-bar"><i id="survivalFill"></i></span></div>
+    <div class="panel" id="relicPanel" title="Relic — press F to use" style="display:none;"><span id="relicIcon">🏺</span><span class="relic-bar"><i id="relicFill"></i></span></div>
     <div class="panel" id="statusPanel" style="display:none;"></div>
     <div class="panel" id="levelPanel">📍 <span id="levelName">—</span> · <span id="questProgress">—</span></div>
     <span class="hud-mutes">
@@ -164,6 +167,14 @@
         <div class="overlay-hint">World keeps playing · J / Esc to close</div>
       </div>
 
+      <div id="bestiaryScreen" style="display:none;">
+        <div id="bestiaryHeader">
+          <h2>📖 Bestiary</h2>
+        </div>
+        <div id="bestiaryBody"></div>
+        <div class="overlay-hint">World keeps playing · B / Esc to close</div>
+      </div>
+
       <div id="skillScreen" style="display:none;">
         <div id="skillHeader">
           <h2>🌳 Skill Tree</h2>
@@ -213,7 +224,7 @@
   <div id="controls">
     <div class="ctrl-card" id="ctrlCard"><b>Controls</b>WASD or ↑←↓→ · SPACE / ENTER to howl/deliver</div>
   </div>
-  <footer>Tip: check the minimap (top-right) to find animals and treats! · <span id="footKeys"><b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests</span></footer>
+  <footer>Tip: check the minimap (top-right) to find animals and treats! · <span id="footKeys"><b>Esc</b> pause · <b>I</b> inventory · <b>J</b> quests · <b>B</b> bestiary</span></footer>
 </div>
 
 <!-- Hover tooltip (items + abilities). Top-level so fullscreen's game-frame zoom
