@@ -20,13 +20,14 @@ Entities.register('stormeagle', {
     e.name='The Storm Eagle'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||90; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||1.5; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='aerial'; e.actT=3400; e.diveCd=1600; e.boltCd=1200; e.touchCd=0; e.bob=0;
-    e.dvx=0; e.dvy=0;
+    e.dir=-1; e.state='aerial'; e.actT=3400; e.diveCd=1600; e.boltCd=1200; e.laneCd=4200; e.touchCd=0; e.bob=0;
+    e.dvx=0; e.dvy=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_seNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, crescendo=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, crescendo=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('⚡ The Storm Eagle charges the sky — lightning lanes incoming!', 2400); }
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -36,10 +37,20 @@ Entities.register('stormeagle', {
       // wheel above the dog
       const a=Math.atan2(p.y-e.y,p.x-e.x); const spd=e.speed*(crescendo?1.1:0.8);
       e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 40, WORLD_W-40); e.y=clamp(e.y+Math.sin(a)*spd*0.5*dtScale, 40, WORLD_H-40); e.dir=Math.cos(a)>=0?1:-1;
-      e.diveCd=Math.max(0,e.diveCd-dt); e.boltCd=Math.max(0,e.boltCd-dt);
-      // rain lightning
+      e.diveCd=Math.max(0,e.diveCd-dt); e.boltCd=Math.max(0,e.boltCd-dt); if(e.laneCd>0) e.laneCd=Math.max(0,e.laneCd-dt);
+      // rain lightning (single strikes at the dog)
       if(e.boltCd<=0){ e.boltCd= crescendo?800:1400;
         Entities.spawn('groundzone',{ x:clamp(p.x+rand(-40,40),40,WORLD_W-40), y:clamp(p.y+rand(-30,30),48,WORLD_H-40), r:40*S, warnMs:crescendo?360:520, dmg:e.dmg, color:'#C9BEF0', scale:S });
+      }
+      // PHASE 2: LIGHTNING LANES — parallel vertical strips of lightning with safe corridors
+      // between them (weave sideways). Distinct from the single point-strikes above.
+      if(phase2 && e.laneCd<=0){ e.laneCd= crescendo?5000:7000;
+        const lanes=crescendo?3:2, spacingX=WORLD_W/(lanes+1), cellH=118, rows=Math.min(11,Math.floor((WORLD_H-100)/cellH));
+        for(let l=1;l<=lanes;l++){ const lx=clamp(l*spacingX+rand(-30,30),50,WORLD_W-50);
+          for(let r=0;r<=rows;r++){ const ly=clamp(64+r*cellH,48,WORLD_H-40);
+            Entities.spawn('groundzone',{ x:lx, y:ly, r:36*S, warnMs:(crescendo?440:600)+l*150, dmg:e.dmg, color:'#B9AEE8', scale:S }); } }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y,'#E6DFFA',18);
+        if(typeof showToast==='function') showToast('⚡ Lightning lanes — weave through the gaps!', 2000);
       }
       // telegraphed dive across the arena
       if(e.diveCd<=0 && dist>90){ e.state='divewind'; e.actT= crescendo?360:520; e.alertT=650; e.dtx=p.x; e.dty=p.y; e.bob=t; return; }
