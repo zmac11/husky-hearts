@@ -140,6 +140,9 @@ window.addEventListener('keydown', e=>{
   // Dev mode: backtick, or the "<" key (IntlBackslash = the key next to left Shift on
   // ISO/European keyboards, which types "<" — e.key covers any other layout too).
   if(e.code === 'Backquote' || e.code === 'IntlBackslash' || e.key === '<'){ e.preventDefault(); if(typeof DevMode!=='undefined' && DevMode.toggle) DevMode.toggle(); }
+  // Dev time controls (handy with the panel closed): [ toggles dev-pause, ] steps one frame.
+  if(e.code === 'BracketLeft'  && typeof DevMode!=='undefined' && DevMode.togglePause){ e.preventDefault(); DevMode.togglePause(); }
+  if(e.code === 'BracketRight' && typeof DevMode!=='undefined' && DevMode.step){ e.preventDefault(); DevMode.step(); }
   // Number keys 1-9 → use the matching hotbar slot (consumables/toys).
   const m = /^Digit([1-9])$/.exec(e.code);
   if(m){ if(typeof UI!=='undefined' && UI.useHotbar) UI.useHotbar(+m[1]); }
