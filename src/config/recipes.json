@@ -1,0 +1,26 @@
+{
+  "pumpkinpie": {
+    "name": "Pumpkin Pie", "icon": "🥧",
+    "needs": { "pumpkin": 2 },
+    "buff": "wellfed", "buffMs": 20000, "heal": 6,
+    "blurb": "A warm slice — mends you and keeps you fed."
+  },
+  "applecider": {
+    "name": "Hot Cider", "icon": "🍶",
+    "needs": { "apple": 2 },
+    "buff": "hasty", "buffMs": 16000, "heal": 3,
+    "blurb": "Spiced and zippy — quick paws for a while."
+  },
+  "herbstew": {
+    "name": "Herb Stew", "icon": "🍲",
+    "needs": { "herb": 1, "pumpkin": 1 },
+    "buff": "toasty", "buffMs": 24000, "heal": 5,
+    "blurb": "Hearty and hot — wards off the cold."
+  },
+  "harvestfeast": {
+    "name": "Harvest Feast", "icon": "🍛",
+    "needs": { "pumpkin": 1, "apple": 1, "herb": 1 },
+    "buff": "wellfed", "buffMs": 26000, "heal": 10,
+    "blurb": "The whole harvest in a bowl — the finest buff."
+  }
+}
