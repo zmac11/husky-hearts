@@ -120,7 +120,7 @@ const Skills = {
     const base=Breeds.get(p.breed);
     const lv=id=>this.level(p, id);
     // Equipment stat bonuses (data/items.js `mods`), summed once.
-    const eq=(typeof Equip!=='undefined') ? Equip.statMods(p) : { maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
+    const eq=(typeof Equip!=='undefined') ? Equip.statMods(p) : { maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0, swim:0 };
     const wasMax = p.hp>=p.maxHp;
     p.maxHp = (base.hp||20) + 2*lv('vitality') + eq.maxHp;
     if(wasMax) p.hp=p.maxHp; else p.hp=Math.min(p.hp, p.maxHp);
@@ -130,6 +130,7 @@ const Skills = {
       scentR:   base.stats.scentR + 20*lv('nose') + eq.scentR,
       noiseMul: +(base.stats.noiseMul * (1 - 0.08*lv('soft')) + eq.noiseMul).toFixed(3),
       priceMul: +(base.stats.priceMul + eq.priceMul).toFixed(3),
+      swim:     +((base.stats.swim||0.5) + (eq.swim||0)).toFixed(3),
     });
     // NOTE: no UI calls here — apply() runs during initial module evaluation
     // (makePlayer at world.js load), before ui.js's `const UI` exists. Callers

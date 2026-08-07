@@ -41,6 +41,14 @@ const Entities = {
   // defeat poof with a small chance of dropped loot. Call OUTSIDE updateAll's loop.
   hurt(e, dmg, fromX, fromY, knock=12){
     if(typeof e.hp!=='number') return false;    // not a damageable entity
+    // Temporarily un-damageable (e.g. the Hermit Crab withdrawn into its armored shell at
+    // high tide). Clink off it and deal nothing until it's exposed.
+    if(e.invuln){
+      e.hurtT=140;
+      if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#DDE6EC', 6);
+      if(typeof spawnFloater==='function') spawnFloater(e.x, e.y-18, 'clink!', 'status');
+      return false;
+    }
     e.hp -= dmg;
     e.hurtT = 220;
     // Gold number floating off the target: damage the dog DEALT (red is damage taken —
@@ -52,6 +60,7 @@ const Entities = {
       e.y=clamp(e.y+Math.sin(ang)*knock, 26, WORLD_H-20);
     }
     if(e.hp<=0){
+      if(typeof Bestiary!=='undefined') Bestiary.recordDefeat(e.kind);   // tally in the journal
       if(typeof spawnSparkles==='function') spawnSparkles(e.x, e.y-6, '#C9C9C9', 20);
       // Loot + XP for this enemy kind come from the config table (LOOT_DATA.enemies).
       const drops=(typeof LOOT_DATA!=='undefined' && LOOT_DATA.enemies && LOOT_DATA.enemies[e.kind]) || null;
@@ -61,7 +70,7 @@ const Entities = {
           const idef=(typeof Items!=='undefined') && Items.get(entry.item);
           // Treat-type drops (bone/heart/…) count toward p.treats on pickup like any world
           // treat; gear/consumables don't (they're `dropped`, same as chest item spills).
-          const isTreat=idef && (idef.type==='treat'||idef.type==='toy'||idef.type==='food');
+          const isTreat=idef && (idef.type==='treat'||idef.type==='toy'||idef.type==='food'||idef.type==='shell');
           collectibles.push({ x:e.x, y:e.y, type:entry.item, qty:entry.qty||1, taken:false,
                               bob:rand(0,Math.PI*2), dropped:!isTreat, icon:idef?idef.icon:'❓',
                               pickupAt:performance.now()+600+i*90 });

@@ -23,6 +23,17 @@ const Warmth = {
 
   reset(p){ if(p){ p.warmth = this.MAX; p.chilled = false; p._chillT = 0; } },
 
+  // Burn a bundle of firewood (from the hotbar) — an instant warmth top-up (Frostfang Tundra).
+  stoke(p, amount){ if(!p) return; p.warmth = Math.min(this.MAX, (p.warmth==null?this.MAX:p.warmth) + (amount||55)); if(typeof UI!=='undefined'&&UI.updateWarmth) UI.updateWarmth(); },
+
+  // A warm coat (items.json `mods.cold`) slows the warmth drain — the endgame gear reward.
+  _coatMul(p){
+    if(!p || !p.equipment || typeof Items==='undefined') return 1;
+    let cut=0;
+    for(const slot in p.equipment){ const d=Items.get(p.equipment[slot]); const c=d&&d.mods&&d.mods.cold; if(c) cut+=c; }
+    return Math.max(0.3, 1-cut);
+  },
+
   // Any lit firepit close enough to warm the dog?
   _nearFire(p){
     const es = (typeof entities!=='undefined' && entities) ? entities : [];
@@ -38,8 +49,10 @@ const Warmth = {
     }
     if(typeof p.warmth!=='number') p.warmth = this.MAX;
     const s = dt/1000;
-    if(this._nearFire(p)) p.warmth = Math.min(this.MAX, p.warmth + this.REFILL_PER_SEC*s);
-    else                  p.warmth = Math.max(0,       p.warmth - this.DRAIN_PER_SEC*s);
+    const toasty = (typeof Status!=='undefined') && Status.has(p,'toasty');   // a warm meal wards off the chill
+    const blizz = (typeof Blizzard!=='undefined' && Blizzard.raging()) ? 1.7 : 1;   // a blizzard bites harder
+    if(this._nearFire(p) || toasty) p.warmth = Math.min(this.MAX, p.warmth + this.REFILL_PER_SEC*s);
+    else                            p.warmth = Math.max(0,       p.warmth - this.DRAIN_PER_SEC*blizz*this._coatMul(p)*s);
 
     const wasChilled = p.chilled;
     p.chilled = p.warmth <= 0;

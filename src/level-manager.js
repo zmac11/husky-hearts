@@ -41,6 +41,11 @@ const LevelManager = {
     // Rebuild the pre-rendered ground with this level's theme.
     buildGroundCanvas();
 
+    if(typeof Tide!=='undefined') Tide.reset();   // enter a tidal level at high tide (readable intro)
+    if(typeof Sandstorm!=='undefined') Sandstorm.reset();   // desert weather clock (Golden Dunes)
+    if(typeof Blizzard!=='undefined') Blizzard.reset();     // tundra weather clock (Frostfang Tundra)
+    if(typeof Cooking!=='undefined') Cooking.reset();   // fresh cook count per level (Amber Orchard)
+
     // Fresh quest progress for the new level; drop any leftover XP orbs.
     Game.cheeredCount = 0;
     if(typeof resetXpOrbs==='function') resetXpOrbs();
@@ -105,6 +110,9 @@ const LevelManager = {
     });
     if(typeof Abilities!=='undefined'){ Abilities.reset(); Abilities.spawnAll(); }
     if(typeof Warmth!=='undefined') Warmth.reset(p1);   // enter every level toasty-warm
+    if(typeof Survival!=='undefined') Survival.reset(p1);// enter every level fully hydrated
+    if(typeof Relics!=='undefined') Relics.reset(p1);   // relic cooldown fresh
+    if(p1){ p1._skysafe=undefined; p1._svx=0; p1._svy=0; }   // fresh sky-glide state (Cloud Kingdom)
     if(typeof Status!=='undefined') Status.clearAll(p1);// and free of any lingering conditions
     if(typeof sparkles!=='undefined') sparkles=[];
     if(typeof updateCamera==='function') updateCamera();

@@ -370,10 +370,17 @@ function isOnBridge(px,py){
   return isOnWalkableBridge(px,py) || onRiverBridge(px,py);
 }
 
+function _inEllipse(o,px,py,k){ return ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<(k||0.92); }
+
 function isInPond(px,py,wasSwimming){
-  // Ponds (meadow) and lakes (rocky) are both swimmable elliptical water bodies.
-  const inEllipse=worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
-    ((px-o.x)/(o.w/2))**2+((py-o.y)/(o.h/2))**2<0.92);
+  // Ponds (meadow) and lakes (rocky) are both swimmable elliptical water bodies. Seashell
+  // Cove adds two more: `deepwater` (dive basins — always submerged) and `tidepool` (only
+  // holds water while the tide is IN; drains to walkable sand at low tide — see tide.js).
+  const inEllipse=worldObjects.some(o=>{
+    if(o.kind==='pond'||o.kind==='lake'||o.kind==='deepwater') return _inEllipse(o,px,py);
+    if(o.kind==='tidepool') return (typeof Tide!=='undefined' && Tide.covered()) && _inEllipse(o,px,py);
+    return false;
+  });
   const inWater=inEllipse || inRiver(px,py);
   if(!inWater) return false;
   if(isOnWalkableBridge(px,py)) return false; // pond bridge deck — never swimming
@@ -385,8 +392,22 @@ function isInPond(px,py,wasSwimming){
 // placement: keep land plants, NPCs and quest animals out of the water.
 function isWater(x,y,margin=0){
   if(inRiver(x,y,margin)) return true;
-  return worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake')&&
+  // For placement, tidal pools and dive basins always count as water (keep plants/NPCs off
+  // them) regardless of the current tide phase.
+  return worldObjects.some(o=>(o.kind==='pond'||o.kind==='lake'||o.kind==='deepwater'||o.kind==='tidepool')&&
     ((x-o.x)/(o.w/2+margin))**2+((y-o.y)/(o.h/2+margin))**2<1);
+}
+
+// True when a point sits over a dive basin (`deepwater`) — used for the diving mechanic
+// (submerge to gather pearls / duck surface jellyfish) in Coral Sands.
+function overDeepWater(x,y){
+  return worldObjects.some(o=>o.kind==='deepwater' && _inEllipse(o,x,y));
+}
+
+// True when a point sits over a slippery ice sheet (`icepatch`) — the dog slides with
+// momentum here (Frostfang Tundra). Uses each patch's w/h ellipse.
+function onSlipperyIce(x,y){
+  return worldObjects.some(o=>o.kind==='icepatch' && _inEllipse(o,x,y,1));
 }
 
 // Move an object (with .x/.y) to the nearest dry land if it spawned in water. Keeps
@@ -407,7 +428,7 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
   const def=Breeds.get(breed); // per-breed stats + active ability (data/breeds.js)
   const maxHp=def.hp||20;      // 1 heart = 2 hp; different starting total per breed
   const p={id,color,x,y,w:24,h:24,dir:'down',moving:false,animFrame:0,animTimer:0,
-    treats:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
+    treats:0,shells:0,reputation:0,inventory:Inventory.create(),equipment:{},hp:maxHp,maxHp,hurtTimer:0,dead:false,
     speed:def.stats.speed,stats:def.stats,abilities:(def.abilities||[]).slice(),
     skills:{},skillPoints:0,   // character stat-tree levels + points (data/skills.js)
     mastery:{},masteryPoints:0,// ability mastery-tree levels + points (data/progression.js)
@@ -415,7 +436,8 @@ function makePlayer(id,color,x,y,breed='dinno',markings='classic'){
     ultimateUnlocked:false,    // the R Ultimate awakens at the Moonlit Rite (Firefly Grove)
     xp:0,dogLevel:1,           // RPG progression (data/progression.js)
     abilityCd:{},              // per-ability cooldowns in ms (abilities/registry.js)
-    howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false};
+    howling:false,howlTimer:0,noiseT:0,breed,markings,swimming:false,
+    warmth:100,heat:100,relicCd:0};   // env-meter + relic-cooldown transient state
   if(typeof Skills!=='undefined') Skills.apply(p);   // derive stats fresh (never share def.stats)
   return p;
 }

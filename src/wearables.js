@@ -15,10 +15,12 @@
 function _wpx(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
 
 const Wearables = {
-  SLOTS: ['head','face','neck','body','back'],
-  SLOT_LABEL: { head:'Head', face:'Face', neck:'Neck', body:'Body', back:'Back' },
+  SLOTS: ['head','face','neck','body','back','feet','relic'],
+  SLOT_LABEL: { head:'Head', face:'Face', neck:'Neck', body:'Body', back:'Back', feet:'Feet', relic:'Relic' },
 
   slotOf(id){ const d=Items.get(id); return d && d.slot; },
+  // Wearables and relics both live in equipment slots (relics are the active-item kind).
+  _equippable(def, slot){ return !!(def && (def.type==='wearable'||def.type==='relic') && def.slot===slot); },
   isWearable(id){ const d=Items.get(id); return !!(d && d.type==='wearable'); },
   equipped(p, slot){ return (p.equipment && p.equipment[slot]) || null; },
 
@@ -54,7 +56,7 @@ const Wearables = {
   equipFromSlot(p, idx, wslot){
     const cell=Inventory.at(p, idx); if(!cell) return false;
     const def=Items.get(cell.id);
-    if(!def || def.type!=='wearable' || def.slot!==wslot) return false;
+    if(!this._equippable(def, wslot)) return false;
     const eq = p.equipment || (p.equipment={});
     const prev = eq[wslot];
     Inventory.removeAt(p, idx, 1);
@@ -75,7 +77,7 @@ const Wearables = {
     if(!target){ Inventory.setAt(p, idx, { id, qty:1 }); delete eq[wslot]; this.restat(p); return true; }
     if(target.id===id && target.qty<Inventory.MAX_STACK){ target.qty++; delete eq[wslot]; this.restat(p); return true; }
     const tdef=Items.get(target.id);
-    if(tdef && tdef.type==='wearable' && tdef.slot===wslot){   // swap the two wearables
+    if(this._equippable(tdef, wslot)){   // swap the two wearables/relics
       Inventory.removeAt(p, idx, 1);
       Inventory.setAt(p, idx, { id, qty:1 });
       eq[wslot]=target.id;
@@ -246,7 +248,7 @@ const Wearables = {
 const Equip = {
   // Sum the stat deltas across everything the player has equipped.
   statMods(p){
-    const out={ maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0 };
+    const out={ maxHp:0, speed:0, scentR:0, noiseMul:0, priceMul:0, swim:0 };
     if(!p || !p.equipment || typeof Items==='undefined') return out;
     for(const slot in p.equipment){
       const def=Items.get(p.equipment[slot]); const m=def && def.mods; if(!m) continue;
@@ -255,6 +257,7 @@ const Equip = {
       if(m.scentR)      out.scentR   += m.scentR;
       if(m.noiseMul)    out.noiseMul += m.noiseMul;
       if(m.smartsPrice) out.priceMul += m.smartsPrice;
+      if(m.swim)        out.swim     += m.swim;
     }
     return out;
   },

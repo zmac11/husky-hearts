@@ -39,7 +39,7 @@ const Save = {
   // ---------- serialisation ----------
   _serializePlayer(p){
     return { id:p.id, breed:p.breed, color:p.color, x:p.x, y:p.y, dir:p.dir,
-             treats:p.treats,
+             treats:p.treats, shells:p.shells||0, reputation:p.reputation||0,
              inventory:Inventory.cells(p).map(c => c ? { id:c.id, qty:c.qty } : null),
              equipment:Object.assign({}, p.equipment), hp:p.hp, maxHp:p.maxHp, dead:!!p.dead,
              skills:Object.assign({}, p.skills), skillPoints:p.skillPoints||0,
@@ -59,6 +59,7 @@ const Save = {
       levelId,
       cheeredCount: Game.cheeredCount,
       progress: (typeof Progress!=='undefined') ? Progress.completed : {},
+      bestiary: (typeof Bestiary!=='undefined') ? Bestiary.export() : {},
       players: Game.players.map(p=>this._serializePlayer(p)),
       cam: { x:cam.x, y:cam.y },
       levels: (typeof LevelState!=='undefined') ? LevelState.all() : {},
@@ -132,12 +133,13 @@ const Save = {
 
     // --- campaign progress + remembered level states ---
     if(typeof Progress!=='undefined') Progress.completed = data.progress || {};
+    if(typeof Bestiary!=='undefined') Bestiary.import(data.bestiary || {});
     if(typeof LevelState!=='undefined') LevelState.setAll(data.levels || {});
 
     // --- player (rebuilt before the level so the HUD and ability spawns see it) ---
     const restore = (sp)=>{
       const pl = makePlayer(sp.id, sp.color, sp.x, sp.y, sp.breed);
-      pl.dir = sp.dir; pl.treats = sp.treats;
+      pl.dir = sp.dir; pl.treats = sp.treats; pl.shells = sp.shells||0; pl.reputation = sp.reputation||0;
       pl.inventory = sp.inventory || Inventory.create(); Inventory.cells(pl); // normalize length
       pl.equipment = sp.equipment || {};
       pl.skills = sp.skills || {};

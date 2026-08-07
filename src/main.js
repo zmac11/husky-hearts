@@ -58,6 +58,8 @@ function loop(now){
     // Darkness overlay (Whispering Woods): dims everything but your pool of light. Drawn in
     // screen space over the world, under the minimap HUD.
     if(typeof Darkness!=='undefined') Darkness.render(ctx, cam);
+    if(typeof Sandstorm!=='undefined') Sandstorm.render(ctx, cam);   // desert sand haze (Golden Dunes)
+    if(typeof Blizzard!=='undefined') Blizzard.render(ctx, cam);     // tundra snow whiteout (Frostfang Tundra)
     drawMinimap();
     if(typeof DevMode!=='undefined' && DevMode.debug) DevMode.drawDebug(now);   // hitboxes + FPS/HUD
   }

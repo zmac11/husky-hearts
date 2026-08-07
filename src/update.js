@@ -22,21 +22,35 @@ function updatePlayer(p,t,dt){
     (p.abilities||[]).forEach(id=>{ const d=Abilities.get(id); if(d && d.speedMul) spdMul*=d.speedMul(p); });
   }
   if(typeof Warmth!=='undefined') spdMul*=Warmth.speedMul(p);   // frozen = sluggish (Frozen Pass)
+  if(typeof Survival!=='undefined') spdMul*=Survival.speedMul(p); // heatstroke = sluggish (Golden Dunes)
   if(typeof Status!=='undefined') spdMul*=Status.speedMul(p);   // slow status drags you down
   if(typeof DevMode!=='undefined'){                             // dev cheats (inert unless toggled)
     if(DevMode.god) p.invulnT=Math.max(p.invulnT||0, 1000);     // godmode: keep i-frames topped up
     if(DevMode.speedMul && DevMode.speedMul!==1) spdMul*=DevMode.speedMul;
   }
-  if(p.moving){
+  const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
+  const spd=(p.swimming?p.speed*swimMul:p.speed)*spdMul;
+  // Slippery ice (Frostfang Tundra): the dog carries momentum, sliding past where it steers.
+  const onIce = (typeof onSlipperyIce==='function') && onSlipperyIce(p.x,p.y);
+  if(onIce){
+    const len=Math.hypot(dx,dy)||1; const nx=p.moving?dx/len:0, ny=p.moving?dy/len:0;
+    p._svx=(p._svx||0)*0.90 + nx*spd*0.15;
+    p._svy=(p._svy||0)*0.90 + ny*spd*0.15;
+    p.x+=p._svx*dtScale; p.y+=p._svy*dtScale;
+    if(p.moving){
+      if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left'; else p.dir=dy>0?'down':'up';
+      p.animTimer+=dt; if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
+    }
+    if(Math.abs(p._svx)>0.05||Math.abs(p._svy)>0.05) p.moving=true;   // still gliding
+  } else if(p.moving){
     const len=Math.hypot(dx,dy); dx/=len; dy/=len;
-    const swimMul=(p.stats&&p.stats.swim)||0.5; // per-breed swim passive (data/breeds.js)
-    const spd=(p.swimming?p.speed*swimMul:p.speed)*spdMul;
     p.x+=dx*spd*dtScale; p.y+=dy*spd*dtScale;
     if(Math.abs(dx)>Math.abs(dy)) p.dir=dx>0?'right':'left';
     else p.dir=dy>0?'down':'up';
     p.animTimer+=dt;
     if(p.animTimer>160){p.animTimer=0;p.animFrame=1-p.animFrame;}
-  }
+    p._svx=0; p._svy=0;
+  } else { p._svx=0; p._svy=0; }
   // Scurry dash: a scripted lunge independent of input (abilities/scurry.js sets these).
   if(p.dashT>0){
     if(!stunned){ p.x+=(p.dashVX||0)*dtScale; p.y+=(p.dashVY||0)*dtScale; p.moving=true; }
@@ -44,8 +58,19 @@ function updatePlayer(p,t,dt){
   }
   if(!(typeof DevMode!=='undefined' && DevMode.noclip)) resolveCollisions(p);   // noclip skips colliders
   p.swimming=isInPond(p.x,p.y,p.swimming);
+  // Diving: while swimming over a dive basin the dog submerges (Coral Sands). Surface
+  // hazards (jellyfish) can't reach a diver, and seabed pearls become collectible.
+  p.diving = p.swimming && (typeof overDeepWater==='function') && overDeepWater(p.x,p.y);
   if(typeof Health!=='undefined') Health.tick(p,dt);
   if(typeof Warmth!=='undefined') Warmth.tick(p,dt);   // cold-level warmth drain/refill
+  if(typeof Survival!=='undefined') Survival.tick(p,dt); // heat-level survival drain/refill (Golden Dunes)
+  if(typeof Relics!=='undefined') Relics.tick(p,dt);   // relic cooldown
+  if(typeof Sky!=='undefined') Sky.tick(p,dt);         // cloud-kingdom gliding / soft-reset fall
+  if(p===p1 && typeof Bestiary!=='undefined') Bestiary.scan(p);   // discover nearby creatures (journal)
+  if(p===p1 && typeof Tide!=='undefined') Tide.tick(dt);   // seashell-cove tide clock (global — tick once)
+  if(p===p1 && typeof Sandstorm!=='undefined') Sandstorm.tick(dt);   // desert weather (global — tick once)
+  if(p===p1 && typeof Blizzard!=='undefined') Blizzard.tick(dt);     // tundra weather (global — tick once)
+  if(p===p1 && typeof Delivery!=='undefined') Delivery.tick(dt);   // boardwalk delivery timer (global)
   if(typeof Status!=='undefined') Status.tick(p,dt);   // timed conditions (poisoned, bleeding, stun, …)
   if(!stunned) Abilities.update(p,dt);                 // stunned: no new ability fire this frame
   if(!stunned && Input.held('action')&&!p.howling){
@@ -63,12 +88,24 @@ function tryCollect(p){
     if(item.pickupAt && now<item.pickupAt) return;          // just-dropped: brief no-pickup window
     if(Math.hypot(p.x-item.x,p.y-item.y)<22){
       const qty=item.qty||1;
+      const def=(typeof Items!=='undefined') ? Items.get(item.type) : null;
+      // Shells are a secondary CURRENCY (Seashell Cove): they bank on p.shells like treats
+      // do, never taking a bag slot.
+      if(def && def.type==='shell'){
+        item.taken=true;
+        if(!item.dropped) p.shells=(p.shells||0)+qty;
+        spawnSparkles(item.x,item.y,'#FFE1B0',10); sfxCollect(); updateHUD();
+        return;
+      }
       if(Inventory.roomFor(p,item.type) < qty){             // full bag → leave it on the ground
         if(!p._invFullAt || now-p._invFullAt>2200){ showToast('🎒 Inventory full — make room to pick this up!',1600); p._invFullAt=now; }
         return;
       }
       item.taken=true;
-      if(!item.dropped) p.treats++;                          // re-collecting a dropped item doesn't re-award a treat
+      // Only real treats (bone/heart/ball/flower/fish) are money; quest pickups (pearls) and
+      // other bag items don't inflate the treat count.
+      const treatish = def && (def.type==='treat'||def.type==='toy'||def.type==='food');
+      if(!item.dropped && treatish) p.treats++;               // re-collecting a dropped item doesn't re-award a treat
       Inventory.add(p,item.type,qty);
       spawnSparkles(item.x,item.y,item.type==='fish'?'#4AC8FF':'#FFD93D',10);sfxCollect();updateHUD();
       if(typeof Tips!=='undefined') Tips.show('collect');

@@ -48,6 +48,18 @@
           { "item": "key" }
         ]
       }
+    },
+    "legendary": {
+      "name": "Legendary Chest", "locked": false, "digMs": 0,
+      "base": "#C9BEF0", "band": "#9B7EC8", "lid": "#E0D6FA", "glow": "rgba(201,190,240,0.55)",
+      "loot": {
+        "treats": [25, 25],
+        "drops": [
+          { "oneOf": ["skywings", "stormcrown", "glidecharm"] },
+          { "item": "feast", "qty": 2 },
+          { "item": "goldbone" }
+        ]
+      }
     }
   },
 
@@ -56,10 +68,24 @@
     "badgerbaron": { "xp": 24, "drops": [ { "item": "goldbone" }, { "item": "biscuit", "qty": 2 }, { "item": "key", "chance": 0.5 } ] },
     "wolf":  { "xp": 6, "drops": [ { "item": "bone", "chance": 0.40 } ] },
     "alphawolf": { "xp": 40, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "key", "chance": 0.5 } ] },
-    "grizzly":   { "xp": 48, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "antidote" }, { "item": "key", "chance": 0.5 } ] }
+    "grizzly":   { "xp": 48, "drops": [ { "item": "goldbone" }, { "item": "feast" }, { "item": "antidote" }, { "item": "key", "chance": 0.5 } ] },
+    "crab":      { "xp": 8,  "drops": [ { "item": "shell", "qty": 2, "chance": 0.7 }, { "item": "biscuit", "chance": 0.2 } ] },
+    "jellyfish": { "xp": 6,  "drops": [ { "item": "shell", "chance": 0.4 } ] },
+    "hermitcrab":{ "xp": 56, "drops": [ { "item": "goldbone" }, { "item": "pearlcharm" }, { "item": "shell", "qty": 5 }, { "item": "feast" }, { "item": "key", "chance": 0.5 } ] },
+    "crow":      { "xp": 6,  "drops": [ { "oneOf": ["apple", "herb"], "chance": 0.5 } ] },
+    "scarecrow": { "xp": 9,  "drops": [ { "item": "pumpkin", "chance": 0.5 }, { "item": "biscuit", "chance": 0.2 } ] },
+    "scarecrowking":{ "xp": 64, "drops": [ { "item": "goldbone" }, { "item": "cloak" }, { "item": "feast", "qty": 2 }, { "item": "key", "chance": 0.5 } ] },
+    "scarab":    { "xp": 5,  "drops": [ { "item": "relic-coin", "chance": 0.3 } ] },
+    "sentinel":  { "xp": 12, "drops": [ { "item": "canteen", "chance": 0.5 }, { "item": "relic-coin", "chance": 0.3 } ] },
+    "sandserpent":{ "xp": 72, "drops": [ { "item": "goldbone" }, { "item": "sunlantern" }, { "item": "feast", "qty": 2 }, { "item": "key", "chance": 0.5 } ] },
+    "frostwolf":  { "xp": 16, "drops": [ { "item": "rarematerial", "chance": 0.8 }, { "item": "firewood", "chance": 0.4 } ] },
+    "icesprite":  { "xp": 12, "drops": [ { "item": "rarematerial", "chance": 0.4 }, { "item": "firewood", "chance": 0.3 } ] },
+    "iceyeti":    { "xp": 84, "drops": [ { "item": "goldbone" }, { "item": "warmcoat" }, { "item": "hearthstone" }, { "item": "feast", "qty": 2 }, { "item": "key", "chance": 0.5 } ] },
+    "skysprite":  { "xp": 12, "drops": [ { "item": "feast", "chance": 0.3 } ] },
+    "stormeagle": { "xp": 120, "drops": [ { "item": "goldbone" }, { "item": "skywings" }, { "item": "stormcrown" }, { "item": "feast", "qty": 3 } ] }
   },
 
-  "chestXp": { "wooden": 2, "iron": 4, "silver": 6, "golden": 12 },
+  "chestXp": { "wooden": 2, "iron": 4, "silver": 6, "golden": 12, "legendary": 16 },
 
   "xp": { "quest": 6, "cheer": 4, "level": 12 }
 }
