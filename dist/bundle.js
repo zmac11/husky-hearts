@@ -8344,19 +8344,22 @@ Entities.register('hermitcrab', {
     e.maxHp=e.maxHp||52; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.8; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
     e.dir=-1; e.state='track'; e.actT=0;
-    e.chargeCd=2600; e.sweepCd=3200; e.staggerT=0; e.touchCd=0;
-    e.cvx=0; e.cvy=0; e.bob=0;
+    e.chargeCd=2600; e.sweepCd=3200; e.sprayCd=5000; e.staggerT=0; e.touchCd=0;
+    e.cvx=0; e.cvy=0; e.bob=0; e._p2=false;
   },
 
   update(e, t, dt){
     const p=_hcNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, panic=frac<=0.34;
+    const frac=e.hp/e.maxHp, panic=frac<=0.34, phase2=frac<=0.66;
     const covered=(typeof Tide!=='undefined') ? Tide.covered() : false;
     const S=e.scale||1;
 
+    // Phase 2 (≤66%): froths up a ranged bubble-spray volley — the crab is no longer only melee.
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🫧 The Hermit Crab froths over — bubble volleys incoming!', 2400); }
     // Panic churns the tide (safe windows flip faster).
     if(typeof Tide!=='undefined') Tide._speed = panic ? 2.4 : 1;
+    e.sprayCd=Math.max(0,e.sprayCd-dt);
 
     // Armor: sealed at high tide UNLESS cracked open by a recent crash (stagger window).
     e.staggerT=Math.max(0, e.staggerT-dt);
@@ -8406,8 +8409,28 @@ Entities.register('hermitcrab', {
       }
       e.bob=t; return;
     }
+    if(e.state==='spraywind'){
+      // rear back frothing, then lob a fan of bubble bursts around the dog
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.sprayCd= panic?3200:5000;
+        const a0=Math.atan2(p.y-e.y,p.x-e.x), n=panic?5:3;
+        const reach=Math.max(70, Math.min(dist,520));
+        for(let i=0;i<n;i++){ const off=i-(n-1)/2; const a=a0+off*0.28;
+          const gx=clamp(e.x+Math.cos(a)*(reach+off*8),40,WORLD_W-40), gy=clamp(e.y+Math.sin(a)*(reach+off*8),48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:32*S, warnMs:panic?400:540, dmg:e.dmg, color:'#5FC4DA', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x+e.dir*18,e.y-8,'#8FE0F0',14);
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+      e.bob=t; return;
+    }
 
     // ---- decide the next move (track) ----
+    // Phase 2+: a ranged bubble volley interleaves (works in either tide mode, so high tide
+    // is no longer a total lull).
+    if(phase2 && e.sprayCd<=0 && dist>70 && dist<560){
+      e.state='spraywind'; e.actT= panic?300:440; e.alertT=600; e.bob=t; return;
+    }
     // At high tide (armored) it CHARGES — the only way in is baiting a crash. At low tide
     // (exposed) it SWEEPS while you punish. Panic keeps both up.
     if((covered || panic) && e.chargeCd<=0 && dist>90 && dist<560){
@@ -8429,47 +8452,103 @@ Entities.register('hermitcrab', {
   draw(e, t){
     const S=e.scale||1, D=e.dir;
     const x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='chargewind'||e.state==='sweepwind');
+    const crouch=(e.state==='chargewind'||e.state==='sweepwind'||e.state==='spraywind');
     const y=y0+(crouch?2:Math.round(Math.sin(t/300)*1));
     const exposed=!e.armored;
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
 
-    // shadow
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y0+16,30,8,0,0,Math.PI*2); ctx.fillStyle='#0C1414'; ctx.fill(); ctx.globalAlpha=1;
-    // wind-up tell
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.28+0.2*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':'#E0A040'; ctx.beginPath(); ctx.ellipse(x,y+8,34,14,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // ---- palette ----
+    const shShadow='#6E4020', shDark='#8A5A34', shBase='#B57A48', shMid='#CE9862',
+          shLite='#E4B47E', shHi='#F4D6A6', shPink='#EAB0A6', apDark='#3A1E12';
+    const cShadow='#8A2A16', cDark='#B03A22', cBase='#E0562F', cMid='#EC6A42',
+          cLite='#F4906E', cHi='#FBC0A2', joint='#C0432E';
+    const eyeK='#160C08', eyeHot='#FFE0B0', barn='#EAD9BE';
 
-    // ---- the borrowed spiral shell (its "home") ----
-    const sc = exposed ? '#C98A5A' : '#B57A48';
-    px(x-26,y-14,26,26,sc); px(x-24,y-16,22,10,'#DCA774');
-    // spiral banding
-    ctx.strokeStyle='#8A5A34'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(x-13,y-1,11,0,Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x-13,y-1,6,0,Math.PI*2); ctx.stroke();
-    // barnacles / spikes
-    px(x-22,y-16,3,3,'#EAD3A8'); px(x-8,y-15,3,3,'#EAD3A8'); px(x-24,y-2,3,3,'#EAD3A8');
-    // crack when staggered
-    if(e.staggerT>0){ ctx.strokeStyle='#3A2A1A'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x-20,y-10); ctx.lineTo(x-13,y-2); ctx.lineTo(x-18,y+6); ctx.stroke(); }
+    // ground shadow
+    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+17,32,9,0,0,Math.PI*2); ctx.fillStyle='#08110F'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':(e.state==='spraywind'?'#5FC4DA':'#E0A040'); ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // frothing bubbles rising while charging the spray
+      if(e.state==='spraywind'){ ctx.save(); ctx.globalAlpha=0.7; ctx.fillStyle='#DFF6FA'; for(let i=0;i<4;i++){ const bx=x+e.dir*(12+i*4), by=y-4-((t/40+i*8)%20); ctx.beginPath(); ctx.arc(bx,by,1.5+i*0.5,0,Math.PI*2); ctx.fill(); } ctx.restore(); }
+    }
+
+    // ============ the borrowed spiral conch shell (its "home") ============
+    // big body-whorl (rounded), tinted a touch darker while sealed shut
+    const tint = exposed ? 0 : -1;
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-9, y-1, 20, 18, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shDark; ctx.beginPath(); ctx.ellipse(x-9, y+6, 20, 12, 0, 0, Math.PI*2); ctx.fill();     // underside shadow
+    ctx.fillStyle=shMid;  ctx.beginPath(); ctx.ellipse(x-11, y-5, 16, 12, 0, 0, Math.PI*2); ctx.fill();    // lit upper body
+    ctx.fillStyle=shLite; ctx.beginPath(); ctx.ellipse(x-13, y-8, 10, 7, 0, 0, Math.PI*2); ctx.fill();     // top highlight
+    // the coiling spire, stepping up toward the apex (top-left)
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-20, y-11, 11, 9, -0.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shMid;  ctx.beginPath(); ctx.ellipse(x-22, y-14, 8, 6, -0.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-27, y-16, 6, 5, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shLite; ctx.beginPath(); ctx.ellipse(x-31, y-18, 4, 3, -0.5, 0, Math.PI*2); ctx.fill();  // apex
+    // spiral ridge lines carved around the whorls
+    ctx.strokeStyle=shShadow; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x-9, y-1, 15, -0.4, Math.PI*1.5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x-11, y-3, 9, -0.4, Math.PI*1.6); ctx.stroke();
+    ctx.strokeStyle=shHi; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(x-11, y-4, 12, Math.PI*0.9, Math.PI*1.4); ctx.stroke();                       // glossy wet sheen
+    // knobbly spire nodules + barnacles + a fleck of coral
+    px(x-20,y-19,3,3,shShadow); px(x-14,y-15,3,3,shShadow); px(x-25,y-20,2,2,shShadow);
+    px(x-6,y-13,3,3,barn); px(x-18,y-6,3,3,barn); px(x+2,y+8,3,3,barn);
+    px(x-24,y+2,2,4,'#3E8E7A'); px(x-26,y+0,2,3,'#4EA890');   // little seaweed frond
+    px(x-2,y+10,4,2,'#E88AA0'); px(x-3,y+11,2,2,'#F0A6B6');   // pink coral nub
+    // crack when staggered (the environmental punish window)
+    if(e.staggerT>0){ ctx.strokeStyle='#2A1810'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-18,y-11); ctx.lineTo(x-10,y-3); ctx.lineTo(x-15,y+5); ctx.lineTo(x-8,y+9); ctx.stroke();
+      ctx.strokeStyle='#F4D6A6'; ctx.lineWidth=0.7; ctx.stroke(); }
+
+    // aperture rim (mouth of the shell, facing +x where the crab emerges)
+    ctx.fillStyle=shShadow; ctx.beginPath(); ctx.ellipse(x+8, y+1, 9, 15, 0.1, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shPink;   ctx.beginPath(); ctx.ellipse(x+8, y+1, 7, 13, 0.1, 0, Math.PI*2); ctx.fill();   // pearly lip
+    ctx.fillStyle=apDark;   ctx.beginPath(); ctx.ellipse(x+9, y+1, 5, 11, 0.1, 0, Math.PI*2); ctx.fill();   // dark interior
 
     if(e.armored){
-      // withdrawn — just a peeking eye + a sealing pincer across the mouth
-      px(x-2,y-2,7,7,'#C0432E'); px(x-1,y-4,3,3,'#20140F');
-      ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DDE6EC'; ctx.fillRect(x-6,y-8,14,3); ctx.restore();
+      // ---- withdrawn: a horny operculum door seals the aperture; one wary eye peeks out ----
+      ctx.fillStyle=cDark;  ctx.beginPath(); ctx.ellipse(x+9, y+1, 6, 12, 0.1, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle=joint;  ctx.beginPath(); ctx.ellipse(x+8, y+0, 4, 9, 0.1, 0, Math.PI*2); ctx.fill();
+      // concentric growth-rings on the door
+      ctx.strokeStyle=cShadow; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(x+9,y+1,4,8,0.1,0,Math.PI*2); ctx.stroke();
+      // a single peeking eye + a braced claw tip
+      px(x+6,y-3,4,4,eyeK); px(x+7,y-2,1,1,eyeHot);
+      px(x+12,y+7,6,4,cBase); px(x+16,y+6,4,3,cMid);          // claw braced across the seam
+      // icy defensive glint over the door
+      ctx.save(); ctx.globalAlpha=0.35+0.15*Math.sin(t/200); ctx.strokeStyle='#DDE6EC'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+9,y+1,8,-1.1,1.1); ctx.stroke(); ctx.restore();
     } else {
-      // ---- exposed crab body reaching out of the shell ----
-      // legs
-      ctx.strokeStyle='#C0432E'; ctx.lineWidth=2.5;
-      for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(x+4,y+4); ctx.lineTo(x+16,y+8+i*4); ctx.stroke(); }
-      px(x-2,y-6,18,14,'#E0562F'); px(x,y-8,14,6,'#EC6A42'); px(x+1,y-7,12,2,'#F4906E');
-      // eye stalks
-      px(x+3,y-13,2,5,'#C0432E'); px(x+9,y-13,2,5,'#C0432E');
-      px(x+2,y-16,3,3,'#20140F'); px(x+8,y-16,3,3,'#20140F');
-      px(x+3,y-15,1,1,'#FFF'); px(x+9,y-15,1,1,'#FFF');
-      // big claw
-      const open=(e.state==='sweepwind')?5:2;
-      px(x+16,y-4,7,5,'#E0562F'); px(x+22,y-6-open,5,4,'#EC6A42'); px(x+22,y+open-2,5,4,'#EC6A42');
+      // ============ exposed crab body reaching out of the shell ============
+      // jointed walking legs fanning from the aperture (drawn first, behind the body)
+      ctx.strokeStyle=cDark; ctx.lineWidth=3; ctx.lineCap='round';
+      const legT=Math.sin(t/220)*2;
+      for(let i=-1;i<=2;i++){ const ay=y+3+i*4;
+        ctx.beginPath(); ctx.moveTo(x+9,ay); ctx.lineTo(x+18,ay+3+legT*(i%2?1:-1)); ctx.lineTo(x+24,ay+9); ctx.stroke(); }
+      ctx.strokeStyle=cMid; ctx.lineWidth=1.2;
+      for(let i=-1;i<=2;i++){ const ay=y+3+i*4; ctx.beginPath(); ctx.moveTo(x+9,ay); ctx.lineTo(x+18,ay+3+legT*(i%2?1:-1)); ctx.stroke(); }
+
+      // fleshy head/carapace poking out of the aperture
+      px(x+6,y-7,15,16,cBase); px(x+8,y-9,12,6,cMid); px(x+9,y-8,10,2,cLite);   // domed shell + lit crest
+      px(x+7,y+6,14,5,cShadow);                                                  // underside
+      // stippled carapace texture
+      px(x+11,y-5,2,2,cDark); px(x+15,y-3,2,2,cDark); px(x+13,y+1,2,2,cDark);
+      // mandible mouthparts
+      px(x+9,y+8,9,3,cShadow); px(x+10,y+9,2,2,'#F4D6A6'); px(x+14,y+9,2,2,'#F4D6A6');
+      // eyestalks with glossy black eyes (angry-red rimmed while panicked)
+      const eyeRim = ((e.hp/e.maxHp)<=0.34) ? '#FF3A2A' : joint;
+      px(x+7,y-15,3,7,eyeRim); px(x+15,y-15,3,7,eyeRim);
+      px(x+6,y-19,5,5,eyeK);   px(x+14,y-19,5,5,eyeK);
+      px(x+8,y-18,2,2,eyeHot); px(x+16,y-18,2,2,eyeHot);
+      // ---- big asymmetric CRUSHER claw (upper) + a smaller pincer (lower) ----
+      const open=(e.state==='sweepwind')?6:2;
+      // crusher arm
+      px(x+19,y-9,7,6,cDark); px(x+20,y-9,6,3,cBase);
+      px(x+25,y-13,11,9,cBase); px(x+27,y-14,9,4,cMid); px(x+28,y-13,7,2,cLite);   // meaty claw base
+      px(x+34,y-15-open,8,5,cBase); px(x+36,y-15-open,6,3,cMid);                    // upper jaw of the pincer
+      px(x+34,y-8+open,8,5,cDark);  px(x+36,y-8+open,6,3,cBase);                    // lower jaw
+      px(x+41,y-14-open,3,3,cHi); px(x+41,y-8+open,3,3,cHi);                        // claw-tip highlights
+      // smaller nipper claw below
+      px(x+18,y+4,6,5,cDark); px(x+23,y+3,6,4,cBase); px(x+27,y+1,4,3,cMid); px(x+27,y+5,4,3,cMid);
     }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,y-20,60,42,'#FF6B4B'); ctx.globalAlpha=1; }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-32,y-22,74,48,'#FF6B4B'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
@@ -8743,14 +8822,16 @@ Entities.register('scarecrowking', {
     e.maxHp=e.maxHp||60; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.9; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
     e.dir=-1; e.state='track'; e.actT=0;
-    e.summonCd=3600; e.fireCd=4200; e.touchCd=0; e.summoned=0; e.bob=0;
+    e.summonCd=3600; e.fireCd=4200; e.crowCd=6500; e.touchCd=0; e.summoned=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_skNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x,p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66;
     const S=e.scale||1;
-    e.summonCd=Math.max(0,e.summonCd-dt); e.fireCd=Math.max(0,e.fireCd-dt);
+    // Phase 2 (≤66%): the King starts calling a murder of crows to harry you.
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🐦 The Scarecrow King caws — crows gather in the dark!', 2400); }
+    e.summonCd=Math.max(0,e.summonCd-dt); e.fireCd=Math.max(0,e.fireCd-dt); e.crowCd=Math.max(0,e.crowCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -8787,7 +8868,25 @@ Entities.register('scarecrowking', {
       e.bob=t; return;
     }
 
+    if(e.state==='crowwind'){
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.crowCd= enraged?6000:8500;
+        const n=enraged?3:2;
+        for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); Entities.spawn('crow',{ x:clamp(e.x+Math.cos(a)*46*S,30,WORLD_W-30), y:clamp(e.y+Math.sin(a)*46*S,40,WORLD_H-40) }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-16,'#33333F',18);
+        if(typeof sfxSummon==='function') sfxSummon();
+        showToast('🐦 A murder of crows descends!',1700);
+      }
+      e.bob=t; return;
+    }
+
     // ---- decide next move ----
+    // Phase 2+: call crows (capped) — a second, aerial add on top of the straw minions.
+    const crowN=(typeof entities!=='undefined'?entities:[]).filter(x=>x.kind==='crow').length;
+    if(phase2 && e.crowCd<=0 && dist<560 && crowN<(enraged?6:4)){
+      e.state='crowwind'; e.actT= enraged?520:680; e.alertT=650; e.bob=t; return;
+    }
     if(e.summonCd<=0 && dist<520 && e.summoned<(enraged?8:5)){
       e.state='summonwind'; e.actT= enraged?700:900; e.alertT=700; e.bob=t; return;
     }
@@ -8803,30 +8902,114 @@ Entities.register('scarecrowking', {
   draw(e, t){
     const S=e.scale||1, D=e.dir;
     const x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='summonwind'||e.state==='firewind');
+    const crouch=(e.state==='summonwind'||e.state==='firewind'||e.state==='crowwind');
+    const fire=(e.state==='firewind');
+    const crow=(e.state==='crowwind');
     const y=y0+(crouch?2:Math.round(Math.sin(t/300)*1));
     const enraged=(e.hp/e.maxHp)<=0.34;
+
+    // ---- palette ----
+    const poleW='#5A4028', poleL='#6E5236';
+    const buShadow='#6A4A24', buDark='#8A6A3A', buBase='#C7A35C', buMid='#D8B978', buLite='#EAD09A',
+          patch='#A8824A', stitch='#4A3418';
+    const clShadow='#4A3018', clDark='#6A4A24', clBase='#8A6636', clMid='#A07A42';
+    const stDark='#C9A24A', stBase='#E4C464', stLite='#F2E290';
+    const glow = enraged ? '#FF3A1E' : '#FF9A2E', glowIn = enraged ? '#FFC24A' : '#FFE0A0', ember='#FF6A1E';
+
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y0+18,26,7,0,0,Math.PI*2); ctx.fillStyle='#1E1A10'; ctx.fill(); ctx.globalAlpha=1;
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.28+0.2*Math.sin(t/60); ctx.fillStyle=e.state==='firewind'?'#F0742E':'#E0C060'; ctx.beginPath(); ctx.ellipse(x,y+8,34,14,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // tattered cape / body
-    px(x-16,y-6,32,24,'#7A5A2E'); px(x-16,y-6,32,5,'#8E6C38');
-    px(x-14,y+14,8,8,'#6A4A24'); px(x+6,y+16,8,6,'#6A4A24');   // ragged hem
-    // cross-arms of straw
-    px(x-24,y-8,48,4,'#8A6A3A'); px(x-24,y-6,6,6,'#E0C87A'); px(x+18,y-6,6,6,'#E0C87A');
-    // burlap head
-    px(x-9,y-26,18,18,'#D8B978'); px(x-9,y-26,18,5,'#E6C98A');
-    // crooked crown of corn husks
+    // ground shadow
+    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+19,28,8,0,0,Math.PI*2); ctx.fillStyle='#161208'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell (fire = orange flare, crows = dark, summon = golden)
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=fire?'#F0742E':(crow?'#4A4452':'#E0C060'); ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // crow-call: dark feathers swirling up
+      if(crow){ ctx.save(); ctx.fillStyle='#20202A'; for(let i=0;i<4;i++){ const a=t/120+i*1.6; const fx=x+Math.cos(a)*18, fy=y-16+Math.sin(a)*6; ctx.globalAlpha=0.7; px(Math.round(fx),Math.round(fy),3,2,'#20202A'); } ctx.restore(); }
+    }
+    // enrage: a smouldering ember haze
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.08*Math.sin(t/150); ctx.fillStyle='#FF5A1E'; ctx.beginPath(); ctx.ellipse(x,y-4,30,30,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- the cross-pole armature it's mounted on (peeks behind) ----
+    px(x-2, y-10, 4, 32, poleW); px(x-1, y-10, 1, 32, poleL);
+    px(x-26, y-3, 52, 4, poleW); px(x-26, y-3, 52, 1, poleL);
+
+    // ---- gangly straw-stuffed arms (one raised while casting) ----
+    const raise = crouch ? -10 : 0;
+    // far arm (behind body)
+    ctx.strokeStyle=clDark; ctx.lineWidth=4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x-6,y-2); ctx.lineTo(x-20,y+2); ctx.lineTo(x-27,y-4+raise*0.4); ctx.stroke();
+    // straw bursting from the far cuff + twig fingers
+    px(x-30,y-8+Math.round(raise*0.4),4,4,stBase);
+    ctx.strokeStyle=poleW; ctx.lineWidth=1.5;
+    for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(x-28,y-4+raise*0.4); ctx.lineTo(x-34,y-7+i*3+raise*0.4); ctx.stroke(); }
+
+    // ---- burlap tunic body (layered) ----
+    px(x-15,y-8, 30,26, buDark);
+    px(x-13,y-8, 26,7,  buMid);          // lit shoulders
+    px(x-14,y-6, 28,4,  buBase);
+    px(x-12,y-1, 24,12, buBase);         // mid torso
+    px(x-13,y+9, 26,6,  buShadow);       // belly shadow
+    // patchwork patches + cross-stitches
+    px(x-9,y+1, 7,7, patch); ctx.strokeStyle=stitch; ctx.lineWidth=1; ctx.strokeRect(x-9,y+1,7,7);
+    px(x-8,y+2,5,1,stitch); px(x-8,y+5,5,1,stitch);
+    px(x+3,y-4, 6,6, patch); ctx.strokeRect(x+3,y-4,6,6);
+    px(x+4,y-3,4,1,stitch); px(x+4,y-1,4,1,stitch);
+    // rope belt
+    px(x-14,y+7, 28,3, '#7A5E30'); px(x-2,y+6, 5,5, '#8A6A3A');
+    // tattered hem with straw poking through
+    px(x-15,y+15, 6,6, clDark); px(x-6,y+16, 6,5, clDark); px(x+3,y+15, 6,6, clDark); px(x+11,y+16, 5,5, clDark);
+    px(x-13,y+18,3,4,stBase); px(x-1,y+18,3,4,stBase); px(x+9,y+18,3,4,stBase);
+
+    // ---- near arm reaching toward the dog (raised while casting) ----
+    ctx.strokeStyle=clBase; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(x+6,y-3); ctx.lineTo(x+20,y+1+raise); ctx.lineTo(x+28,y-5+raise); ctx.stroke();
+    ctx.strokeStyle=clMid; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+6,y-3); ctx.lineTo(x+20,y+1+raise); ctx.stroke();
+    // straw cuff + gnarled twig claw
+    px(x+25,y-9+raise,5,5,stBase); px(x+26,y-10+raise,3,2,stLite);
+    ctx.strokeStyle=poleW; ctx.lineWidth=2; ctx.lineCap='round';
+    for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(x+29,y-6+raise); ctx.lineTo(x+36,y-9+i*4+raise); ctx.stroke(); }
+
+    // ---- straw ruff at the collar ----
+    ctx.fillStyle=stBase;
+    for(let i=-3;i<=3;i++){ ctx.beginPath(); ctx.moveTo(x+i*3-1,y-8); ctx.lineTo(x+i*2,y-15); ctx.lineTo(x+i*3+1,y-8); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle=stLite; px(x-1,y-14,2,4,stLite);
+
+    // ---- big burlap sack head ----
+    px(x-11,y-28, 22,20, buBase); px(x-11,y-28,22,6, buMid); px(x-10,y-27,20,2, buLite);   // lit crown
+    px(x-11,y-11, 22,4, buShadow);                                                          // jaw shadow
+    // stitched sack seams + a cinched, tied top
+    ctx.strokeStyle=stitch; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,y-28); ctx.lineTo(x,y-9); ctx.stroke();          // vertical seam
+    for(let i=-3;i<=3;i++){ px(x+i*3, y-28+ (i%2?0:1), 2,1, stitch); }             // cross-stitch band
+    px(x-3,y-30,6,3,'#7A5E30'); px(x-2,y-32,4,3,buDark);                            // cinched tie + gathered top
+    // burlap weave speckle
+    px(x-7,y-22,2,2,buDark); px(x+4,y-24,2,2,buDark); px(x-1,y-14,2,2,buDark);
+
+    // ---- carved, glowing jack-o'-lantern face ----
+    ctx.save();
+    ctx.globalAlpha=0.5+0.25*Math.sin(t/180);
+    const fg=ctx.createRadialGradient(x,y-19,1,x,y-19,14); fg.addColorStop(0,glowIn); fg.addColorStop(1,'rgba(255,140,40,0)');
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(x,y-19,14,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle=glow;
+    ctx.beginPath(); ctx.moveTo(x-7,y-23); ctx.lineTo(x-2,y-20); ctx.lineTo(x-7,y-17); ctx.closePath(); ctx.fill();   // left eye
+    ctx.beginPath(); ctx.moveTo(x+7,y-23); ctx.lineTo(x+2,y-20); ctx.lineTo(x+7,y-17); ctx.closePath(); ctx.fill();   // right eye
+    px(x-6,y-21,2,2,glowIn); px(x+4,y-21,2,2,glowIn);       // hot pupils
+    ctx.beginPath(); ctx.moveTo(x-1,y-19); ctx.lineTo(x+2,y-15); ctx.lineTo(x-2,y-15); ctx.closePath(); ctx.fillStyle=glow; ctx.fill();   // triangular nose
+    // jagged toothy grin
+    ctx.fillStyle=glow; px(x-7,y-14,14,3,glow);
+    ctx.fillStyle=buShadow;
+    px(x-5,y-14,2,3,buShadow); px(x-1,y-14,2,3,buShadow); px(x+3,y-14,2,3,buShadow);
+    px(x-6,y-11,2,1,glowIn); px(x+4,y-11,2,1,glowIn);
+
+    // ---- crooked crown of dried corn husks + a little gourd ----
     ctx.fillStyle='#E0A83A';
-    for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(x+i*5-2,y-26); ctx.lineTo(x+i*5,y-38); ctx.lineTo(x+i*5+2,y-26); ctx.closePath(); ctx.fill(); }
-    // glowing jack-o'-lantern face
-    const eye=enraged?'#FF3A1E':'#FF9A2E';
-    ctx.fillStyle=eye;
-    ctx.beginPath(); ctx.moveTo(x-6,y-20); ctx.lineTo(x-2,y-18); ctx.lineTo(x-6,y-15); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x+6,y-20); ctx.lineTo(x+2,y-18); ctx.lineTo(x+6,y-15); ctx.closePath(); ctx.fill();
-    px(x-5,y-12,10,3,eye);   // jagged grin
-    px(x-3,y-11,2,2,'#3A2A1A'); px(x+2,y-11,2,2,'#3A2A1A');
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-26,y-30,52,50,'#FF9A5A'); ctx.globalAlpha=1; }
+    for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(x+i*5-2,y-28); ctx.lineTo(x+i*5+Math.sin(i)*1,y-40); ctx.lineTo(x+i*5+2,y-28); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle='#C98A2E'; for(let i=-2;i<=2;i+=2){ px(x+i*5-1,y-38,2,4,'#C98A2E'); }
+    px(x-2,y-43,5,5,'#E67E22'); px(x-1,y-44,3,2,'#F0923A'); px(x,y-46,2,3,'#5A7A3A');   // gourd + stem
+
+    // enrage: floating embers
+    if(enraged){ ctx.fillStyle=ember; for(let i=0;i<4;i++){ const a=t/300+i*1.6; ctx.globalAlpha=0.6*(0.5+0.5*Math.sin(t/200+i)); px(Math.round(x+Math.cos(a)*22), Math.round(y-8+Math.sin(a*1.3)*18-((t/40+i*20)%40)+20), 2,2, ember); } ctx.globalAlpha=1; }
+
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,y-44,56,66,'#FF9A5A'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
@@ -9224,12 +9407,14 @@ Entities.register('sandserpent', {
     e.name='The Sand Serpent'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||64; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||1.6; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.touchCd=0; e.bob=0;
+    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.lineCd=5000; e.touchCd=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_ssNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🌪️ The Sand Serpent thrashes — it erupts in LINES now!', 2400); }
+    if(e.lineCd>0) e.lineCd=Math.max(0,e.lineCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -9245,6 +9430,15 @@ Entities.register('sandserpent', {
       e.moundCd-=dt;
       if(e.moundCd<=0){ e.moundCd= enraged?700:1100;
         Entities.spawn('groundzone', { x:clamp(p.x+rand(-30,30),40,WORLD_W-40), y:clamp(p.y+rand(-24,24),48,WORLD_H-40), r:46*S, warnMs:enraged?420:600, dmg:e.dmg, color:'#D8A85A', scale:S });
+      }
+      // PHASE 2: a LINE-eruption sweep — a row of mounds bursts along the dog's approach axis;
+      // sidestep perpendicular. Distinct from the scattered point mounds above.
+      if(phase2 && e.lineCd<=0){ e.lineCd= enraged?4200:6200;
+        const la=Math.atan2(p.y-e.y, p.x-e.x), step=62*S;
+        for(let i=-2;i<=3;i++){ const gx=clamp(p.x+Math.cos(la)*i*step,40,WORLD_W-40), gy=clamp(p.y+Math.sin(la)*i*step,48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:34*S, warnMs:(enraged?380:540)+(i+2)*90, dmg:e.dmg, color:'#E0B060', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y,'#E8C87A',14);
+        if(typeof showToast==='function') showToast('🌪️ Line eruption — sidestep it!', 1500);
       }
       e.actT-=dt;
       // surface when the timer runs out, or immediately if it has closed on a decoy/plate lure
@@ -9275,37 +9469,78 @@ Entities.register('sandserpent', {
   draw(e, t){
     const S=e.scale||1, D=e.dir, x=Math.round(e.x), y=Math.round(e.y);
     if(e.buried){
-      // a rushing sand mound + a cresting fin
-      ctx.save(); ctx.globalAlpha=0.9; ctx.fillStyle='#D8BC84';
-      ctx.beginPath(); ctx.ellipse(x,y,26*S,12*S,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#C6A868'; ctx.beginPath(); ctx.ellipse(x,y+3,20*S,8*S,0,0,Math.PI*2); ctx.fill();
-      // fin
-      ctx.fillStyle='#A6864A'; ctx.beginPath(); ctx.moveTo(x-6*S,y-2); ctx.lineTo(x+D*4*S,y-16*S); ctx.lineTo(x+8*S,y-2); ctx.closePath(); ctx.fill();
-      // trailing sand puffs
-      ctx.globalAlpha=0.4; for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(x-D*i*10*S, y+4, 4*S, 0, Math.PI*2); ctx.fill(); }
+      // ---- a rushing sand mound with a churning crest + a cresting spine ridge ----
+      ctx.save();
+      // trailing wake humps behind (suggest the long body under the sand)
+      ctx.globalAlpha=0.5; ctx.fillStyle='#C6A868';
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.ellipse(x-D*i*13*S, y+3, (14-i*2)*S, (7-i)*S, 0, 0, Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha=1;
+      // main mound
+      ctx.fillStyle='#B0904A'; ctx.beginPath(); ctx.ellipse(x,y+4,28*S,12*S,0,0,Math.PI*2); ctx.fill();     // shadowed base
+      ctx.fillStyle='#D8BC84'; ctx.beginPath(); ctx.ellipse(x,y,27*S,12*S,0,0,Math.PI*2); ctx.fill();        // sand hump
+      ctx.fillStyle='#EAD6A0'; ctx.beginPath(); ctx.ellipse(x-2*S,y-3*S,18*S,7*S,0,0,Math.PI*2); ctx.fill(); // sunlit crest
+      // dorsal spine ridge breaking the surface
+      ctx.fillStyle='#A6864A';
+      for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(x+(i*7-3)*S, y-2); ctx.lineTo(x+(i*7+D*2)*S, y-(12-Math.abs(i)*2)*S); ctx.lineTo(x+(i*7+3)*S, y-2); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle='#8A6A2E'; for(let i=-2;i<=2;i++){ px(x+(i*7)*S-1, y-6*S, 2, 4*S, '#8A6A2E'); }
+      // kicked-up sand particles
+      ctx.globalAlpha=0.5; ctx.fillStyle='#F0E0B0';
+      for(let i=0;i<6;i++){ const a=i*1.9; px(Math.round(x-D*20*S+Math.cos(a)*10), Math.round(y-4-((t/30+i*7)%14)), 2, 2, '#F0E0B0'); }
       ctx.restore();
       return;
     }
-    // reared, exposed serpent
+    // ============ reared, exposed serpent ============
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
     const enraged=(e.hp/e.maxHp)<=0.34;
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+20,26,7,0,0,Math.PI*2); ctx.fillStyle='#2A2214'; ctx.fill(); ctx.globalAlpha=1;
-    // coiled body rising
-    ctx.fillStyle='#C69A54';
-    ctx.beginPath(); ctx.moveTo(x-16,y+18); ctx.quadraticCurveTo(x-22,y-2,x-6,y-12); ctx.quadraticCurveTo(x+10,y-22,x+6,y-34); ctx.lineTo(x+16,y-32); ctx.quadraticCurveTo(x+22,y-14,x+8,y-2); ctx.quadraticCurveTo(x-2,y+8,x+6,y+18); ctx.closePath(); ctx.fill();
-    // belly scales
-    ctx.fillStyle='#E0C078'; for(let i=0;i<5;i++){ px(x-2+i*0, y+10-i*8, 8, 3, '#E0C078'); }
-    // head
-    const hx=x+12, hy=y-34;
-    px(hx-8,hy-4,18,12,'#B5893E'); px(hx-6,hy-6,14,5,'#C69A54');
-    // jaw
-    px(hx-8,hy+6,16,4,'#8A6A2E');
-    // eyes
-    const eye=enraged?'#FF3A1E':'#FFB03A'; px(hx-4,hy-1,3,3,eye); px(hx+5,hy-1,3,3,eye);
-    // fangs
-    ctx.fillStyle='#F5F0E0'; ctx.beginPath(); ctx.moveTo(hx-4,hy+6); ctx.lineTo(hx-2,hy+11); ctx.lineTo(hx,hy+6); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(hx+4,hy+6); ctx.lineTo(hx+6,hy+11); ctx.lineTo(hx+8,hy+6); ctx.closePath(); ctx.fill();
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-24,y-40,52,60,'#FF9A5A'); ctx.globalAlpha=1; }
+    // palette
+    const sShadow='#8A6A2E', sDark='#A6864A', sBase='#C69A54', sMid='#D8B468', sLite='#EACC86', belly='#EAD8A0',
+          hoodEdge='#8A5E2E', hoodSpot='#6A4A22', fang='#F5F0E0', mouth='#4A2416', tongue='#C0432E';
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+20,28,8,0,0,Math.PI*2); ctx.fillStyle='#2A2214'; ctx.fill(); ctx.globalAlpha=1;
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.06*Math.sin(t/140); ctx.fillStyle='#FF7A2E'; ctx.beginPath(); ctx.ellipse(x+4,y-16,20,26,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- thick coiled body rising from the sand ----
+    ctx.fillStyle=sDark;
+    ctx.beginPath(); ctx.moveTo(x-18,y+18); ctx.quadraticCurveTo(x-24,y-4,x-6,y-14); ctx.quadraticCurveTo(x+12,y-26,x+7,y-38); ctx.lineTo(x+19,y-36); ctx.quadraticCurveTo(x+25,y-14,x+9,y-1); ctx.quadraticCurveTo(x-3,y+9,x+8,y+18); ctx.closePath(); ctx.fill();
+    // lit front edge of the coil
+    ctx.fillStyle=sBase;
+    ctx.beginPath(); ctx.moveTo(x-12,y+16); ctx.quadraticCurveTo(x-18,y-4,x-3,y-13); ctx.quadraticCurveTo(x+12,y-24,x+8,y-36); ctx.lineTo(x+14,y-35); ctx.quadraticCurveTo(x+19,y-16,x+6,y-3); ctx.quadraticCurveTo(x-4,y+7,x+4,y+16); ctx.closePath(); ctx.fill();
+    // belly scutes down the throat
+    ctx.fillStyle=belly; for(let i=0;i<6;i++){ px(x+2, y+12-i*7, 9-Math.abs(i-3), 3, belly); }
+    ctx.fillStyle=sShadow; for(let i=0;i<6;i++){ px(x+2, y+15-i*7, 9-Math.abs(i-3), 1, sShadow); }
+    // dorsal diamond scales along the back of the coil
+    ctx.fillStyle=sMid;
+    for(let i=0;i<5;i++){ const sx=x-14+i*4, sy=y+8-i*6; ctx.beginPath(); ctx.moveTo(sx,sy-3); ctx.lineTo(sx+3,sy); ctx.lineTo(sx,sy+3); ctx.lineTo(sx-3,sy); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle=sLite; px(x-13,y+7,2,2,sLite); px(x-5,y-5,2,2,sLite);
+
+    // ---- flared cobra hood behind the head ----
+    const hx=x+13, hy=y-38;
+    ctx.fillStyle='#C08A44';
+    ctx.beginPath(); ctx.moveTo(hx-2,hy+8); ctx.quadraticCurveTo(hx-20,hy+2,hx-14,hy-8); ctx.quadraticCurveTo(hx-6,hy-14,hx-2,hy-6);
+    ctx.lineTo(hx+8,hy-6); ctx.quadraticCurveTo(hx+12,hy-14,hx+20,hy-8); ctx.quadraticCurveTo(hx+26,hy+2,hx+8,hy+8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=hoodEdge; ctx.lineWidth=1.5; ctx.stroke();
+    // hood eye-spot markings
+    ctx.fillStyle=hoodSpot; ctx.beginPath(); ctx.arc(hx-9,hy-2,3,0,Math.PI*2); ctx.arc(hx+13,hy-2,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#E8CC86'; px(hx-10,hy-3,2,2,'#E8CC86'); px(hx+12,hy-3,2,2,'#E8CC86');
+
+    // ---- broad wedge head ----
+    px(hx-9,hy-5,20,14,sBase); px(hx-7,hy-7,16,6,sMid); px(hx-5,hy-8,12,2,sLite);   // skull + lit brow
+    // ridged brow horns
+    ctx.fillStyle=sShadow; ctx.beginPath(); ctx.moveTo(hx-6,hy-6); ctx.lineTo(hx-9,hy-12); ctx.lineTo(hx-2,hy-7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+6,hy-6); ctx.lineTo(hx+9,hy-12); ctx.lineTo(hx+2,hy-7); ctx.closePath(); ctx.fill();
+    // slit reptilian eyes (vertical pupils)
+    const eye=enraged?'#FF3A1E':'#FFB03A';
+    px(hx-5,hy-2,4,4,eye); px(hx+3,hy-2,4,4,eye);
+    px(hx-4,hy-2,1,4,'#1A0E06'); px(hx+4,hy-2,1,4,'#1A0E06');   // slit pupils
+    px(hx-5,hy-2,1,1,'#FFF3D0'); px(hx+3,hy-2,1,1,'#FFF3D0');
+    // snout + nostrils
+    px(hx+7,hy+2,7,5,sMid); px(hx+13,hy+3,2,2,sShadow);
+    // open fanged maw
+    px(hx-6,hy+7,18,4,mouth); px(hx-4,hy+9,6,2,tongue); px(hx+2,hy+9,3,3,tongue);   // maw + forked tongue
+    ctx.fillStyle=fang;
+    ctx.beginPath(); ctx.moveTo(hx-4,hy+7); ctx.lineTo(hx-2,hy+13); ctx.lineTo(hx,hy+7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+8,hy+7); ctx.lineTo(hx+10,hy+13); ctx.lineTo(hx+12,hy+7); ctx.closePath(); ctx.fill();
+
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-26,y-52,56,72,'#FF9A5A'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
@@ -9508,15 +9743,16 @@ Entities.register('iceyeti', {
     e.name='The Ice Yeti'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||70; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.85; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='track'; e.actT=0; e.poundCd=2600; e.encaseCd=5000; e.touchCd=0; e.bob=0;
+    e.dir=-1; e.state='track'; e.actT=0; e.poundCd=2600; e.encaseCd=5000; e.icicleCd=6000; e.touchCd=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_yNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🧊 The Ice Yeti roars — the ceiling starts to shed icicles!', 2400); }
     // enrage whips the storm faster
     if(enraged && typeof Blizzard!=='undefined' && Blizzard.active()){ Blizzard._t=(Blizzard._t+dt*2)%Blizzard.PERIOD; }
-    e.poundCd=Math.max(0,e.poundCd-dt); e.encaseCd=Math.max(0,e.encaseCd-dt);
+    e.poundCd=Math.max(0,e.poundCd-dt); e.encaseCd=Math.max(0,e.encaseCd-dt); e.icicleCd=Math.max(0,e.icicleCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -9544,7 +9780,24 @@ Entities.register('iceyeti', {
       e.bob=t; return;
     }
 
+    if(e.state==='iciclewind'){
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.icicleCd= enraged?5000:7200;
+        // an arena-wide barrage of falling icicles around the dog (telegraphed crash spots)
+        const n=enraged?8:6;
+        for(let i=0;i<n;i++){ const gx=clamp(p.x+rand(-160,160),40,WORLD_W-40), gy=clamp(p.y+rand(-120,120),48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:26*S, warnMs:(enraged?400:560)+rand(0,320), dmg:e.dmg, color:'#BFE4F5', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-20,'#DFF2FF',18);
+        if(typeof sfxHowl==='function') sfxHowl();
+        showToast('🧊 Icicles rain down — keep moving!', 1900);
+      }
+      e.bob=t; return;
+    }
+
     // ---- decide ----
+    // Phase 2+: an area-wide icicle barrage (distinct from the pound rings that emanate from it).
+    if(phase2 && e.icicleCd<=0 && dist<560){ e.state='iciclewind'; e.actT= enraged?520:700; e.alertT=650; e.bob=t; return; }
     if(e.encaseCd<=0 && dist<110*S){ e.state='encasewind'; e.actT= enraged?600:820; e.alertT=700; e.bob=t; return; }
     if(e.poundCd<=0 && dist<300){ e.state='poundwind'; e.actT= enraged?500:680; e.alertT=650; e.bob=t; return; }
     const a=Math.atan2(p.y-e.y,p.x-e.x); const spd=e.speed*(enraged?1.25:1);
@@ -9555,28 +9808,87 @@ Entities.register('iceyeti', {
   },
   draw(e, t){
     const S=e.scale||1, D=e.dir, x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='poundwind'||e.state==='encasewind');
+    const crouch=(e.state==='poundwind'||e.state==='encasewind'||e.state==='iciclewind');
     const y=y0+(crouch?3:Math.round(Math.sin(t/320)*1));
     const enraged=(e.hp/e.maxHp)<=0.34;
+    // ---- palette ----
+    const fShadow='#BCCEDC', fDark='#D2E2EC', fBase='#E8F2F8', fLite='#F6FBFF', fHi='#FFFFFF',
+          iDark='#7FB8D8', iBase='#AFE0F5', iLite='#DFF2FF',
+          skin='#C6DAE6', brow='#9FC0D2', mouth='#25404E', fang='#F0F8FF', nose='#8AAABC';
+    const eye=enraged?'#3AD0FF':'#2A7EA0', eyeHot=enraged?'#CFF4FF':'#8FD0F0';
+
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
-    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+22,30,8,0,0,Math.PI*2); ctx.fillStyle='#1A2430'; ctx.fill(); ctx.globalAlpha=1;
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.28+0.2*Math.sin(t/60); ctx.fillStyle=e.state==='encasewind'?'#8FD0F0':'#BFE4F5'; ctx.beginPath(); ctx.ellipse(x,y+10,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
-    // shaggy white body
-    px(x-18,y-10,36,28,'#E8F2F8'); px(x-14,y-2,28,16,'#F6FBFF');
-    px(x-16,y+16,10,8,'#D2E2EC'); px(x+6,y+16,10,8,'#D2E2EC');   // legs
-    px(x-24,y-6,10,18,'#E0EEF6'); px(x+14,y-6,10,18,'#E0EEF6');  // arms
-    // icy claws
-    px(x-26,y+10,8,3,'#AFE0F5'); px(x+18,y+10,8,3,'#AFE0F5');
-    // head + horns of ice
-    px(x-11,y-24,22,18,'#EEF7FC');
-    ctx.fillStyle='#BFE4F5'; ctx.beginPath(); ctx.moveTo(x-10,y-22); ctx.lineTo(x-16,y-34); ctx.lineTo(x-4,y-24); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x+10,y-22); ctx.lineTo(x+16,y-34); ctx.lineTo(x+4,y-24); ctx.closePath(); ctx.fill();
-    // face
-    const eye=enraged?'#3AD0FF':'#2A6E8C'; px(x-6,y-18,4,4,eye); px(x+3,y-18,4,4,eye);
-    px(x-7,y-11,15,3,'#2A4A5A');   // grumpy mouth
+    // ground shadow
+    ctx.globalAlpha=0.30; ctx.beginPath(); ctx.ellipse(x,y0+23,34,9,0,0,Math.PI*2); ctx.fillStyle='#14202C'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='encasewind'?'#8FD0F0':'#BFE4F5'; ctx.beginPath(); ctx.ellipse(x,y+11,38,16,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // enrage: a frigid aura
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.06*Math.sin(t/150); ctx.fillStyle='#5FC0F0'; ctx.beginPath(); ctx.ellipse(x,y-2,34,34,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // helper: a ring of shaggy fur tufts around an ellipse
+    const tuft=(cx,cy,rw,rh,col,n)=>{ ctx.fillStyle=col; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; const ox=cx+Math.cos(a)*rw, oy=cy+Math.sin(a)*rh; const oa=a+0.25;
+      ctx.beginPath(); ctx.moveTo(cx+Math.cos(a-0.18)*rw, cy+Math.sin(a-0.18)*rh); ctx.lineTo(cx+Math.cos(oa)*(rw+6), cy+Math.sin(oa)*(rh+6)); ctx.lineTo(cx+Math.cos(a+0.18)*rw, cy+Math.sin(a+0.18)*rh); ctx.closePath(); ctx.fill(); } };
+
+    // ---- legs + big clawed feet ----
+    px(x-17,y+13,13,11,fDark); px(x+4,y+13,13,11,fDark);
+    px(x-18,y+21,15,4,fBase); px(x+3,y+21,15,4,fBase);            // furry feet tops
+    ctx.fillStyle=iBase; for(const fx of [-15,-10,7,12]){ ctx.beginPath(); ctx.moveTo(x+fx,y+24); ctx.lineTo(x+fx+2,y+20); ctx.lineTo(x+fx+4,y+24); ctx.closePath(); ctx.fill(); }   // toe claws
+
+    // ---- far arm (behind body) ----
+    px(x+15,y-9,12,24,fDark); tuft(x+21,y+2,8,12,fDark,7);
+    px(x+22,y+14,9,7,fBase);                                       // fist
+    ctx.fillStyle=iBase; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(x+22+i*3,y+15); ctx.lineTo(x+23+i*3,y+9); ctx.lineTo(x+25+i*3,y+15); ctx.closePath(); ctx.fill(); }   // icy knuckles
+
+    // ---- barrel body: shaggy fur ring, then filled mass ----
+    tuft(x,y+2,20,16,fShadow,16);
+    tuft(x,y+1,19,15,fDark,16);
+    ctx.fillStyle=fBase; ctx.beginPath(); ctx.ellipse(x,y+2,20,17,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=fLite; ctx.beginPath(); ctx.ellipse(x-4,y-4,14,11,0,0,Math.PI*2); ctx.fill();   // lit chest/shoulder
+    // pale belly fur + a couple of hanging icicles
+    ctx.fillStyle=fHi; ctx.beginPath(); ctx.ellipse(x-1,y+6,10,9,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=iLite; ctx.beginPath(); ctx.moveTo(x-8,y+14); ctx.lineTo(x-6,y+22); ctx.lineTo(x-4,y+14); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+3,y+15); ctx.lineTo(x+5,y+21); ctx.lineTo(x+7,y+15); ctx.closePath(); ctx.fill();
+    // hunched shoulder crest (raised fur hump)
+    tuft(x-6,y-11,13,7,fDark,10); ctx.fillStyle=fBase; ctx.beginPath(); ctx.ellipse(x-4,y-11,12,7,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle=fLite; px(x-10,y-13,10,3,fLite);
+
+    // ---- near arm reaching forward ----
+    px(x-27,y-9,13,25,fBase); tuft(x-21,y+2,9,13,fBase,8);
+    px(x-30,y+13,11,9,fLite);                                      // big fist
+    ctx.fillStyle=iBase; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(x-30+i*3,y+14); ctx.lineTo(x-29+i*3,y+7); ctx.lineTo(x-27+i*3,y+14); ctx.closePath(); ctx.fill(); }   // icy knuckle-spikes
+    px(x-16,y-8,6,10,fLite);                                       // lit shoulder joint
+
+    // ---- head set into the shoulders ----
+    px(x-12,y-25,24,19,skin); tuft(x,y-24,13,10,fBase,12);         // furry mane behind the face
+    px(x-12,y-25,24,19,skin);                                      // face plate over the mane
+    px(x-11,y-24,22,4,fLite);                                       // lit crown fur line
+    // heavy brow
+    px(x-11,y-18,22,3,brow); px(x-10,y-19,20,1,'#B6D2E0');
+    // deep-set glowing eyes
+    px(x-8,y-17,6,4,'#12303C'); px(x+2,y-17,6,4,'#12303C');
+    px(x-7,y-16,3,3,eye); px(x+3,y-16,3,3,eye);
+    px(x-7,y-16,1,1,eyeHot); px(x+3,y-16,1,1,eyeHot);
+    // broad flat nose
+    px(x-3,y-13,6,4,nose); px(x-2,y-12,1,1,'#5E7E90'); px(x+1,y-12,1,1,'#5E7E90');
+    // snarling mouth with fangs
+    px(x-9,y-9,18,4,mouth);
+    ctx.fillStyle=fang;
+    ctx.beginPath(); ctx.moveTo(x-7,y-9); ctx.lineTo(x-5,y-4); ctx.lineTo(x-3,y-9); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+3,y-9); ctx.lineTo(x+5,y-4); ctx.lineTo(x+7,y-9); ctx.closePath(); ctx.fill();
+    px(x-8,y-9,16,1,fang);                                          // upper tooth line
+    // cheek fur tufts
+    ctx.fillStyle=fLite; px(x-14,y-14,4,6,fLite); px(x+10,y-14,4,6,fLite);
+
+    // ---- jagged ICE CROWN jutting from the head + a shoulder shard ----
+    ctx.fillStyle=iBase;
+    ctx.beginPath(); ctx.moveTo(x-9,y-24); ctx.lineTo(x-14,y-38); ctx.lineTo(x-3,y-25); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x-1,y-26); ctx.lineTo(x,y-42); ctx.lineTo(x+5,y-25); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x+7,y-24); ctx.lineTo(x+14,y-37); ctx.lineTo(x+2,y-25); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=iLite; px(x-11,y-33,2,6,iLite); px(x-1,y-37,2,8,iLite); px(x+8,y-31,2,5,iLite);   // highlights on the shards
+    ctx.fillStyle=iBase; ctx.beginPath(); ctx.moveTo(x-16,y-12); ctx.lineTo(x-22,y-22); ctx.lineTo(x-11,y-14); ctx.closePath(); ctx.fill();   // shoulder shard
+
     // frost breath while winding up an encase
-    if(e.state==='encasewind'){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DFF2FF'; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(x+D*(16+i*7), y-8, 3+i, 0, Math.PI*2); ctx.fill(); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,y-34,56,58,'#FFB0B0'); ctx.globalAlpha=1; }
+    if(e.state==='encasewind'){ ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DFF2FF'; for(let i=0;i<4;i++){ ctx.beginPath(); ctx.arc(x-D*(16+i*7), y-11, 3+i, 0, Math.PI*2); ctx.fill(); } ctx.restore(); }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-34,y-42,68,68,'#FFB0B0'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
@@ -9695,13 +10007,14 @@ Entities.register('stormeagle', {
     e.name='The Storm Eagle'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||90; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||1.5; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='aerial'; e.actT=3400; e.diveCd=1600; e.boltCd=1200; e.touchCd=0; e.bob=0;
-    e.dvx=0; e.dvy=0;
+    e.dir=-1; e.state='aerial'; e.actT=3400; e.diveCd=1600; e.boltCd=1200; e.laneCd=4200; e.touchCd=0; e.bob=0;
+    e.dvx=0; e.dvy=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_seNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, crescendo=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, crescendo=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('⚡ The Storm Eagle charges the sky — lightning lanes incoming!', 2400); }
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -9711,10 +10024,20 @@ Entities.register('stormeagle', {
       // wheel above the dog
       const a=Math.atan2(p.y-e.y,p.x-e.x); const spd=e.speed*(crescendo?1.1:0.8);
       e.x=clamp(e.x+Math.cos(a)*spd*dtScale, 40, WORLD_W-40); e.y=clamp(e.y+Math.sin(a)*spd*0.5*dtScale, 40, WORLD_H-40); e.dir=Math.cos(a)>=0?1:-1;
-      e.diveCd=Math.max(0,e.diveCd-dt); e.boltCd=Math.max(0,e.boltCd-dt);
-      // rain lightning
+      e.diveCd=Math.max(0,e.diveCd-dt); e.boltCd=Math.max(0,e.boltCd-dt); if(e.laneCd>0) e.laneCd=Math.max(0,e.laneCd-dt);
+      // rain lightning (single strikes at the dog)
       if(e.boltCd<=0){ e.boltCd= crescendo?800:1400;
         Entities.spawn('groundzone',{ x:clamp(p.x+rand(-40,40),40,WORLD_W-40), y:clamp(p.y+rand(-30,30),48,WORLD_H-40), r:40*S, warnMs:crescendo?360:520, dmg:e.dmg, color:'#C9BEF0', scale:S });
+      }
+      // PHASE 2: LIGHTNING LANES — parallel vertical strips of lightning with safe corridors
+      // between them (weave sideways). Distinct from the single point-strikes above.
+      if(phase2 && e.laneCd<=0){ e.laneCd= crescendo?5000:7000;
+        const lanes=crescendo?3:2, spacingX=WORLD_W/(lanes+1), cellH=118, rows=Math.min(11,Math.floor((WORLD_H-100)/cellH));
+        for(let l=1;l<=lanes;l++){ const lx=clamp(l*spacingX+rand(-30,30),50,WORLD_W-50);
+          for(let r=0;r<=rows;r++){ const ly=clamp(64+r*cellH,48,WORLD_H-40);
+            Entities.spawn('groundzone',{ x:lx, y:ly, r:36*S, warnMs:(crescendo?440:600)+l*150, dmg:e.dmg, color:'#B9AEE8', scale:S }); } }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y,'#E6DFFA',18);
+        if(typeof showToast==='function') showToast('⚡ Lightning lanes — weave through the gaps!', 2000);
       }
       // telegraphed dive across the arena
       if(e.diveCd<=0 && dist>90){ e.state='divewind'; e.actT= crescendo?360:520; e.alertT=650; e.dtx=p.x; e.dty=p.y; e.bob=t; return; }
@@ -9758,29 +10081,98 @@ Entities.register('stormeagle', {
     const y=Math.round(e.y+lift+(e.airborne?Math.sin(t/200)*3:0));
     const crescendo=(e.hp/e.maxHp)<=0.34;
     const flap=Math.sin(t/(e.airborne?120:400))* (e.airborne?9:3);
+    // ---- palette ----
+    const fShadow='#4A4E66', fDark=crescendo?'#5A5A78':'#5E6280', fBase=crescendo?'#72768E':'#7E82A0',
+          fMid='#9296B2', fLite='#B2B6D0', fEdge='#CBCEE4',
+          brBase='#C6CADE', brLite='#E4E6F2', scallop='#A6AAC6',
+          hBase='#8E92AE', hLite='#B6BAD4', crest='#63678A',
+          beak='#F0B23A', beakLt='#F8CC64', beakTip='#7E5418', cere='#E0A83A',
+          talon='#E0A83A', talonD='#A87E28';
+    const eye=crescendo?'#FF3A2A':'#F5CE44', eyeHot='#FFF0B0';
+
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
-    // shadow on the clouds below (bigger when airborne)
-    ctx.globalAlpha=e.airborne?0.14:0.26; ctx.beginPath(); ctx.ellipse(x,Math.round(e.y)+18,e.airborne?20:30,7,0,0,Math.PI*2); ctx.fillStyle='#3A3A52'; ctx.fill(); ctx.globalAlpha=1;
-    if(e.state==='divewind'){ ctx.save(); ctx.globalAlpha=0.3+0.2*Math.sin(t/60); ctx.strokeStyle='#C9BEF0'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(e.dtx,e.dty); ctx.stroke(); ctx.restore(); }
-    // broad storm-grey wings
-    const wcol=crescendo?'#6A6E8C':'#7E82A0';
-    ctx.fillStyle=wcol;
-    ctx.beginPath(); ctx.moveTo(x-6,y-2); ctx.lineTo(x-34,y-10-flap); ctx.lineTo(x-30,y+2-flap*0.4); ctx.lineTo(x-6,y+6); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x+6,y-2); ctx.lineTo(x+34,y-10-flap); ctx.lineTo(x+30,y+2-flap*0.4); ctx.lineTo(x+6,y+6); ctx.closePath(); ctx.fill();
-    // wing tips
-    ctx.fillStyle='#5A5E78'; px(x-34,y-11-flap,6,4,'#5A5E78'); px(x+29,y-11-flap,6,4,'#5A5E78');
-    // body
-    px(x-8,y-6,16,18,'#8E92AE'); px(x-6,y+2,12,10,'#C6CADE');   // pale chest
-    // tail
-    ctx.fillStyle='#6E7290'; ctx.beginPath(); ctx.moveTo(x-4,y+10); ctx.lineTo(x,y+22); ctx.lineTo(x+4,y+10); ctx.closePath(); ctx.fill();
-    // head + golden beak
-    px(x+D*4-5,y-16,12,11,'#E8EAF2');
-    ctx.fillStyle='#F0B23A'; ctx.beginPath(); ctx.moveTo(x+D*9,y-11); ctx.lineTo(x+D*16,y-9); ctx.lineTo(x+D*9,y-6); ctx.closePath(); ctx.fill();
-    const eye=crescendo?'#FF3A2A':'#F0C63A'; px(x+D*4-2,y-13,3,3,eye);
-    // storm crackle around it in crescendo
-    if(crescendo){ ctx.save(); ctx.globalAlpha=0.4+0.3*Math.sin(t/80); ctx.strokeStyle='#C9BEF0'; ctx.lineWidth=1.5;
-      for(let i=0;i<3;i++){ const a=t/200+i*2; ctx.beginPath(); ctx.moveTo(x+Math.cos(a)*20,y+Math.sin(a)*16); ctx.lineTo(x+Math.cos(a)*30,y+Math.sin(a)*24); ctx.stroke(); } ctx.restore(); }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-34,y-20,68,44,'#FFB0B0'); ctx.globalAlpha=1; }
+    // shadow on the clouds below (smaller/fainter while airborne)
+    ctx.globalAlpha=e.airborne?0.14:0.28; ctx.beginPath(); ctx.ellipse(x,Math.round(e.y)+18,e.airborne?20:30,7,0,0,Math.PI*2); ctx.fillStyle='#2E2E48'; ctx.fill(); ctx.globalAlpha=1;
+    if(e.state==='divewind'){ ctx.save(); ctx.globalAlpha=0.3+0.2*Math.sin(t/60); ctx.strokeStyle='#C9BEF0'; ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(e.dtx,e.dty); ctx.stroke(); ctx.restore(); }
+    // crescendo storm charge behind the eagle
+    if(crescendo){ ctx.save(); ctx.globalAlpha=0.14+0.08*Math.sin(t/120); ctx.fillStyle='#8A7EC8'; ctx.beginPath(); ctx.ellipse(x,y-2,38,30,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // wing geometry: spread & raised when airborne (flap), swept lower & folded when grounded
+    const spread = e.airborne ? 40 : 26;
+    const rise   = e.airborne ? (14+flap) : 2;
+    // ---- a symmetric feathered wing, mirrored for left(-1)/right(+1) ----
+    const wing=(s)=>{
+      const bx=x+s*7, by=y-3;
+      const tipX=x+s*spread, tipY=y-rise;
+      // wing membrane (coverts) — a filled sweep from shoulder to tip
+      ctx.fillStyle=fDark;
+      ctx.beginPath(); ctx.moveTo(bx, by-4); ctx.quadraticCurveTo(x+s*(spread*0.6), by-rise-6, tipX, tipY);
+      ctx.lineTo(tipX-s*3, tipY+9); ctx.quadraticCurveTo(x+s*(spread*0.5), by+4, bx, by+7); ctx.closePath(); ctx.fill();
+      // primary flight feathers fanning from the tip
+      for(let i=0;i<5;i++){ const f=i/4; const px2=x+s*(spread-2-i*3), py=y-rise+ i*2 - 2;
+        ctx.fillStyle=(i%2? fBase : fShadow);
+        ctx.beginPath(); ctx.moveTo(px2, py); ctx.lineTo(px2+s*10, py+2+i*1.5); ctx.lineTo(px2+s*2, py+7); ctx.closePath(); ctx.fill(); }
+      // secondary coverts (rows of shorter feathers) with pale edges
+      for(let i=0;i<3;i++){ const cx=x+s*(11+i*6), cy=by-2 - (rise*0.4) + i*3;
+        ctx.fillStyle=fMid;  ctx.beginPath(); ctx.ellipse(cx, cy, 5, 3, s*0.4, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle=fEdge; px(Math.round(cx-2), Math.round(cy-2), 3,1, fEdge); }
+      // leading-edge highlight
+      ctx.strokeStyle=fLite; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(bx, by-3); ctx.quadraticCurveTo(x+s*(spread*0.6), by-rise-5, tipX, tipY); ctx.stroke();
+    };
+    wing(-1);   // far wing first (behind body)
+
+    // ---- fanned tail below ----
+    ctx.fillStyle=fDark;
+    for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(x-3,y+9); ctx.lineTo(x+i*4, y+24); ctx.lineTo(x+3,y+9); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle=fShadow; for(let i=-2;i<=2;i+=2){ px(x+i*4-1,y+20,2,4,fShadow); }
+
+    // ---- talons (tucked while airborne, gripping/braced when grounded) ----
+    if(e.airborne){
+      ctx.fillStyle=talon; px(x-5,y+9,4,5,talon); px(x+1,y+9,4,5,talon);
+      ctx.fillStyle=talonD; px(x-5,y+13,4,2,talonD); px(x+1,y+13,4,2,talonD);
+    } else {
+      ctx.strokeStyle=talon; ctx.lineWidth=3; ctx.lineCap='round';
+      for(const lx of [-6,5]){ ctx.beginPath(); ctx.moveTo(x+lx,y+8); ctx.lineTo(x+lx,y+18); ctx.stroke();
+        ctx.lineWidth=1.5; for(let k=-1;k<=1;k++){ ctx.beginPath(); ctx.moveTo(x+lx,y+18); ctx.lineTo(x+lx+k*4,y+22); ctx.stroke(); } ctx.lineWidth=3; }
+    }
+
+    // ---- body: dark back + pale scalloped breast ----
+    ctx.fillStyle=fBase; ctx.beginPath(); ctx.ellipse(x,y+1,11,15,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=fShadow; ctx.beginPath(); ctx.ellipse(x+4,y+2,7,13,0,0,Math.PI*2); ctx.fill();   // shaded back flank
+    ctx.fillStyle=brBase; ctx.beginPath(); ctx.ellipse(x-2,y+3,8,12,0,0,Math.PI*2); ctx.fill();     // pale breast
+    ctx.fillStyle=brLite; ctx.beginPath(); ctx.ellipse(x-4,y,5,7,0,0,Math.PI*2); ctx.fill();
+    // scalloped breast feather rows
+    ctx.fillStyle=scallop; for(let r=0;r<3;r++){ for(let c=-1;c<=1;c++){ px(x-5+c*4, y-2+r*5, 3,2, scallop); } }
+
+    wing(1);    // near wing over the body
+
+    // ---- head turned forward (+x): crest, skull, brow, eye, hooked beak ----
+    const hx=x+3, hy=y-15;
+    // swept-back feather crest
+    ctx.fillStyle=crest; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(hx-4-i*2,hy-2); ctx.lineTo(hx-10-i*3,hy-6-i); ctx.lineTo(hx-3-i*2,hy+2); ctx.closePath(); ctx.fill(); }
+    // skull
+    px(hx-6,hy-6,14,13,hBase); px(hx-5,hy-7,11,4,hLite); px(hx-4,hy-8,8,2,fEdge);
+    // bony brow ridge (fierce scowl)
+    px(hx-5,hy-2,12,2,fShadow);
+    // fierce eye
+    px(hx+1,hy-2,5,4,'#20223A'); px(hx+2,hy-2,3,3,eye); px(hx+4,hy-2,1,1,'#0C0C16'); px(hx+2,hy-2,1,1,eyeHot);
+    // cere + hooked golden beak
+    px(hx+6,hy-1,3,4,cere);
+    ctx.fillStyle=beak;
+    ctx.beginPath(); ctx.moveTo(hx+8,hy-2); ctx.lineTo(hx+18,hy-1); ctx.quadraticCurveTo(hx+20,hy+3, hx+16,hy+5); ctx.lineTo(hx+8,hy+4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=beakLt; ctx.beginPath(); ctx.moveTo(hx+8,hy-1); ctx.lineTo(hx+16,hy-0.5); ctx.lineTo(hx+9,hy+1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=beakTip; ctx.beginPath(); ctx.moveTo(hx+17,hy-0.5); ctx.quadraticCurveTo(hx+20,hy+3, hx+16,hy+5); ctx.lineTo(hx+15,hy+2); ctx.closePath(); ctx.fill();   // dark hooked tip
+    px(hx+9,hy+3,6,1,fShadow);   // beak gape line
+
+    // ---- storm crackle arcing off it (always a little, more in crescendo) ----
+    ctx.save(); ctx.strokeStyle=crescendo?'#E6DFFA':'#C9BEF0'; ctx.lineWidth=1.5;
+    const arcs=crescendo?4:2;
+    for(let i=0;i<arcs;i++){ const a=t/200+i*(6.28/arcs); ctx.globalAlpha=(crescendo?0.5:0.3)*(0.5+0.5*Math.sin(t/90+i));
+      let bx=x+Math.cos(a)*20, by2=y+Math.sin(a)*17; ctx.beginPath(); ctx.moveTo(bx,by2);
+      for(let s2=0;s2<3;s2++){ bx+=Math.cos(a)*5+rand(-3,3); by2+=Math.sin(a)*5+rand(-3,3); ctx.lineTo(bx,by2); } ctx.stroke(); }
+    ctx.restore();
+
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-40,y-22,80,50,'#FFB0B0'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },

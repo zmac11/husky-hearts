@@ -36,19 +36,22 @@ Entities.register('hermitcrab', {
     e.maxHp=e.maxHp||52; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.8; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
     e.dir=-1; e.state='track'; e.actT=0;
-    e.chargeCd=2600; e.sweepCd=3200; e.staggerT=0; e.touchCd=0;
-    e.cvx=0; e.cvy=0; e.bob=0;
+    e.chargeCd=2600; e.sweepCd=3200; e.sprayCd=5000; e.staggerT=0; e.touchCd=0;
+    e.cvx=0; e.cvy=0; e.bob=0; e._p2=false;
   },
 
   update(e, t, dt){
     const p=_hcNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, panic=frac<=0.34;
+    const frac=e.hp/e.maxHp, panic=frac<=0.34, phase2=frac<=0.66;
     const covered=(typeof Tide!=='undefined') ? Tide.covered() : false;
     const S=e.scale||1;
 
+    // Phase 2 (≤66%): froths up a ranged bubble-spray volley — the crab is no longer only melee.
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🫧 The Hermit Crab froths over — bubble volleys incoming!', 2400); }
     // Panic churns the tide (safe windows flip faster).
     if(typeof Tide!=='undefined') Tide._speed = panic ? 2.4 : 1;
+    e.sprayCd=Math.max(0,e.sprayCd-dt);
 
     // Armor: sealed at high tide UNLESS cracked open by a recent crash (stagger window).
     e.staggerT=Math.max(0, e.staggerT-dt);
@@ -98,8 +101,28 @@ Entities.register('hermitcrab', {
       }
       e.bob=t; return;
     }
+    if(e.state==='spraywind'){
+      // rear back frothing, then lob a fan of bubble bursts around the dog
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.sprayCd= panic?3200:5000;
+        const a0=Math.atan2(p.y-e.y,p.x-e.x), n=panic?5:3;
+        const reach=Math.max(70, Math.min(dist,520));
+        for(let i=0;i<n;i++){ const off=i-(n-1)/2; const a=a0+off*0.28;
+          const gx=clamp(e.x+Math.cos(a)*(reach+off*8),40,WORLD_W-40), gy=clamp(e.y+Math.sin(a)*(reach+off*8),48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:32*S, warnMs:panic?400:540, dmg:e.dmg, color:'#5FC4DA', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x+e.dir*18,e.y-8,'#8FE0F0',14);
+        if(typeof sfxHowl==='function') sfxHowl();
+      }
+      e.bob=t; return;
+    }
 
     // ---- decide the next move (track) ----
+    // Phase 2+: a ranged bubble volley interleaves (works in either tide mode, so high tide
+    // is no longer a total lull).
+    if(phase2 && e.sprayCd<=0 && dist>70 && dist<560){
+      e.state='spraywind'; e.actT= panic?300:440; e.alertT=600; e.bob=t; return;
+    }
     // At high tide (armored) it CHARGES — the only way in is baiting a crash. At low tide
     // (exposed) it SWEEPS while you punish. Panic keeps both up.
     if((covered || panic) && e.chargeCd<=0 && dist>90 && dist<560){
@@ -121,47 +144,103 @@ Entities.register('hermitcrab', {
   draw(e, t){
     const S=e.scale||1, D=e.dir;
     const x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='chargewind'||e.state==='sweepwind');
+    const crouch=(e.state==='chargewind'||e.state==='sweepwind'||e.state==='spraywind');
     const y=y0+(crouch?2:Math.round(Math.sin(t/300)*1));
     const exposed=!e.armored;
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
 
-    // shadow
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y0+16,30,8,0,0,Math.PI*2); ctx.fillStyle='#0C1414'; ctx.fill(); ctx.globalAlpha=1;
-    // wind-up tell
-    if(crouch){ ctx.save(); ctx.globalAlpha=0.28+0.2*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':'#E0A040'; ctx.beginPath(); ctx.ellipse(x,y+8,34,14,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // ---- palette ----
+    const shShadow='#6E4020', shDark='#8A5A34', shBase='#B57A48', shMid='#CE9862',
+          shLite='#E4B47E', shHi='#F4D6A6', shPink='#EAB0A6', apDark='#3A1E12';
+    const cShadow='#8A2A16', cDark='#B03A22', cBase='#E0562F', cMid='#EC6A42',
+          cLite='#F4906E', cHi='#FBC0A2', joint='#C0432E';
+    const eyeK='#160C08', eyeHot='#FFE0B0', barn='#EAD9BE';
 
-    // ---- the borrowed spiral shell (its "home") ----
-    const sc = exposed ? '#C98A5A' : '#B57A48';
-    px(x-26,y-14,26,26,sc); px(x-24,y-16,22,10,'#DCA774');
-    // spiral banding
-    ctx.strokeStyle='#8A5A34'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(x-13,y-1,11,0,Math.PI*2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x-13,y-1,6,0,Math.PI*2); ctx.stroke();
-    // barnacles / spikes
-    px(x-22,y-16,3,3,'#EAD3A8'); px(x-8,y-15,3,3,'#EAD3A8'); px(x-24,y-2,3,3,'#EAD3A8');
-    // crack when staggered
-    if(e.staggerT>0){ ctx.strokeStyle='#3A2A1A'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x-20,y-10); ctx.lineTo(x-13,y-2); ctx.lineTo(x-18,y+6); ctx.stroke(); }
+    // ground shadow
+    ctx.globalAlpha=0.28; ctx.beginPath(); ctx.ellipse(x,y0+17,32,9,0,0,Math.PI*2); ctx.fillStyle='#08110F'; ctx.fill(); ctx.globalAlpha=1;
+    // wind-up tell
+    if(crouch){ ctx.save(); ctx.globalAlpha=0.30+0.20*Math.sin(t/60); ctx.fillStyle=e.state==='chargewind'?'#D65A3C':(e.state==='spraywind'?'#5FC4DA':'#E0A040'); ctx.beginPath(); ctx.ellipse(x,y+9,36,15,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+      // frothing bubbles rising while charging the spray
+      if(e.state==='spraywind'){ ctx.save(); ctx.globalAlpha=0.7; ctx.fillStyle='#DFF6FA'; for(let i=0;i<4;i++){ const bx=x+e.dir*(12+i*4), by=y-4-((t/40+i*8)%20); ctx.beginPath(); ctx.arc(bx,by,1.5+i*0.5,0,Math.PI*2); ctx.fill(); } ctx.restore(); }
+    }
+
+    // ============ the borrowed spiral conch shell (its "home") ============
+    // big body-whorl (rounded), tinted a touch darker while sealed shut
+    const tint = exposed ? 0 : -1;
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-9, y-1, 20, 18, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shDark; ctx.beginPath(); ctx.ellipse(x-9, y+6, 20, 12, 0, 0, Math.PI*2); ctx.fill();     // underside shadow
+    ctx.fillStyle=shMid;  ctx.beginPath(); ctx.ellipse(x-11, y-5, 16, 12, 0, 0, Math.PI*2); ctx.fill();    // lit upper body
+    ctx.fillStyle=shLite; ctx.beginPath(); ctx.ellipse(x-13, y-8, 10, 7, 0, 0, Math.PI*2); ctx.fill();     // top highlight
+    // the coiling spire, stepping up toward the apex (top-left)
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-20, y-11, 11, 9, -0.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shMid;  ctx.beginPath(); ctx.ellipse(x-22, y-14, 8, 6, -0.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shBase; ctx.beginPath(); ctx.ellipse(x-27, y-16, 6, 5, -0.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shLite; ctx.beginPath(); ctx.ellipse(x-31, y-18, 4, 3, -0.5, 0, Math.PI*2); ctx.fill();  // apex
+    // spiral ridge lines carved around the whorls
+    ctx.strokeStyle=shShadow; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x-9, y-1, 15, -0.4, Math.PI*1.5); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x-11, y-3, 9, -0.4, Math.PI*1.6); ctx.stroke();
+    ctx.strokeStyle=shHi; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(x-11, y-4, 12, Math.PI*0.9, Math.PI*1.4); ctx.stroke();                       // glossy wet sheen
+    // knobbly spire nodules + barnacles + a fleck of coral
+    px(x-20,y-19,3,3,shShadow); px(x-14,y-15,3,3,shShadow); px(x-25,y-20,2,2,shShadow);
+    px(x-6,y-13,3,3,barn); px(x-18,y-6,3,3,barn); px(x+2,y+8,3,3,barn);
+    px(x-24,y+2,2,4,'#3E8E7A'); px(x-26,y+0,2,3,'#4EA890');   // little seaweed frond
+    px(x-2,y+10,4,2,'#E88AA0'); px(x-3,y+11,2,2,'#F0A6B6');   // pink coral nub
+    // crack when staggered (the environmental punish window)
+    if(e.staggerT>0){ ctx.strokeStyle='#2A1810'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-18,y-11); ctx.lineTo(x-10,y-3); ctx.lineTo(x-15,y+5); ctx.lineTo(x-8,y+9); ctx.stroke();
+      ctx.strokeStyle='#F4D6A6'; ctx.lineWidth=0.7; ctx.stroke(); }
+
+    // aperture rim (mouth of the shell, facing +x where the crab emerges)
+    ctx.fillStyle=shShadow; ctx.beginPath(); ctx.ellipse(x+8, y+1, 9, 15, 0.1, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=shPink;   ctx.beginPath(); ctx.ellipse(x+8, y+1, 7, 13, 0.1, 0, Math.PI*2); ctx.fill();   // pearly lip
+    ctx.fillStyle=apDark;   ctx.beginPath(); ctx.ellipse(x+9, y+1, 5, 11, 0.1, 0, Math.PI*2); ctx.fill();   // dark interior
 
     if(e.armored){
-      // withdrawn — just a peeking eye + a sealing pincer across the mouth
-      px(x-2,y-2,7,7,'#C0432E'); px(x-1,y-4,3,3,'#20140F');
-      ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#DDE6EC'; ctx.fillRect(x-6,y-8,14,3); ctx.restore();
+      // ---- withdrawn: a horny operculum door seals the aperture; one wary eye peeks out ----
+      ctx.fillStyle=cDark;  ctx.beginPath(); ctx.ellipse(x+9, y+1, 6, 12, 0.1, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle=joint;  ctx.beginPath(); ctx.ellipse(x+8, y+0, 4, 9, 0.1, 0, Math.PI*2); ctx.fill();
+      // concentric growth-rings on the door
+      ctx.strokeStyle=cShadow; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(x+9,y+1,4,8,0.1,0,Math.PI*2); ctx.stroke();
+      // a single peeking eye + a braced claw tip
+      px(x+6,y-3,4,4,eyeK); px(x+7,y-2,1,1,eyeHot);
+      px(x+12,y+7,6,4,cBase); px(x+16,y+6,4,3,cMid);          // claw braced across the seam
+      // icy defensive glint over the door
+      ctx.save(); ctx.globalAlpha=0.35+0.15*Math.sin(t/200); ctx.strokeStyle='#DDE6EC'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x+9,y+1,8,-1.1,1.1); ctx.stroke(); ctx.restore();
     } else {
-      // ---- exposed crab body reaching out of the shell ----
-      // legs
-      ctx.strokeStyle='#C0432E'; ctx.lineWidth=2.5;
-      for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(x+4,y+4); ctx.lineTo(x+16,y+8+i*4); ctx.stroke(); }
-      px(x-2,y-6,18,14,'#E0562F'); px(x,y-8,14,6,'#EC6A42'); px(x+1,y-7,12,2,'#F4906E');
-      // eye stalks
-      px(x+3,y-13,2,5,'#C0432E'); px(x+9,y-13,2,5,'#C0432E');
-      px(x+2,y-16,3,3,'#20140F'); px(x+8,y-16,3,3,'#20140F');
-      px(x+3,y-15,1,1,'#FFF'); px(x+9,y-15,1,1,'#FFF');
-      // big claw
-      const open=(e.state==='sweepwind')?5:2;
-      px(x+16,y-4,7,5,'#E0562F'); px(x+22,y-6-open,5,4,'#EC6A42'); px(x+22,y+open-2,5,4,'#EC6A42');
+      // ============ exposed crab body reaching out of the shell ============
+      // jointed walking legs fanning from the aperture (drawn first, behind the body)
+      ctx.strokeStyle=cDark; ctx.lineWidth=3; ctx.lineCap='round';
+      const legT=Math.sin(t/220)*2;
+      for(let i=-1;i<=2;i++){ const ay=y+3+i*4;
+        ctx.beginPath(); ctx.moveTo(x+9,ay); ctx.lineTo(x+18,ay+3+legT*(i%2?1:-1)); ctx.lineTo(x+24,ay+9); ctx.stroke(); }
+      ctx.strokeStyle=cMid; ctx.lineWidth=1.2;
+      for(let i=-1;i<=2;i++){ const ay=y+3+i*4; ctx.beginPath(); ctx.moveTo(x+9,ay); ctx.lineTo(x+18,ay+3+legT*(i%2?1:-1)); ctx.stroke(); }
+
+      // fleshy head/carapace poking out of the aperture
+      px(x+6,y-7,15,16,cBase); px(x+8,y-9,12,6,cMid); px(x+9,y-8,10,2,cLite);   // domed shell + lit crest
+      px(x+7,y+6,14,5,cShadow);                                                  // underside
+      // stippled carapace texture
+      px(x+11,y-5,2,2,cDark); px(x+15,y-3,2,2,cDark); px(x+13,y+1,2,2,cDark);
+      // mandible mouthparts
+      px(x+9,y+8,9,3,cShadow); px(x+10,y+9,2,2,'#F4D6A6'); px(x+14,y+9,2,2,'#F4D6A6');
+      // eyestalks with glossy black eyes (angry-red rimmed while panicked)
+      const eyeRim = ((e.hp/e.maxHp)<=0.34) ? '#FF3A2A' : joint;
+      px(x+7,y-15,3,7,eyeRim); px(x+15,y-15,3,7,eyeRim);
+      px(x+6,y-19,5,5,eyeK);   px(x+14,y-19,5,5,eyeK);
+      px(x+8,y-18,2,2,eyeHot); px(x+16,y-18,2,2,eyeHot);
+      // ---- big asymmetric CRUSHER claw (upper) + a smaller pincer (lower) ----
+      const open=(e.state==='sweepwind')?6:2;
+      // crusher arm
+      px(x+19,y-9,7,6,cDark); px(x+20,y-9,6,3,cBase);
+      px(x+25,y-13,11,9,cBase); px(x+27,y-14,9,4,cMid); px(x+28,y-13,7,2,cLite);   // meaty claw base
+      px(x+34,y-15-open,8,5,cBase); px(x+36,y-15-open,6,3,cMid);                    // upper jaw of the pincer
+      px(x+34,y-8+open,8,5,cDark);  px(x+36,y-8+open,6,3,cBase);                    // lower jaw
+      px(x+41,y-14-open,3,3,cHi); px(x+41,y-8+open,3,3,cHi);                        // claw-tip highlights
+      // smaller nipper claw below
+      px(x+18,y+4,6,5,cDark); px(x+23,y+3,6,4,cBase); px(x+27,y+1,4,3,cMid); px(x+27,y+5,4,3,cMid);
     }
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-28,y-20,60,42,'#FF6B4B'); ctx.globalAlpha=1; }
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-32,y-22,74,48,'#FF6B4B'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },

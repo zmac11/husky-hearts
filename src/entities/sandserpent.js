@@ -20,12 +20,14 @@ Entities.register('sandserpent', {
     e.name='The Sand Serpent'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||64; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||1.6; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.touchCd=0; e.bob=0;
+    e.dir=-1; e.state='burrow'; e.actT=3200; e.moundCd=900; e.lineCd=5000; e.touchCd=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_ssNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🌪️ The Sand Serpent thrashes — it erupts in LINES now!', 2400); }
+    if(e.lineCd>0) e.lineCd=Math.max(0,e.lineCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -41,6 +43,15 @@ Entities.register('sandserpent', {
       e.moundCd-=dt;
       if(e.moundCd<=0){ e.moundCd= enraged?700:1100;
         Entities.spawn('groundzone', { x:clamp(p.x+rand(-30,30),40,WORLD_W-40), y:clamp(p.y+rand(-24,24),48,WORLD_H-40), r:46*S, warnMs:enraged?420:600, dmg:e.dmg, color:'#D8A85A', scale:S });
+      }
+      // PHASE 2: a LINE-eruption sweep — a row of mounds bursts along the dog's approach axis;
+      // sidestep perpendicular. Distinct from the scattered point mounds above.
+      if(phase2 && e.lineCd<=0){ e.lineCd= enraged?4200:6200;
+        const la=Math.atan2(p.y-e.y, p.x-e.x), step=62*S;
+        for(let i=-2;i<=3;i++){ const gx=clamp(p.x+Math.cos(la)*i*step,40,WORLD_W-40), gy=clamp(p.y+Math.sin(la)*i*step,48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:34*S, warnMs:(enraged?380:540)+(i+2)*90, dmg:e.dmg, color:'#E0B060', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(p.x,p.y,'#E8C87A',14);
+        if(typeof showToast==='function') showToast('🌪️ Line eruption — sidestep it!', 1500);
       }
       e.actT-=dt;
       // surface when the timer runs out, or immediately if it has closed on a decoy/plate lure
@@ -71,37 +82,78 @@ Entities.register('sandserpent', {
   draw(e, t){
     const S=e.scale||1, D=e.dir, x=Math.round(e.x), y=Math.round(e.y);
     if(e.buried){
-      // a rushing sand mound + a cresting fin
-      ctx.save(); ctx.globalAlpha=0.9; ctx.fillStyle='#D8BC84';
-      ctx.beginPath(); ctx.ellipse(x,y,26*S,12*S,0,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='#C6A868'; ctx.beginPath(); ctx.ellipse(x,y+3,20*S,8*S,0,0,Math.PI*2); ctx.fill();
-      // fin
-      ctx.fillStyle='#A6864A'; ctx.beginPath(); ctx.moveTo(x-6*S,y-2); ctx.lineTo(x+D*4*S,y-16*S); ctx.lineTo(x+8*S,y-2); ctx.closePath(); ctx.fill();
-      // trailing sand puffs
-      ctx.globalAlpha=0.4; for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.arc(x-D*i*10*S, y+4, 4*S, 0, Math.PI*2); ctx.fill(); }
+      // ---- a rushing sand mound with a churning crest + a cresting spine ridge ----
+      ctx.save();
+      // trailing wake humps behind (suggest the long body under the sand)
+      ctx.globalAlpha=0.5; ctx.fillStyle='#C6A868';
+      for(let i=1;i<=3;i++){ ctx.beginPath(); ctx.ellipse(x-D*i*13*S, y+3, (14-i*2)*S, (7-i)*S, 0, 0, Math.PI*2); ctx.fill(); }
+      ctx.globalAlpha=1;
+      // main mound
+      ctx.fillStyle='#B0904A'; ctx.beginPath(); ctx.ellipse(x,y+4,28*S,12*S,0,0,Math.PI*2); ctx.fill();     // shadowed base
+      ctx.fillStyle='#D8BC84'; ctx.beginPath(); ctx.ellipse(x,y,27*S,12*S,0,0,Math.PI*2); ctx.fill();        // sand hump
+      ctx.fillStyle='#EAD6A0'; ctx.beginPath(); ctx.ellipse(x-2*S,y-3*S,18*S,7*S,0,0,Math.PI*2); ctx.fill(); // sunlit crest
+      // dorsal spine ridge breaking the surface
+      ctx.fillStyle='#A6864A';
+      for(let i=-2;i<=2;i++){ ctx.beginPath(); ctx.moveTo(x+(i*7-3)*S, y-2); ctx.lineTo(x+(i*7+D*2)*S, y-(12-Math.abs(i)*2)*S); ctx.lineTo(x+(i*7+3)*S, y-2); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle='#8A6A2E'; for(let i=-2;i<=2;i++){ px(x+(i*7)*S-1, y-6*S, 2, 4*S, '#8A6A2E'); }
+      // kicked-up sand particles
+      ctx.globalAlpha=0.5; ctx.fillStyle='#F0E0B0';
+      for(let i=0;i<6;i++){ const a=i*1.9; px(Math.round(x-D*20*S+Math.cos(a)*10), Math.round(y-4-((t/30+i*7)%14)), 2, 2, '#F0E0B0'); }
       ctx.restore();
       return;
     }
-    // reared, exposed serpent
+    // ============ reared, exposed serpent ============
     ctx.save(); ctx.translate(e.x,e.y); ctx.scale(D<0?-S:S,S); ctx.translate(-e.x,-e.y);
     const enraged=(e.hp/e.maxHp)<=0.34;
-    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+20,26,7,0,0,Math.PI*2); ctx.fillStyle='#2A2214'; ctx.fill(); ctx.globalAlpha=1;
-    // coiled body rising
-    ctx.fillStyle='#C69A54';
-    ctx.beginPath(); ctx.moveTo(x-16,y+18); ctx.quadraticCurveTo(x-22,y-2,x-6,y-12); ctx.quadraticCurveTo(x+10,y-22,x+6,y-34); ctx.lineTo(x+16,y-32); ctx.quadraticCurveTo(x+22,y-14,x+8,y-2); ctx.quadraticCurveTo(x-2,y+8,x+6,y+18); ctx.closePath(); ctx.fill();
-    // belly scales
-    ctx.fillStyle='#E0C078'; for(let i=0;i<5;i++){ px(x-2+i*0, y+10-i*8, 8, 3, '#E0C078'); }
-    // head
-    const hx=x+12, hy=y-34;
-    px(hx-8,hy-4,18,12,'#B5893E'); px(hx-6,hy-6,14,5,'#C69A54');
-    // jaw
-    px(hx-8,hy+6,16,4,'#8A6A2E');
-    // eyes
-    const eye=enraged?'#FF3A1E':'#FFB03A'; px(hx-4,hy-1,3,3,eye); px(hx+5,hy-1,3,3,eye);
-    // fangs
-    ctx.fillStyle='#F5F0E0'; ctx.beginPath(); ctx.moveTo(hx-4,hy+6); ctx.lineTo(hx-2,hy+11); ctx.lineTo(hx,hy+6); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(hx+4,hy+6); ctx.lineTo(hx+6,hy+11); ctx.lineTo(hx+8,hy+6); ctx.closePath(); ctx.fill();
-    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-24,y-40,52,60,'#FF9A5A'); ctx.globalAlpha=1; }
+    // palette
+    const sShadow='#8A6A2E', sDark='#A6864A', sBase='#C69A54', sMid='#D8B468', sLite='#EACC86', belly='#EAD8A0',
+          hoodEdge='#8A5E2E', hoodSpot='#6A4A22', fang='#F5F0E0', mouth='#4A2416', tongue='#C0432E';
+    ctx.globalAlpha=0.26; ctx.beginPath(); ctx.ellipse(x,y+20,28,8,0,0,Math.PI*2); ctx.fillStyle='#2A2214'; ctx.fill(); ctx.globalAlpha=1;
+    if(enraged){ ctx.save(); ctx.globalAlpha=0.12+0.06*Math.sin(t/140); ctx.fillStyle='#FF7A2E'; ctx.beginPath(); ctx.ellipse(x+4,y-16,20,26,0,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+
+    // ---- thick coiled body rising from the sand ----
+    ctx.fillStyle=sDark;
+    ctx.beginPath(); ctx.moveTo(x-18,y+18); ctx.quadraticCurveTo(x-24,y-4,x-6,y-14); ctx.quadraticCurveTo(x+12,y-26,x+7,y-38); ctx.lineTo(x+19,y-36); ctx.quadraticCurveTo(x+25,y-14,x+9,y-1); ctx.quadraticCurveTo(x-3,y+9,x+8,y+18); ctx.closePath(); ctx.fill();
+    // lit front edge of the coil
+    ctx.fillStyle=sBase;
+    ctx.beginPath(); ctx.moveTo(x-12,y+16); ctx.quadraticCurveTo(x-18,y-4,x-3,y-13); ctx.quadraticCurveTo(x+12,y-24,x+8,y-36); ctx.lineTo(x+14,y-35); ctx.quadraticCurveTo(x+19,y-16,x+6,y-3); ctx.quadraticCurveTo(x-4,y+7,x+4,y+16); ctx.closePath(); ctx.fill();
+    // belly scutes down the throat
+    ctx.fillStyle=belly; for(let i=0;i<6;i++){ px(x+2, y+12-i*7, 9-Math.abs(i-3), 3, belly); }
+    ctx.fillStyle=sShadow; for(let i=0;i<6;i++){ px(x+2, y+15-i*7, 9-Math.abs(i-3), 1, sShadow); }
+    // dorsal diamond scales along the back of the coil
+    ctx.fillStyle=sMid;
+    for(let i=0;i<5;i++){ const sx=x-14+i*4, sy=y+8-i*6; ctx.beginPath(); ctx.moveTo(sx,sy-3); ctx.lineTo(sx+3,sy); ctx.lineTo(sx,sy+3); ctx.lineTo(sx-3,sy); ctx.closePath(); ctx.fill(); }
+    ctx.fillStyle=sLite; px(x-13,y+7,2,2,sLite); px(x-5,y-5,2,2,sLite);
+
+    // ---- flared cobra hood behind the head ----
+    const hx=x+13, hy=y-38;
+    ctx.fillStyle='#C08A44';
+    ctx.beginPath(); ctx.moveTo(hx-2,hy+8); ctx.quadraticCurveTo(hx-20,hy+2,hx-14,hy-8); ctx.quadraticCurveTo(hx-6,hy-14,hx-2,hy-6);
+    ctx.lineTo(hx+8,hy-6); ctx.quadraticCurveTo(hx+12,hy-14,hx+20,hy-8); ctx.quadraticCurveTo(hx+26,hy+2,hx+8,hy+8); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=hoodEdge; ctx.lineWidth=1.5; ctx.stroke();
+    // hood eye-spot markings
+    ctx.fillStyle=hoodSpot; ctx.beginPath(); ctx.arc(hx-9,hy-2,3,0,Math.PI*2); ctx.arc(hx+13,hy-2,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#E8CC86'; px(hx-10,hy-3,2,2,'#E8CC86'); px(hx+12,hy-3,2,2,'#E8CC86');
+
+    // ---- broad wedge head ----
+    px(hx-9,hy-5,20,14,sBase); px(hx-7,hy-7,16,6,sMid); px(hx-5,hy-8,12,2,sLite);   // skull + lit brow
+    // ridged brow horns
+    ctx.fillStyle=sShadow; ctx.beginPath(); ctx.moveTo(hx-6,hy-6); ctx.lineTo(hx-9,hy-12); ctx.lineTo(hx-2,hy-7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+6,hy-6); ctx.lineTo(hx+9,hy-12); ctx.lineTo(hx+2,hy-7); ctx.closePath(); ctx.fill();
+    // slit reptilian eyes (vertical pupils)
+    const eye=enraged?'#FF3A1E':'#FFB03A';
+    px(hx-5,hy-2,4,4,eye); px(hx+3,hy-2,4,4,eye);
+    px(hx-4,hy-2,1,4,'#1A0E06'); px(hx+4,hy-2,1,4,'#1A0E06');   // slit pupils
+    px(hx-5,hy-2,1,1,'#FFF3D0'); px(hx+3,hy-2,1,1,'#FFF3D0');
+    // snout + nostrils
+    px(hx+7,hy+2,7,5,sMid); px(hx+13,hy+3,2,2,sShadow);
+    // open fanged maw
+    px(hx-6,hy+7,18,4,mouth); px(hx-4,hy+9,6,2,tongue); px(hx+2,hy+9,3,3,tongue);   // maw + forked tongue
+    ctx.fillStyle=fang;
+    ctx.beginPath(); ctx.moveTo(hx-4,hy+7); ctx.lineTo(hx-2,hy+13); ctx.lineTo(hx,hy+7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(hx+8,hy+7); ctx.lineTo(hx+10,hy+13); ctx.lineTo(hx+12,hy+7); ctx.closePath(); ctx.fill();
+
+    if(e.hurtT>0){ ctx.globalAlpha=Math.min(0.5,e.hurtT/440); px(x-26,y-52,56,72,'#FF9A5A'); ctx.globalAlpha=1; }
     ctx.restore();
     Entities.drawAlert(e);
   },
