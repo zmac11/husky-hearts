@@ -9743,15 +9743,16 @@ Entities.register('iceyeti', {
     e.name='The Ice Yeti'; e.boss=true; e.noKnockback=true;
     e.maxHp=e.maxHp||70; e.hp=(typeof e.hp==='number'&&e.hp<=e.maxHp)?e.hp:e.maxHp;
     e.speed=e.speed||0.85; e.dmg=e.dmg||3; e.scale=e.scale||BOSS_SCALE;
-    e.dir=-1; e.state='track'; e.actT=0; e.poundCd=2600; e.encaseCd=5000; e.touchCd=0; e.bob=0;
+    e.dir=-1; e.state='track'; e.actT=0; e.poundCd=2600; e.encaseCd=5000; e.icicleCd=6000; e.touchCd=0; e.bob=0; e._p2=false;
   },
   update(e, t, dt){
     const p=_yNearest(e); if(!p){ e.bob=t; return; }
     const dist=Math.hypot(p.x-e.x, p.y-e.y);
-    const frac=e.hp/e.maxHp, enraged=frac<=0.34, S=e.scale||1;
+    const frac=e.hp/e.maxHp, enraged=frac<=0.34, phase2=frac<=0.66, S=e.scale||1;
+    if(phase2 && !e._p2){ e._p2=true; if(typeof showToast==='function') showToast('🧊 The Ice Yeti roars — the ceiling starts to shed icicles!', 2400); }
     // enrage whips the storm faster
     if(enraged && typeof Blizzard!=='undefined' && Blizzard.active()){ Blizzard._t=(Blizzard._t+dt*2)%Blizzard.PERIOD; }
-    e.poundCd=Math.max(0,e.poundCd-dt); e.encaseCd=Math.max(0,e.encaseCd-dt);
+    e.poundCd=Math.max(0,e.poundCd-dt); e.encaseCd=Math.max(0,e.encaseCd-dt); e.icicleCd=Math.max(0,e.icicleCd-dt);
     if(e.touchCd>0) e.touchCd=Math.max(0,e.touchCd-dt);
     if(e.hurtT>0) e.hurtT=Math.max(0,e.hurtT-dt);
     if(e.alertT>0) e.alertT=Math.max(0,e.alertT-dt);
@@ -9779,7 +9780,24 @@ Entities.register('iceyeti', {
       e.bob=t; return;
     }
 
+    if(e.state==='iciclewind'){
+      e.actT-=dt;
+      if(e.actT<=0){
+        e.state='track'; e.icicleCd= enraged?5000:7200;
+        // an arena-wide barrage of falling icicles around the dog (telegraphed crash spots)
+        const n=enraged?8:6;
+        for(let i=0;i<n;i++){ const gx=clamp(p.x+rand(-160,160),40,WORLD_W-40), gy=clamp(p.y+rand(-120,120),48,WORLD_H-40);
+          Entities.spawn('groundzone',{ x:gx, y:gy, r:26*S, warnMs:(enraged?400:560)+rand(0,320), dmg:e.dmg, color:'#BFE4F5', scale:S }); }
+        if(typeof spawnSparkles==='function') spawnSparkles(e.x,e.y-20,'#DFF2FF',18);
+        if(typeof sfxHowl==='function') sfxHowl();
+        showToast('🧊 Icicles rain down — keep moving!', 1900);
+      }
+      e.bob=t; return;
+    }
+
     // ---- decide ----
+    // Phase 2+: an area-wide icicle barrage (distinct from the pound rings that emanate from it).
+    if(phase2 && e.icicleCd<=0 && dist<560){ e.state='iciclewind'; e.actT= enraged?520:700; e.alertT=650; e.bob=t; return; }
     if(e.encaseCd<=0 && dist<110*S){ e.state='encasewind'; e.actT= enraged?600:820; e.alertT=700; e.bob=t; return; }
     if(e.poundCd<=0 && dist<300){ e.state='poundwind'; e.actT= enraged?500:680; e.alertT=650; e.bob=t; return; }
     const a=Math.atan2(p.y-e.y,p.x-e.x); const spd=e.speed*(enraged?1.25:1);
@@ -9790,7 +9808,7 @@ Entities.register('iceyeti', {
   },
   draw(e, t){
     const S=e.scale||1, D=e.dir, x=Math.round(e.x), y0=Math.round(e.y);
-    const crouch=(e.state==='poundwind'||e.state==='encasewind');
+    const crouch=(e.state==='poundwind'||e.state==='encasewind'||e.state==='iciclewind');
     const y=y0+(crouch?3:Math.round(Math.sin(t/320)*1));
     const enraged=(e.hp/e.maxHp)<=0.34;
     // ---- palette ----
